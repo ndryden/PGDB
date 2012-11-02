@@ -1,0 +1,95 @@
+PGDB is a parallelized version of GDB, designed for debugging batch jobs in parallel.
+
+Here's the quick version of how to get the debugger running and some common questions and answers.
+See INSTALL for installation details.
+
+Attach mode: python gdbfe.py -p <srun process ID>
+Launch mode: python gdbfe.py -a srun <arguments to srun>
+(Other resource managers may work, but this has only been tested with srun.)
+
+To use launch mode, the application should be compiled with an MPI compiler and invoke MPI_Init,
+or the debugger may not be able to stop it before it reaches its entry point (this is a potential
+bug in srun's MPIR implementation).
+
+PGDB works by deploying a remote GDB process for each process in a job. Each debugger attaches
+to a back-end process and debuggers can be issued commands either individually or in collective
+through the front-end.
+
+Be aware of the memory requirements of both the processes to debug and the debug symbols. Some
+large applications have gibibytes of debug symbols that must be loaded by each debugger. Do not
+deploy more processes per node than can be debugged, or debuggers may be killed due to memory
+limits.
+
+It may take some time for the debugger to fully launch, due to having to load many debug symbols.
+Wait until you get "Stopped" reports from each remote node before proceeding.
+
+Provide any feedback and bug reports to the contact information at the bottom of this file.
+
+Common answers and usage follow:
+
+- Srun may report something along the lines of "srun: got SIGCONT". This is normal and can be
+ignored.
+
+- The MPI rank corresponding to the debugger is printed in square brackets before (almost)
+every corresponding message.
+
+- Ctrl-C does not work as it would in regular GDB.
+
+- Every command you enter is sent to every debugger by default. If you want to send a command
+to just a subset of processors, use the `proc' command. Demonstration by example:
+Print 1 on processor 0:
+proc 0 print 1
+Print 1 on processors 0 and 1:
+proc 0,1 print 1
+Print 1 on processors 0 through 3:
+proc 0-3 print 1
+Print 1 on processors 0, 2, and 4 through 8:
+proc 0,2,4-8 print 1
+
+- The text input interface is not fancy (no readline support). If you find that backspace is
+not working, try ^h instead (that's Ctrl-h). Likewise, there is no tab complete like in regular
+GDB.
+
+- At present, there is one name for each command. These, in general, are not the shortcuts.
+For example, to print, it's "print", not "p". For a backtrace, it's "backtrace", not "bt" or
+"where". However, do let me know what common abreviations and alternate names you use, I'd
+like to support them eventually.
+
+- If you find output that is not pretty-printed (it will look like repr'd Python data-structures),
+report it so that pretty-printing support can be added. Most commands should have support.
+
+- Note that some commands work somewhat differently for various reasons related to using GDB's
+machine interface. For the details of how they work, see the MI documentation. Eventually,
+it will mostly be normalized to work more similarly to vanilla GDB.
+
+The machine interface supports many commands that have no direct analogue in regular GDB;
+see the MI documentation for these.
+
+- To block output from selected processors, use the command `block <processors>', where you may
+specify processors in the same way as for the `proc' command above. To unblock output, use the
+`unblock <processors>' command.
+
+- To print variables, there are two methods. First, you can use the regular `print' command,
+however, that may not give you a sufficient overview of the object. When printing references
+or pointers, it may just print the address; however, you should be able to access the fields
+of the object as normal.
+
+Alternately, you can make use of the command `varprint <variable>' to print variables with
+their structural information. This may take a while for large classes or large arrays, so be
+aware of this. Varprint makes use of variable objects, so if you want additional functionality,
+you can make use of those; see below. Some aspects of varprint are configurable from the
+gdbconf file. If you used varprint, you can also assign values to these variables through the
+command `varassign <name> = <value>'.
+
+- Known bugs:
+   - Very rarely, the interface hangs and stops responding. I think this is due to a
+   system call deadlocking, but in any case, I have yet to identify the root cause. If it
+   happens, restarting the debugger is the only option (you will need to ^c it).
+
+- Contact info: email: dryden1@llnl.gov.
+
+- Some useful links:
+   - GDB documentation: http://sourceware.org/gdb/current/onlinedocs/gdb/index.html
+   - GDB MI documentation: http://sourceware.org/gdb/current/onlinedocs/gdb/GDB_002fMI.html#GDB_002fMI
+   (Go here if you can't figure out the details of a command.)
+   - GDB variable objects: http://sourceware.org/gdb/current/onlinedocs/gdb/GDB_002fMI-Variable-Objects.html#GDB_002fMI-Variable-Objects

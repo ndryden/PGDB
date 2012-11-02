@@ -1,0 +1,11 @@
+#!/usr/local/bin/python
+
+from gdbfe import GDBFE
+
+def run():
+    """Simple function to run the front-end."""
+    gdbfe = GDBFE()
+    gdbfe.run()
+
+if __name__ == "__main__":
+    run()
