@@ -50,6 +50,7 @@ class GDBMIParser:
         Returns a tuple, the first element being a list of out-of-band records,
         and the second element a list of result records."""
         lines = src.split("\n")
+        records = []
         oob_records = []
         result_records = []
         for line in lines:
@@ -71,10 +72,10 @@ class GDBMIParser:
                 else:
                     token = int(token)
                 if symbol == self._result_record_symbol:
-                    result_records.append(self.parse_result_record(token, rest))
+                    records.append(self.parse_result_record(token, rest))
                 else:
-                    oob_records.append(self.parse_oob_record(token, symbol, rest))
-        return (oob_records, result_records)
+                    records.append(self.parse_oob_record(token, symbol, rest))
+        return records
 
     def parse_result_record(self, token, src):
         """Parse a result record into a GDBMIResultRecord()."""

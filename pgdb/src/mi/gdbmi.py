@@ -66,12 +66,10 @@ class GDBMachineInterface:
                 (before, nl, self.buffer) = self.buffer.rpartition("\n")
                 if nl:
                     (oob_records, result_records) = self.parser.parse_output(before)
-                    for oob_record in oob_records:
-                        yield oob_record
-                    for result_record in result_records:
-                        yield result_record
+                    records = self.parser.parse_output(before)
+                    for record in records:
+                        yield record
                 else:
-                    #self.buffer = before
                     return
 
     def is_running(self):
