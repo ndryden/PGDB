@@ -33,6 +33,7 @@ class LMON_be(object):
         self.lib.LMON_be_recvUsrData.argtypes = [c_void_p]
         self.lib.LMON_be_barrier.argtypes = []
         self.lib.LMON_be_broadcast.argtypes = [c_void_p, c_int]
+        self.lib.lmon_be_scatter.argtypes = [c_void_p, c_int, c_void_p]
 
     def init(self, argc, argv):
         """Invoke LMON_be_init.
@@ -161,3 +162,27 @@ class LMON_be(object):
             else:
                 buf = buf.value
             return lmon.udata_unserialize(buf)
+
+    def scatter(self, udata_array, elem_size):
+        """Scatter with LMON_be_scatter.
+
+        The master provides udata_array, which is an array of data to scatter.
+        The slaves may provide None for the data.
+        elem_size is the size of each element. Due to serialization of data,
+        this should be the maximum size of the data, and the elements are padded
+        to this length.
+
+        All callers return their respective data (including the master).
+
+        """
+        buf = create_string_buffer(elem_size)
+        if self.amIMaster():
+            # Master pads data if needed and sends.
+            buf_list = map(lambda x: cast(create_string_buffer(lmon.udata_serialize(x),
+                                                               elem_size), c_char_p), udata_array)
+            buf_ar = lmon.create_array(c_char_p, tmp_argv)
+            lmon.call(self.lib.LMON_be_scatter, cast(buf_ar, c_void_p), elem_size, cast(buf, c_void_p))
+        else:
+            lmon.call(self.lib.LMON_be_scatter, cast(None, c_void_p), elem_size, cast(buf, c_void_p))
+        # Note: We may need the same fix as in broadcast for nulls; this needs to be tested.
+        return lmon.udata_unserialize(buf)
