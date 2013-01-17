@@ -2,15 +2,17 @@ import sys, os, socket, time, cPickle
 from mrnet.mrnet import *
 
 class NodeInfo:
-    def __init__(self, mrnrank, host, port, parent):
+    def __init__(self, mrnrank, host, port, parent, be_rank):
         self.mrnrank = mrnrank
         self.host = host
         self.port = port
         self.parent = parent
+        self.be_rank = be_rank
 
     def __str__(self):
-        return "{0} {1} {2} {3}".format(self.mrnrank, self.host,
-                                        self.port, self.parent)
+        return "{0} {1} {2} {3} {4}".format(self.mrnrank, self.host,
+                                            self.port, self.parent,
+                                            self.be_rank)
 
     def __repr__(self):
         return "<" + self.__str__() + ">"
