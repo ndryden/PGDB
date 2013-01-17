@@ -31,7 +31,7 @@ class MPIR_PROCDESC(Structure):
     _fields_ = [("host_name", c_char_p),
                 ("executable_name", c_char_p),
                 ("pid", c_int)]
-    
+
 class MPIR_PROCDESC_EXT(Structure):
     """A CTypes structure for the MPIR_PROCDESC_EXT structure."""
     _fields_ = [("pd", MPIR_PROCDESC),
