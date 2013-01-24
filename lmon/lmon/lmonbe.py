@@ -33,7 +33,7 @@ class LMON_be(object):
         self.lib.LMON_be_recvUsrData.argtypes = [c_void_p]
         self.lib.LMON_be_barrier.argtypes = []
         self.lib.LMON_be_broadcast.argtypes = [c_void_p, c_int]
-        self.lib.lmon_be_scatter.argtypes = [c_void_p, c_int, c_void_p]
+        self.lib.LMON_be_scatter.argtypes = [c_void_p, c_int, c_void_p]
 
     def init(self, argc, argv):
         """Invoke LMON_be_init.
