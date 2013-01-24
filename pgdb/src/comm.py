@@ -1,6 +1,6 @@
 """Primary communication class for managing LaunchMON and MRNet communication."""
 
-import cPickle, os, sys, socket
+import cPickle, os, sys, socket, threading
 from conf import gdbconf
 from lmon import lmon
 from lmon.lmonfe import LMON_fe
@@ -10,10 +10,34 @@ from MRNet import MRN, shared_ptr
 class Communicator (object):
     """Basic communicator class."""
 
-    def __init__(self):
+    # Special names for certain intervals.
+    frontend = "FRONTEND"
+    broadcast = "BROADCAST"
+
+    def __init__(self, locking = False):
         """Initialize things."""
         self.lmon = None
         self.mrnet = None
+        self.shutdown = False
+        self.recv_stash = []
+        self.use_locking = locking
+        if self.use_locking:
+            self.lock = threading.RLock()
+
+    def _lock(self):
+        """If using locking, acquire the lock. Otherwise do nothing.
+
+        Note that this does not quite work like the with statement, and things
+        will break if exceptions are raised.
+
+        """
+        if self.use_locking:
+            self.lock.acquire()
+
+    def _unlock(self):
+        """If using locking, release the lock. Otherwise do nothing."""
+        if self.use_locking:
+            self.lock.release()
 
     def init_lmon(self):
         """Initialize LaunchMON. Should be over-ridden by children."""
@@ -22,6 +46,36 @@ class Communicator (object):
     def init_mrnet(self):
         """Initialize MRNet. Should be over-ridden by children."""
         raise NotImplemented
+
+    def shutdown(self):
+        """Shut down the comm infrastructure. Should be over-ridden by children."""
+        raise NotImplemented
+
+    def is_shutdown(self):
+        """Return whether the comm instrastructure is shut down."""
+        return self.shutdown
+
+    def _init_shared_mrnet(self):
+        """Initialze some common MRNet stuff."""
+        self.packet_stash = []
+        self._init_mrnet_streams()
+        self._init_mrnet_rank_map()
+
+    def _init_mrnet_streams(self):
+        """Initialize basic MRNet streams."""
+        self.broadcast_communicator = self.mrnet.get_BroadcastCommunicator()
+        self.mrnet_broadcast_stream = self.mrnet.new_Stream(self.broadcast_communicator, 0, 0, 0)
+        self.mrnet_frontend_stream = None # Filled in by back-ends later.
+
+    def _init_mrnet_rank_map(self):
+        """Initialize the mappings from MPI ranks to MRNet ranks."""
+        # Note: This may break on the back-ends, and certainly does not get everything.
+        self.mpirank_to_mrnrank_map = {}
+        hostname_to_mrnrank = {}
+        for endpoint in self.broadcast_communicator.get_EndPoints():
+            hostname_to_mrnrank[socket.getfqdn(endpoint.get_HostName())] = endpoint.get_Rank()
+        for proc in self.get_proctab():
+            self.mpirank_to_mrnrank_map[proc.mpirank] = hostname_to_mrnrank[socket.getfqdn(proc.pd.host_name)]
 
     def get_proctab_size(self):
         """Return the size of the process table from LaunchMON"""
@@ -35,21 +89,115 @@ class Communicator (object):
         """Return the set of hosts on which LaunchMON runs."""
         return list(set(map(lambda x: x.pd.host_name, self.proctab)))
 
+    def mpirank_to_mrnrank(self, rank):
+        """Convert an MPI rank to an MRNet rank."""
+        return self.mpirank_to_mrnrank_map[rank]
+
+    def _multi_payload_split(self, msg):
+        """Given a message, split it into multi-messages if needed."""
+        if len(msg) > gdbconf.multi_len:
+            split_len = gdbconf.multi_len
+            payloads = [msg[i:i + split_len] for i in range(0, len(msg), split_len)]
+            payload_msgs = [GDBMessage(MULTI_MESSAGE, num = len(payloads))]
+            for payload in payloads:
+                payload_msgs.append(GDBMessage(MULTI_PAYLOAD_MSG, payload = payload))
+            serialized_msgs = []
+            for payload in payload_msgs:
+                serialized_msgs.append(cPickle.dumps(payload, 0))
+            return serialized_msgs
+        else:
+            # Nothing to be done.
+            return [msg]
+
+    def _get_stream_for_interval(self, interval):
+        """Given an interval, get the appropriate stream for it."""
+        if interval == self.frontend:
+            return self.mrnet_frontend_stream
+        elif interval == self.broadcast:
+            return self.mrnet_broadcast_stream
+        else:
+            stream = None
+            mrnet_ranks = []
+            for rank in interval.members():
+                mrnet_ranks.append(self.mpirank_to_mrnrank(rank))
+            # Since multiple MPI ranks correspond to one MRNet rank, eliminate duplicates.
+            mrnet_ranks = list(set(mrnet_ranks))
+            comm = self.mrnet.new_Communicator(mrnet_ranks)
+            return self.mrnet.new_Stream(comm, 0, 0, 0)
+
     def send(self, message, targets):
         """Send data over MRNet.
 
-        message is the data to send.
-        targets is an Interval of the targets to send the data to.
+        message is the GDBMessage to send.
+        targets is an Interval of the targets to send the data to, or one of
+        self.frontend or self.broadcast.
 
         """
-        pass
+        msg = cPickle.dumps(message, 0)
+        send_list = self._multi_payload_split(msg)
+        stream = self._get_stream_for_interval(targets)
+        self._lock()
+        for payload in send_list:
+            if stream.send(MSG_TAG, "%s", payload) == -1:
+                print "Fatal error on stream send."
+                sys.exit(1)
+        self._unlock()
+
+    def _recv(self, blocking = True):
+        """Raw receive function for MRNet."""
+        self._lock()
+        ret, tag, packet, stream = self.mrnet.recv(blocking)
+        self._unlock()
+        if ret == -1:
+            print "Terminal network failure on recv."
+            sys.exit(1)
+        if ret == 0:
+            return None
+        ret, serialized = packet.get.unpack("%s")
+        if ret == -1:
+            print "Could not unpack packet."
+            sys.exit(1)
+        msg = cPickle.loads(serialized)
+        # This keeps Python from garbage-collecting these.
+        self.packet_stash.append(packet)
+        return msg
+
+    def _recv_multi_message(self, msg):
+        """Handle receiving a multi-message."""
+        payload = ""
+        counter = 0
+        while counter != msg.num:
+            multi_msg = None
+            while not multi_msg:
+                # Block, because we know we should get messages.
+                recvd = self._recv()
+                if not recvd:
+                    # This shouldn't happen and may cause bad things.
+                    continue
+                if recvd.msg_type == MULTI_PAYLOAD_MSG:
+                    multi_msg = recvd
+                else:
+                    self.recv_stash.append(recvd)
+            payload += multi_msg.payload
+            counter += 1
+        return cPickle.loads(payload)
 
     def recv(self, blocking = True):
-        """Receive data over MRNet."""
-        pass
+        """Receive data on MRNet. Automatically handles multi-messages."""
+        if len(self.recv_stash) > 0:
+            return self.recv_stash.pop(0)
+        msg = self._recv(blocking)
+        if not msg:
+            return None
+        if msg.msg_type == MULTI_MSG:
+            return self._recv_multi_message(msg)
+        return msg
 
 class CommunicatorBE (Communicator):
     """Communicator for the back-end."""
+
+    def __init__(self, locking = False):
+        Communicator.__init__(self, locking)
 
     def init_lmon(self, argv):
         """Initialize LaunchMON communication.
@@ -68,6 +216,14 @@ class CommunicatorBE (Communicator):
         self.lmon_master = self.lmon.amIMaster()
         self.proctab_size = self.lmon.getMyProctabSize()
         self.proctab, unused = self.lmon.getMyProctab(self.proctab_size)
+
+    def _wait_for_hello(self):
+        """Wait until we receive a HELLO message on MRnet from the front-end."""
+        msg, stream = self.recv()
+        if msg.msg_type != HELLO_MSG:
+            print "First message is not hello!"
+            sys.exit(1)
+        self.mrnet_frontend_stream = stream
 
     def init_mrnet(self):
         """Initialize MRNet."""
@@ -90,16 +246,21 @@ class CommunicatorBE (Communicator):
                 str(local_node_info.be_rank)] # My rank.
         # Initialize.
         self.mrnet = MRN.Network.CreateNetworkBE(6, argv)
-        self.packet_stash = []
+        self._init_shared_mrnet()
+        self._wait_for_hello()
 
-    def send(self, message, targets):
-        pass
-
-    def recv(self, blocking = True):
-        pass
+    def shutdown(self):
+        """Shut down the communication infrastructure."""
+        self.lmon.finalize()
+        self.mrnet.waitfor_ShutDown()
+        del self.mrnet
+        self.shutdown = True
 
 class CommunicatorFE (Communicator):
     """Communicator for the front-end."""
+
+    def __init__(self, locking = False):
+        Communicator.__init__(self, locking)
 
     def init_lmon(self, attach, **kwargs):
         """Initialize LaunchMON and deploy back-end daemons.
@@ -204,25 +365,35 @@ class CommunicatorFE (Communicator):
         self.lmon.sendUsrDataBe(self.lmon_session, node_info)
         self.mrnet_network_size = len(node_info) - 1
 
-    def _init_mrnet_streams(self):
-        """Initialize MRNet streams."""
-        self.mrnet_broadcast_comm = self.mrnet.get_BroadcastCommunicator()
+    def _mrnet_node_joined_cb(self):
+        """An MRNet callback invoked whenever a back-end node joins."""
+        self.node_joins += 1
 
-    def _construct_mrnet_rank_mapping(self):
-        """Create a mapping from MRNet ranks to MPI ranks."""
-        self.mpirank_to_mrnrank = {}
-        self.mpiranks = []
-        hostname_to_mrnrank = {}
-        for ep in self.
+    def _mrnet_node_removed_cb(self):
+        """An MRnet callback invoked whenever a back-end node leaves."""
+        # TODO: Handle all nodes exiting.
+        pass
+
+    def _wait_for_nodes(self):
+        """Wait for all MRNet nodes to join the network."""
+        while self.node_joins != self.mrnet_network_size: pass
 
     def init_mrnet(self):
         """Initialize MRNet."""
         self._construct_mrnet_topology()
         self.mrnet = MRN.Network.CreateNetworkFE(self.mrnet_topo_path)
+        self.node_joins = 0
         self.mrnet.register_EventCallback(MRN.Event.TOPOLOGY_EVENT,
                                           MRN.TopologyEvent.TOPOL_ADD_BE,
-                                          self.mrnet_node_joined_cb)
+                                          self._mrnet_node_joined_cb)
         self.mrnet.register_EventCallback(MRN.Event.TOPOLOGY_EVENT,
                                           MRN.TopologyEvent.TOPOL_REMOVE_NODE,
-                                          self.mrnet_node_removed_cb)
+                                          self._mrnet_node_removed_cb)
         self._send_mrnet_topology()
+        self._wait_for_nodes()
+        self._init_shared_mrnet()
+
+    def shutdown(self):
+        """Shut down the communication infrastructure."""
+        del self.mrnet
+        self.shutdown = True

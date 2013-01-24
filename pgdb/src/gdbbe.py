@@ -6,104 +6,17 @@ deploying GDB, and sending commands and data back and forth.
 """
 
 from conf import gdbconf
+from comm import *
 from gdb_shared import *
 from lmon.lmonbe import *
 from mi.gdbmi import *
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.varobj import VariableObject, VariableObjectManager
+from mi.commands import Command
 import signal, os
 
 class GDBBE:
     """The back-end GDB daemon process."""
-
-    def init_lmon(self):
-        """Initialize LaunchMON communication and collect our process table."""
-        self.lmonbe = LMON_be()
-        self.lmonbe.init(len(sys.argv), sys.argv)
-        self.lmonbe.regPackForBeToFe(lmon.pack)
-        self.lmonbe.regUnpackForFeToBe(lmon.unpack)
-        self.lmonbe.handshake(None)
-        self.lmonbe.ready(None)
-        self.lmon_rank = self.lmonbe.getMyRank()
-        self.lmon_size = self.lmonbe.getSize()
-        self.lmon_master = self.lmonbe.amIMaster()
-        self.proctab_size = self.lmonbe.getMyProctabSize()
-        self.proctab, unused = self.lmonbe.getMyProctab(self.proctab_size)
-
-    def init_mrnet(self):
-        """Initialize MRNet by receiving the topology information and connecting to the comm nodes."""
-        if self.lmon_master:
-            # Master receives topology information from front-end and broadcasts to the rest.
-            self.topo_info = self.lmonbe.recvUsrData(gdbconf.topology_transmit_size)
-            self.lmonbe.broadcast(self.topo_info, gdbconf.topology_transmit_size)
-        else:
-            # Others receive the master's broadcast.
-            self.topo_info = self.lmonbe.broadcast(None, gdbconf.topology_transmit_size)
-
-        for node_info in self.topo_info.values():
-            if node_info.parent == -1:
-                self.mrnet_fe_rank = node_info.mrnrank
-                break
-        argv = self.get_mrnet_argv()
-        self.mrnet = MRN.Network.CreateNetworkBE(6, argv)
-        self.packet_stash = []
-
-    def get_mrnet_argv(self):
-        """Construct the argument list for MRNet's CreateNetworkBE."""
-        # Find our information in the topology.
-        max_rank = max(self.topo_info.keys()) + 1
-        myhost = socket.getfqdn()
-        for rank, node_info in self.topo_info.items():
-            # This assumes a bit about the form of the domain names.
-            if node_info.host == myhost:
-                return [sys.argv[0], # Program name.
-                        str(node_info.host), # Parent host.
-                        str(node_info.port), # Parent port.
-                        str(node_info.mrnrank), # Parent rank.
-                        myhost, # My host.
-                        str(max_rank + rank)] # My rank.
-        raise ValueError("Could not find my ({0}) topology information!".format(myhost))
-
-    def mrnet_stream_send(self, stream, msg_type, rank, **kwargs):
-        """Construct, serialize, and send a GDBMessage on a given MRNet stream."""
-        msg = cPickle.dumps(GDBMessage(msg_type, rank, **kwargs), 0)
-        split_len = int(gdbconf.multi_len / 2)
-        if len(msg) > gdbconf.multi_len:
-            # We use multi-messages at this point.
-            payloads = [msg[i:i + split_len] for i in range(0, len(msg), split_len)]
-            # Send the initial MULTI_MSG.
-            self.mrnet_stream_send(stream, MULTI_MSG, rank, num = len(payloads))
-            # Send the payloads.            
-            for payload in payloads:
-                self.mrnet_stream_send(stream, MULTI_PAYLOAD_MSG, rank, payload = payload)
-        else:
-            if stream.send(MSG_TAG, "%s", msg) == -1:
-                sys.exit(1)
-
-    def mrnet_recv(self, blocking = True):
-        """Receive data on MRNet and unserialize it."""
-        ret, tag, packet, stream = self.mrnet.recv(blocking)
-        if ret == -1:
-            print "Terminal network failure on recv."
-            sys.exit(1)
-        if ret == 0:
-            return None, None
-        ret, serialized = packet.get().unpack("%s")
-        if ret == -1:
-            print "Could not unpack packet."
-            sys.exit(1)
-        msg = cPickle.loads(serialized)
-        # We need to keep Python from garbage-collecting these.
-        self.packet_stash.append(packet)
-        return msg, stream
-
-    def wait_for_hello(self):
-        """Wait until we receive a HELLO message on MRNet."""
-        msg, stream = self.mrnet_recv()
-        if msg.msg_type != HELLO_MSG:
-            print "Didn't get hello."
-            sys.exit(1)
-        self.mrnet_fe_stream = stream
 
     def init_gdb(self):
         """Initialize GDB-related things, including launching the GDB process."""
@@ -113,25 +26,17 @@ class GDBBE:
         self.varprint_id = 0
         self.varprint_stacks = {}
 
-        # Default handler to ignore things.
-        def handler(record):
-            return True
-
-        for proc in self.proctab:
-            self.gdb[proc.mpirank] = GDBMachineInterface(gdb_args = ["-x", gdbconf.gdb_init_path],
-                                                         default_handler = handler)
+        enable_pprint_cmd = Command("enable_pretty_printing")
+        for proc in self.comm.get_proctab():
+            self.gdb[proc.mpirank] = GDBMachineInterface(gdb_args = ["-x", gdbconf.gdb_init_path])
             # Attach to the process.
-            if not self.gdb_run_cmd(proc.mpirank, "attach", (proc.pd.pid, ), {}):
-                raise RuntimeError("Could not attach to process!")
+            if not self.run_gdb_command(Command("attach", args = [proc.pd.pid]), Interval(lis = [proc.pd.pid])):
+                raise RuntimeError("Could not attach to rank {0}!".format(proc.mpirank))
             # Enable pretty-printing by default.
             # TODO: Make this optional.
-            if not self.gdb_run_cmd(proc.mpirank, "enable_pretty_printing", (), {}):
-                raise RuntimeError("Could not enable pretty printing!")
+            if not self.run_gdb_command(enable_pprint_cmd, Interval(lis = [proc.pd.pid])):
+                raise RuntimeError("Could not enable pretty printing on rank {0}!".format(proc.mpirank))
             self.varobjs[proc.mpirank] = VariableObjectManager()
-
-        # Master sends commands list back to front-end.
-        if self.lmon_master:
-            self.lmonbe.sendUsrData(self.gdb[self.proctab[0].mpirank].commands.keys())
 
     def quit_all(self):
         """Terminate all targets being debugged.
@@ -140,41 +45,18 @@ class GDBBE:
         for proc in self.proctab:
             os.kill(proc.pd.pid, signal.SIGTERM)
 
-    def msg_rank_to_list(self, msg_rank):
-        """Convert a "rank" to a list of ranks.
+    def run_gdb_command(self, command, ranks, token = None):
+        """Run a GDB command.
 
-        Ranks can be represented in a number of ways; -1 stands for all ranks we have.
-        A single integer refers to that rank.
-        There can be a list of ranks, which is just returned as is.
-        There can be a list of tuples indicating ranges of ranks, inclusively, which are expanded
-        into a list of ranks.
+        command is a Command object representing the command.
+        ranks is an Interval of the ranks to run the command on.
+        token is the optional token to use.
 
         """
-        if isinstance(msg_rank, int):
-            return [msg_rank]
-        return msg_rank.members()
-        if isinstance(msg_rank, int):
-            if msg_rank == -1:
-                return self.gdb.keys()
-            else:
-                return [msg_rank]
-        elif isinstance(msg_rank, list):
-            if isinstance(msg_rank[0], tuple):
-                ranks = []
-                for rank_tup in msg_rank:
-                    ranks += range(rank_tup[0], rank_tup[1] + 1)
-                return ranks
-            else:
-                return msg_rank
-        return False
-
-    def gdb_run_cmd(self, rank, cmd, args, options, token = None, handler = None):
-        """Run a GDB command on a set of GDB processes."""
-        ranks = self.msg_rank_to_list(rank)
-        for rank2 in ranks:
-            if rank2 in self.gdb:
-                func = getattr(self.gdb[rank2], cmd)
-                func(*args, options = options, token = token, handler = handler)
+        cmd_str = command.generate_mi_command()
+        for rank in ranks:
+            if rank in self.gdb:
+                self.gdb[rank].send(cmd_str, token)
         return True
 
     def init_handlers(self):
@@ -206,23 +88,18 @@ class GDBBE:
         """Initialize LaunchMON, MRNet, GDB, and other things."""
         self.is_shutdown = False
         self.quit = False
-        self.init_lmon()
-        self.init_mrnet()
-        self.wait_for_hello()
+        self.comm = CommunicatorBE()
+        self.comm.init_lmon(sys.argv)
+        self.comm.init_mrnet()
         self.init_gdb()
         self.init_handlers()
         self.init_filters()
 
     def shutdown(self):
         """Cleanly shut things down if we have not already done so."""
-        if not self.is_shutdown:
-            self.lmonbe.finalize()
-            self.mrnet.waitfor_ShutDown()
-            try:
-                del self.mrnet
-            except AttributeError: pass
-            self.is_shutdown = True
-        
+        if not self.comm.is_shutdown():
+            self.comm.shutdown()
+
     def __del__(self):
         """Invoke shutdown()."""
         self.shutdown()
@@ -234,28 +111,26 @@ class GDBBE:
     def cmd_handler(self, msg):
         """Handle a CMD message by running the command.
 
-        The message needs the following fields:
-        cmd - the command to run.
-        args - the positional arguments to the command.
-        options - the options to the command.
-        rank - the ranks to run the command on.
-        token - optional, the token to use for the command.
+        The message contains the following fields:
+        command - A Command object to run.
+        ranks - An interval of ranks on which to run.
+        token - An optional token to use.
 
         """
-        if msg.cmd == "quit":
+        if msg.command.command == "quit":
             # Special case for quit.
             self.quit = True
         token = None
         if hasattr(msg, "token"):
             token = msg.token
-        if not self.gdb_run_cmd(msg.rank, msg.cmd, msg.args, msg.options, token = token):
+        if not self.run_gdb_command(msg.command.command, msg.ranks, token = token):
             # TODO: Send die message.
             print "Managed to get a bad command '{0}'.".format(msg.cmd)
 
     def kill_handler(self, msg):
         """Handle a kill message, killing all processes."""
         self.quit_all()
-            
+
     def filter_handler(self, msg):
         """Handle a filter message by adding the filter."""
         self.filters.append((msg.filter_type, msg.filter_class))
@@ -404,7 +279,7 @@ class GDBBE:
                                      branch_depth = branch_depth, branch_name = name)
         self.gdb_run_cmd(rank, "var_list_children", ("1", '"' + varobj.name + '"'), {},
                          handler = _list_handler)
-                        
+
     def varprint_dfs(self, record, rank, v_id, name, max_depth = gdbconf.varprint_max_depth,
                      max_children = gdbconf.varprint_max_children,
                      reset_maxes = False, branch_depth = None, branch_name = None):
@@ -483,7 +358,7 @@ class GDBBE:
             if self.quit:
                 break
             # TODO: Check for memory leaks relating to these.
-            msg, stream = self.mrnet_recv(blocking = False)
+            msg = self.comm.recv(blocking = False)
             if msg is not None:
                 # Received data.
                 if msg.msg_type in self.msg_handlers:
@@ -494,7 +369,7 @@ class GDBBE:
             for rank, gdb in self.gdb.items():
                 for record in gdb.read():
                     if not self.is_filterable(record):
-                        self.mrnet_stream_send(self.mrnet_fe_stream, OUT_MSG, rank, record = record)
+                        self.comm.send(GDBMessage(OUT_MSG, record = record, rank = rank), self.comm.frontend)
 
             # Sleep a bit to reduce banging on the CPU.
             time.sleep(0.01)

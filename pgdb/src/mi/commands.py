@@ -12,7 +12,7 @@ class Command(object):
         command is the command.
         opts is a dictionary of key-value options.
         args is a list of positional arguments.
-        
+
         """
         self.command = command
         self.opts = opts
