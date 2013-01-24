@@ -12,7 +12,7 @@ from gdb_shared import *
 from lmon.lmonfe import LMON_fe
 from lmon import lmon
 from comm import *
-from mi.gdbmi_front import GDBMICmd
+from mi.gdbmicmd import GDBMICmd
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from mi.varobj import VariableObject, VariableObjectManager
@@ -109,7 +109,11 @@ class GDBFE (GDBMICmd):
 
     def __del__(self):
         """Invoke shutdown()."""
-        self.shutdown()
+        # Need to catch a potential exception when comm does not exist.
+        # This occurs if there is an error before comm init.
+        try:
+            self.shutdown()
+        except AttributeError: pass
 
     def die_handler(self, msg):
         """Handle a die message. Presently does nothing."""
