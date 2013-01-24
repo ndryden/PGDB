@@ -320,12 +320,12 @@ class CommunicatorFE (Communicator):
         self.mrnet_topo_path = "{0}/topo_{1}".format(gdbconf.topology_path, os.getpid())
         fmt = "{0}:0"
         with open(self.mrnet_topo_path, "w+") as topo_file:
-            while hostlist:
+            while host_list:
                 new_parents = []
                 for parent in cur_parents:
-                    children = hostlist[:branch_factor]
+                    children = host_list[:branch_factor]
                     new_parents += children
-                    del hostlist[:branch_factor]
+                    del host_list[:branch_factor]
                     if children:
                         topo_file.write(fmt.format(parent) + " => " +
                                         " ".join(map(lambda x: fmt.format(x), children)) + " ;\n")
