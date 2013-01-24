@@ -102,7 +102,10 @@ class GDBBE:
 
     def __del__(self):
         """Invoke shutdown()."""
-        self.shutdown()
+        # Exception guard if we have an error before comm init.
+        try:
+            self.shutdown()
+        except AttributeError: pass
 
     def die_handler(self, msg):
         """Handle a die message by exiting."""
