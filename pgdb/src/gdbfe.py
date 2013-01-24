@@ -16,7 +16,7 @@ from mi.gdbmi_front import GDBMICmd
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from mi.varobj import VariableObject, VariableObjectManager
-from mi.commands. import Command
+from mi.commands import Command
 from pprinter import GDBMIPrettyPrinter
 from interval import Interval
 
