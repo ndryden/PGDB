@@ -1,6 +1,7 @@
 """Primary communication class for managing LaunchMON and MRNet communication."""
 
 import cPickle, os, sys, socket, threading
+from gdb_shared import *
 from conf import gdbconf
 from lmon import lmon
 from lmon.lmonfe import LMON_fe
@@ -233,7 +234,7 @@ class CommunicatorBE (Communicator):
             node_info = self.lmon.recvUsrData(gdbconf.topology_transmit_size)
             # Scatter topology information to back-end.
             # Presently uses a node info size of 256.
-            local_node_info = self.lmon.scatter(node_info.items(), 256)
+            local_node_info = self.lmon.scatter(node_info, 256)
         else:
             # Receive scattered topology.
             local_node_info = self.lmon.scatter(None, 256)
@@ -340,7 +341,7 @@ class CommunicatorFE (Communicator):
         """
         topology = self.mrnet.get_NetworkTopology()
         # Note: This assumes that leaves gives us a list.
-        leaves = topology.get_Leaves()
+        leaves = list(topology.get_Leaves())
         num_nodes = topology.get_NumNodes() + 1 # Add 1 to make sure we're good.
         node_info = []
         local_rank = self.mrnet.get_LocalRank()
@@ -353,7 +354,7 @@ class CommunicatorFE (Communicator):
                                           leaf.get_Port(), -1, num_nodes + i))
             else:
                 node_info.append(NodeInfo(leaf.get_Rank(), leaf.get_HostName(),
-                                          leaf.get_Port(), leaf.get_Parent()), num_nodes + i)
+                                          leaf.get_Port(), leaf.get_Parent(), num_nodes + i))
             if i % gdbconf.mrnet_branch_factor == (gdbconf.mrnet_branch_factor - 1):
                 # Remove the leaf after we've given it mrnet_branch_factor children.
                 leaves.pop(0)
