@@ -18,7 +18,7 @@ class Communicator (object):
         """Initialize things."""
         self.lmon = None
         self.mrnet = None
-        self.shutdown = False
+        self.been_shutdown = False
         self.recv_stash = []
         self.use_locking = locking
         if self.use_locking:
@@ -53,7 +53,7 @@ class Communicator (object):
 
     def is_shutdown(self):
         """Return whether the comm instrastructure is shut down."""
-        return self.shutdown
+        return self.been_shutdown
 
     def _init_shared_mrnet(self):
         """Initialze some common MRNet stuff."""
@@ -254,7 +254,7 @@ class CommunicatorBE (Communicator):
         self.lmon.finalize()
         self.mrnet.waitfor_ShutDown()
         del self.mrnet
-        self.shutdown = True
+        self.been_shutdown = True
 
 class CommunicatorFE (Communicator):
     """Communicator for the front-end."""
@@ -396,4 +396,4 @@ class CommunicatorFE (Communicator):
     def shutdown(self):
         """Shut down the communication infrastructure."""
         del self.mrnet
-        self.shutdown = True
+        self.been_shutdown = True
