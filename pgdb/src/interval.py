@@ -162,7 +162,7 @@ class Interval(object):
                         k += 1
                     else:
                         break
-                else:                    
+                else:
                     if other.intervals[k][1] < interval[0]:
                         k += 1
                     else:
@@ -248,11 +248,14 @@ class Interval(object):
         """
         if not len(other):
             return self
+        i = 0
         k = 0
         new = []
         for interval in self.intervals:
+            append = False
             while k < len(other):
                 if self._interval_intersect(interval, other.intervals[k]):
+                    append = True
                     diff = self._interval_difference(interval, other.intervals[k])
                     if diff:
                         new += diff
@@ -263,10 +266,14 @@ class Interval(object):
                     else:
                         k += 1
                 else:
-                    k += 1
-                    if other.intervals[k][0] > interval[1]:
+                    if other.intervals[k][0] > interval[1] and not append:
+                        append = True
                         new.append(interval)
+                        k += 1
                         break
+                    k += 1
+            if k >= len(other) and not append:
+                new.append(interval)
         return Interval(intervals = new, is_sorted = True)
 
     def symmetric_difference(self, other):
