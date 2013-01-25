@@ -27,15 +27,15 @@ class GDBBE:
         self.varprint_id = 0
         self.varprint_stacks = {}
 
-        enable_pprint_cmd = Command("enable_pretty_printing")
+        enable_pprint_cmd = Command("enable-pretty-printing")
         for proc in self.comm.get_proctab():
             self.gdb[proc.mpirank] = GDBMachineInterface(gdb_args = ["-x", gdbconf.gdb_init_path])
             # Attach to the process.
-            if not self.run_gdb_command(Command("attach", args = [proc.pd.pid]), Interval(lis = [proc.pd.pid])):
+            if not self.run_gdb_command(Command("target-attach", args = [proc.pd.pid]), Interval(lis = [proc.mpirank])):
                 raise RuntimeError("Could not attach to rank {0}!".format(proc.mpirank))
             # Enable pretty-printing by default.
             # TODO: Make this optional.
-            if not self.run_gdb_command(enable_pprint_cmd, Interval(lis = [proc.pd.pid])):
+            if not self.run_gdb_command(enable_pprint_cmd, Interval(lis = [proc.mpirank])):
                 raise RuntimeError("Could not enable pretty printing on rank {0}!".format(proc.mpirank))
             self.varobjs[proc.mpirank] = VariableObjectManager()
 
