@@ -304,7 +304,7 @@ class GDBFE (GDBMICmd):
         print "GDB deployed to {0} hosts and {1} processors.".format(self.comm.get_mrnet_network_size(),
                                                                      self.comm.get_proctab_size())
         recvd = False
-        while not self.quit:
+        while not self.quit and not self.comm.all_nodes_exited():
             # Receive data, if any.
             msg = self.comm.recv(blocking = False)
             if msg is not None:
@@ -319,7 +319,6 @@ class GDBFE (GDBMICmd):
                 time.sleep(self.sleep_time)
         self.shutdown()
         thread.interrupt_main()
-        #print "Use C-d to exit the front-end."
 
     def local_body(self):
         """The local command input loop."""

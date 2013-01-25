@@ -385,7 +385,7 @@ class CommunicatorFE (Communicator):
     def _mrnet_node_removed_cb(self):
         """An MRnet callback invoked whenever a back-end node leaves."""
         # TODO: Handle all nodes exiting.
-        pass
+        self.node_exits += 1
 
     def _wait_for_nodes(self):
         """Wait for all MRNet nodes to join the network."""
@@ -416,6 +416,7 @@ class CommunicatorFE (Communicator):
         self._construct_mrnet_topology()
         self.mrnet = MRN.Network.CreateNetworkFE(self.mrnet_topo_path)
         self.node_joins = 0
+        self.node_exits = 0
         self.mrnet.register_EventCallback(MRN.Event.TOPOLOGY_EVENT,
                                           MRN.TopologyEvent.TOPOL_ADD_BE,
                                           self._mrnet_node_joined_cb)
@@ -436,3 +437,11 @@ class CommunicatorFE (Communicator):
     def get_mrnet_network_size(self):
         """Return the size of the MRNet network."""
         return self.mrnet_network_size
+
+    def get_exit_count(self):
+        """Return the number of MRNet nodes that have exited."""
+        return self.node_exits
+
+    def all_nodes_exited(self):
+        """Return whether all nodes have exited."""
+        return self.node_exits == self.node_joins
