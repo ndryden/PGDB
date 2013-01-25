@@ -135,7 +135,8 @@ class Communicator (object):
             print "Terminal network failure on recv."
             sys.exit(1)
         if ret == 0:
-            return None
+            self._unlock()
+            return None, None
         ret, serialized = packet.get.unpack("%s")
         if ret == -1:
             print "Could not unpack packet."
@@ -144,7 +145,7 @@ class Communicator (object):
         # This keeps Python from garbage-collecting these.
         self.packet_stash.append(packet)
         self._unlock()
-        return msg
+        return msg, stream
 
     def _recv_multi_message(self, msg):
         """Handle receiving a multi-message."""
@@ -154,7 +155,7 @@ class Communicator (object):
             multi_msg = None
             while not multi_msg:
                 # Block, because we know we should get messages.
-                recvd = self._recv()
+                recvd, stream = self._recv()
                 if not recvd:
                     # This shouldn't happen and may cause bad things.
                     continue
@@ -168,18 +169,21 @@ class Communicator (object):
             counter += 1
         return cPickle.loads(payload)
 
-    def recv(self, blocking = True):
+    def recv(self, blocking = True, ret_stream = False):
         """Receive data on MRNet. Automatically handles multi-messages."""
         self._lock()
         if len(self.recv_stash) > 0:
             return self.recv_stash.pop(0)
         self._unlock()
-        msg = self._recv(blocking)
+        msg, stream = self._recv(blocking)
         if not msg:
             return None
         if msg.msg_type == MULTI_MSG:
             return self._recv_multi_message(msg)
-        return msg
+        if ret_stream:
+            return msg, stream
+        else:
+            return msg
 
 class CommunicatorBE (Communicator):
     """Communicator for the back-end."""
@@ -207,7 +211,7 @@ class CommunicatorBE (Communicator):
 
     def _wait_for_hello(self):
         """Wait until we receive a HELLO message on MRnet from the front-end."""
-        msg, stream = self.recv()
+        msg, stream = self.recv(ret_stream = True)
         if msg.msg_type != HELLO_MSG:
             print "First message is not hello!"
             sys.exit(1)
