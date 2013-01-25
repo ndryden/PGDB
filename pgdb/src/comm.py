@@ -386,7 +386,8 @@ class CommunicatorFE (Communicator):
         """Initialize the mappings from MPI ranks to MRNet ranks."""
         self.mpirank_to_mrnrank_map = {}
         hostname_to_mrnrank = {}
-        for endpoint in self.broadcast_communicator.get_EndPoints():
+        self.mrnet_endpoints = self.broadcast_communicator.get_EndPoints()
+        for endpoint in self.mrnet_endpoints:
             hostname_to_mrnrank[socket.getfqdn(endpoint.get_HostName())] = endpoint.get_Rank()
         for proc in self.get_proctab():
             self.mpirank_to_mrnrank_map[proc.mpirank] = hostname_to_mrnrank[socket.getfqdn(proc.pd.host_name)]
