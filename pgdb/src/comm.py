@@ -44,6 +44,12 @@ class Communicator (object):
         """Initialize LaunchMON. Should be over-ridden by children."""
         raise NotImplemented
 
+    def _init_mpiranks(self):
+        """Initialize the list of MPI ranks."""
+        self.mpiranks = []
+        for proc in self.proctab:
+            self.mpiranks.append(proc.mpirank)
+
     def init_mrnet(self):
         """Initialize MRNet. Should be over-ridden by children."""
         raise NotImplemented
@@ -74,7 +80,7 @@ class Communicator (object):
         return list(set(map(lambda x: x.pd.host_name, self.proctab)))
 
     def get_mpiranks(self):
-        """Return a list of MPI ranks. Only works on the front-end."""
+        """Return a list of MPI ranks. If on the back-end, this is local only."""
         return self.mpiranks
 
     def mpirank_to_mrnrank(self, rank):
@@ -212,6 +218,7 @@ class CommunicatorBE (Communicator):
         self.lmon_master = self.lmon.amIMaster()
         self.proctab_size = self.lmon.getMyProctabSize()
         self.proctab, unused = self.lmon.getMyProctab(self.proctab_size)
+        self._init_mpiranks()
 
     def _wait_for_hello(self):
         """Wait until we receive a HELLO message on MRnet from the front-end."""
@@ -302,6 +309,7 @@ class CommunicatorFE (Communicator):
         self.lmon_rank = None
         self.lmon_size = None
         self.lmon_master = None
+        self._init_mpiranks()
 
     def _construct_mrnet_topology(self, comm_nodes = None):
         """Construct the topology to be used for MRNet.
@@ -395,13 +403,11 @@ class CommunicatorFE (Communicator):
     def _init_mrnet_rank_map(self):
         """Initialize the mappings from MPI ranks to MRNet ranks."""
         self.mpirank_to_mrnrank_map = {}
-        self.mpiranks = []
         hostname_to_mrnrank = {}
         self.mrnet_endpoints = self.broadcast_communicator.get_EndPoints()
         for endpoint in self.mrnet_endpoints:
             hostname_to_mrnrank[socket.getfqdn(endpoint.get_HostName())] = endpoint.get_Rank()
         for proc in self.get_proctab():
-            self.mpiranks.append(proc.mpirank)
             self.mpirank_to_mrnrank_map[proc.mpirank] = hostname_to_mrnrank[socket.getfqdn(proc.pd.host_name)]
 
     def init_mrnet(self):
