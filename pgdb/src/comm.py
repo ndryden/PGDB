@@ -60,23 +60,6 @@ class Communicator (object):
         """Initialze some common MRNet stuff."""
         self.packet_stash = []
         self._init_mrnet_streams()
-        self._init_mrnet_rank_map()
-
-    def _init_mrnet_streams(self):
-        """Initialize basic MRNet streams."""
-        self.broadcast_communicator = self.mrnet.get_BroadcastCommunicator()
-        self.mrnet_broadcast_stream = self.mrnet.new_Stream(self.broadcast_communicator, 0, 0, 0)
-        self.mrnet_frontend_stream = None # Filled in by back-ends later.
-
-    def _init_mrnet_rank_map(self):
-        """Initialize the mappings from MPI ranks to MRNet ranks."""
-        # Note: This may break on the back-ends, and certainly does not get everything.
-        self.mpirank_to_mrnrank_map = {}
-        hostname_to_mrnrank = {}
-        for endpoint in self.broadcast_communicator.get_EndPoints():
-            hostname_to_mrnrank[socket.getfqdn(endpoint.get_HostName())] = endpoint.get_Rank()
-        for proc in self.get_proctab():
-            self.mpirank_to_mrnrank_map[proc.mpirank] = hostname_to_mrnrank[socket.getfqdn(proc.pd.host_name)]
 
     def get_proctab_size(self):
         """Return the size of the process table from LaunchMON"""
@@ -91,7 +74,7 @@ class Communicator (object):
         return list(set(map(lambda x: x.pd.host_name, self.proctab)))
 
     def mpirank_to_mrnrank(self, rank):
-        """Convert an MPI rank to an MRNet rank."""
+        """Convert an MPI rank to an MRNet rank. Only works on front-end."""
         return self.mpirank_to_mrnrank_map[rank]
 
     def _multi_payload_split(self, msg):
@@ -226,6 +209,12 @@ class CommunicatorBE (Communicator):
             sys.exit(1)
         self.mrnet_frontend_stream = stream
 
+    def _init_mrnet_streams(self):
+        """Initialize basic MRNet streams."""
+        self.broadcast_communicator = None
+        self.mrnet_broadcast_stream = None
+        self.mrnet_frontend_stream = None # Filled in by back-ends later.
+
     def init_mrnet(self):
         """Initialize MRNet."""
         local_node_info = None
@@ -239,7 +228,7 @@ class CommunicatorBE (Communicator):
             # Receive scattered topology.
             local_node_info = self.lmon.scatter(None, 256)
         # Construct MRNet arguments and create network.
-        argv = [sys.argv[0], # Program name.
+        argv= [sys.argv[0], # Program name.
                 str(local_node_info.host), # Comm node host.
                 str(local_node_info.port), # Comm node port.
                 str(local_node_info.mrnrank), # Comm node rank.
@@ -379,6 +368,21 @@ class CommunicatorFE (Communicator):
         """Wait for all MRNet nodes to join the network."""
         while self.node_joins != self.mrnet_network_size: pass
 
+    def _init_mrnet_streams(self):
+        """Initialize basic MRNet streams."""
+        self.broadcast_communicator = self.mrnet.get_BroadcastCommunicator()
+        self.mrnet_broadcast_stream = self.mrnet.new_Stream(self.broadcast_communicator, 0, 0, 0)
+        self.mrnet_frontend_stream = None # Not used here.
+
+    def _init_mrnet_rank_map(self):
+        """Initialize the mappings from MPI ranks to MRNet ranks."""
+        self.mpirank_to_mrnrank_map = {}
+        hostname_to_mrnrank = {}
+        for endpoint in self.broadcast_communicator.get_EndPoints():
+            hostname_to_mrnrank[socket.getfqdn(endpoint.get_HostName())] = endpoint.get_Rank()
+        for proc in self.get_proctab():
+            self.mpirank_to_mrnrank_map[proc.mpirank] = hostname_to_mrnrank[socket.getfqdn(proc.pd.host_name)]
+
     def init_mrnet(self):
         """Initialize MRNet."""
         self._construct_mrnet_topology()
@@ -393,6 +397,7 @@ class CommunicatorFE (Communicator):
         self._send_mrnet_topology()
         self._wait_for_nodes()
         self._init_shared_mrnet()
+        self._init_mrnet_rank_map()
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
