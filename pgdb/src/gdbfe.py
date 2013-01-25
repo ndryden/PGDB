@@ -196,6 +196,9 @@ class GDBFE (GDBMICmd):
             return
 
         targets = self.parse_proc_spec(proc_spec)
+        if not (targets - self.comm.get_mpiranks()).empty():
+            print "Out-of-range processor specification."
+            return
         cmd = self.resolve_gdbmi_command(line, err = False)
         if cmd:
             self.comm.send(GDBMessage(CMD_MSG, command = cmd, ranks = targets), targets)

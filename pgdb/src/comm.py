@@ -7,6 +7,7 @@ from lmon import lmon
 from lmon.lmonfe import LMON_fe
 from lmon.lmonbe import LMON_be
 from MRNet import MRN, shared_ptr
+from interval import Interval
 
 class Communicator (object):
     """Basic communicator class."""
@@ -80,8 +81,8 @@ class Communicator (object):
         return list(set(map(lambda x: x.pd.host_name, self.proctab)))
 
     def get_mpiranks(self):
-        """Return a list of MPI ranks. If on the back-end, this is local only."""
-        return self.mpiranks
+        """Return an interval of MPI ranks. If on the back-end, this is local only."""
+        return Interval(lis = self.mpiranks)
 
     def mpirank_to_mrnrank(self, rank):
         """Convert an MPI rank to an MRNet rank. Only works on front-end."""
