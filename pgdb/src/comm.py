@@ -118,9 +118,9 @@ class Communicator (object):
 
         """
         msg = cPickle.dumps(message, 0)
+        self._lock()
         send_list = self._multi_payload_split(msg)
         stream = self._get_stream_for_interval(targets)
-        self._lock()
         for payload in send_list:
             if stream.send(MSG_TAG, "%s", payload) == -1:
                 print "Fatal error on stream send."
@@ -131,7 +131,6 @@ class Communicator (object):
         """Raw receive function for MRNet."""
         self._lock()
         ret, tag, packet, stream = self.mrnet.recv(blocking)
-        self._unlock()
         if ret == -1:
             print "Terminal network failure on recv."
             sys.exit(1)
@@ -144,6 +143,7 @@ class Communicator (object):
         msg = cPickle.loads(serialized)
         # This keeps Python from garbage-collecting these.
         self.packet_stash.append(packet)
+        self._unlock()
         return msg
 
     def _recv_multi_message(self, msg):
@@ -161,15 +161,19 @@ class Communicator (object):
                 if recvd.msg_type == MULTI_PAYLOAD_MSG:
                     multi_msg = recvd
                 else:
+                    self._lock()
                     self.recv_stash.append(recvd)
+                    self._unlock()
             payload += multi_msg.payload
             counter += 1
         return cPickle.loads(payload)
 
     def recv(self, blocking = True):
         """Receive data on MRNet. Automatically handles multi-messages."""
+        self._lock()
         if len(self.recv_stash) > 0:
             return self.recv_stash.pop(0)
+        self._unlock()
         msg = self._recv(blocking)
         if not msg:
             return None
