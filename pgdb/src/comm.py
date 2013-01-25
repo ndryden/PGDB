@@ -336,15 +336,17 @@ class CommunicatorFE (Communicator):
         in debuggers for communication purposes.
 
         """
-        topology = self.mrnet.get_NetworkTopology()
+        self.topology = self.mrnet.get_NetworkTopology()
         # Note: This assumes that leaves gives us a list.
-        leaves = list(topology.get_Leaves())
-        num_nodes = topology.get_NumNodes() + 1 # Add 1 to make sure we're good.
+        self.mrnet_leaves = self.topology.get_Leaves()
+        leaves = list(self.mrnet_leaves)
+        num_nodes = self.topology.get_NumNodes() + 1 # Add 1 to make sure we're good.
         node_info = []
         local_rank = self.mrnet.get_LocalRank()
+        leaf_idx = 0
         # be_rank is assigned to be greater than all the existing nodes.
         for i in range(0, len(self.get_lmon_hosts())):
-            leaf = leaves[0]
+            leaf = leaves[leaf_idx]
             # Check for root, since get_Parent fails on it.
             if leaf.get_Rank() == local_rank:
                 node_info.append(NodeInfo(local_rank, leaf.get_HostName(),
@@ -354,14 +356,14 @@ class CommunicatorFE (Communicator):
                                           leaf.get_Port(), leaf.get_Parent(), num_nodes + i))
             if i % gdbconf.mrnet_branch_factor == (gdbconf.mrnet_branch_factor - 1):
                 # Remove the leaf after we've given it mrnet_branch_factor children.
-                leaves.pop(0)
+                leaf_idx += 1
         return node_info
 
     def _send_mrnet_topology(self):
         """Send the MRNet topology to the back-end daemons."""
         node_info = self._assign_mrnet_leaves()
         self.lmon.sendUsrDataBe(self.lmon_session, node_info)
-        self.mrnet_network_size = len(node_info) - 1
+        self.mrnet_network_size = len(node_info)
 
     def _mrnet_node_joined_cb(self):
         """An MRNet callback invoked whenever a back-end node joins."""
