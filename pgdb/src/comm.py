@@ -425,3 +425,7 @@ class CommunicatorFE (Communicator):
         """Shut down the communication infrastructure."""
         del self.mrnet
         self.been_shutdown = True
+
+    def get_mrnet_network_size(self):
+        """Return the size of the MRNet network."""
+        return self.mrnet_network_size

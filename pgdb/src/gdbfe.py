@@ -296,8 +296,8 @@ class GDBFE (GDBMICmd):
         """
         # Must do the init inside of this thread, or else LaunchMON steals stdin.
         self.remote_init()
-        print "GDB deployed to {0} hosts and {1} processors.".format(self.network_size,
-                                                                     self.proctab_size)
+        print "GDB deployed to {0} hosts and {1} processors.".format(self.comm.get_mrnet_network_size(),
+                                                                     self.comm.get_proctab_size())
         recvd = False
         while not self.quit:
             # Receive data, if any.
