@@ -121,7 +121,7 @@ class GDBBE:
         token - An optional token to use.
 
         """
-        if msg.command.command == "quit":
+        if msg.command.command == "gdb-exit":
             # Special case for quit.
             self.quit = True
         token = None
