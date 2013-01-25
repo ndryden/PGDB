@@ -65,7 +65,6 @@ class GDBMachineInterface:
             while True:
                 (before, nl, self.buffer) = self.buffer.rpartition("\n")
                 if nl:
-                    (oob_records, result_records) = self.parser.parse_output(before)
                     records = self.parser.parse_output(before)
                     for record in records:
                         yield record
