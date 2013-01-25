@@ -117,7 +117,7 @@ class GDBBE:
 
         The message contains the following fields:
         command - A Command object to run.
-        ranks - An interval of ranks on which to run.
+        ranks - An optional interval of ranks on which to run.
         token - An optional token to use.
 
         """
@@ -127,6 +127,9 @@ class GDBBE:
         token = None
         if hasattr(msg, "token"):
             token = msg.token
+        ranks = self.comm.get_mpiranks()
+        if hasattr(msg, "ranks"):
+            ranks = msg.ranks
         if not self.run_gdb_command(msg.command.command, msg.ranks, token = token):
             # TODO: Send die message.
             print "Managed to get a bad command '{0}'.".format(msg.cmd)
