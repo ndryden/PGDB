@@ -198,7 +198,7 @@ class GDBFE (GDBMICmd):
         targets = self.parse_proc_spec(proc_spec)
         cmd = self.resolve_gdbmi_command(line, err = False)
         if cmd:
-            self.comm.send(GDBMessage(CMD_MSG, command = cmd), targets)
+            self.comm.send(GDBMessage(CMD_MSG, command = cmd, ranks = targets), targets)
         else:
             split = line.split()
             cmd = split[0]
@@ -259,7 +259,8 @@ class GDBFE (GDBMICmd):
                 continue
             self.comm.send(GDBMessage(CMD_MSG,
                                       command = Command("var_assign",
-                                                        args = ('"' + full_name + '"', '"' + val + '"'))),
+                                                        args = ('"' + full_name + '"', '"' + val + '"')),
+                                      ranks = rank),
                            rank)
 
     def do_help(self, cmd, targets = None):
@@ -268,7 +269,8 @@ class GDBFE (GDBMICmd):
             # Because this makes the most sense, unless told otherwise, we run this on one processor.
             targets = 0
         self.comm.send(GDBMessage(CMD_MSG, Command("interpreter_exec",
-                                                   args = ("console", '"help ' + cmd + '"'))),
+                                                   args = ("console", '"help ' + cmd + '"')),
+                                  ranks = targets),
                        targets)
 
     def do_kill(self, cmd, targets = None):
