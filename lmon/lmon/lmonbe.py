@@ -178,11 +178,21 @@ class LMON_be(object):
         buf = create_string_buffer(elem_size)
         if self.amIMaster():
             # Master pads data if needed and sends.
-            buf_list = map(lambda x: cast(create_string_buffer(lmon.udata_serialize(x),
-                                                               elem_size), c_char_p), udata_array)
-            buf_ar = lmon.create_array(c_char_p, tmp_argv)
-            lmon.call(self.lib.LMON_be_scatter, cast(buf_ar, c_void_p), elem_size, cast(buf, c_void_p))
+            total_size = len(udata_array) * elem_size
+            send_buf = create_string_buffer(total_size)
+            buf_addr = addressof(send_buf)
+            idx = 0
+            for elem in udata_array:
+                tmp_buf = create_string_buffer(string_at(lmon.udata_serialize(elem)), elem_size)
+                memmove(buf_addr + (idx * elem_size), tmp_buf, elem_size)
+                idx += 1
+            lmon.call(self.lib.LMON_be_scatter, cast(send_buf, c_void_p), elem_size, cast(buf, c_void_p))
         else:
             lmon.call(self.lib.LMON_be_scatter, cast(None, c_void_p), elem_size, cast(buf, c_void_p))
-        # Note: We may need the same fix as in broadcast for nulls; this needs to be tested.
+        # This is here for the same reason as in broadcast.
+        # Note that it appears that the null byte is only present for children.
+        if buf.raw[0] == "\0" and buf.raw[1] != "\0":
+            buf = string_at(addressof(buf) + 1)
+        else:
+            buf = buf.value
         return lmon.udata_unserialize(buf)
