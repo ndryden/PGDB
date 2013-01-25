@@ -137,7 +137,7 @@ class Communicator (object):
         if ret == 0:
             self._unlock()
             return None, None
-        ret, serialized = packet.get.unpack("%s")
+        ret, serialized = packet.get().unpack("%s")
         if ret == -1:
             print "Could not unpack packet."
             sys.exit(1)
