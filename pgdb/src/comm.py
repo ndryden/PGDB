@@ -382,6 +382,10 @@ class CommunicatorFE (Communicator):
         self.mrnet_broadcast_stream = self.mrnet.new_Stream(self.broadcast_communicator, 0, 0, 0)
         self.mrnet_frontend_stream = None # Not used here.
 
+    def _send_mrnet_hello(self):
+        """Send the HELLO message across MRNet."""
+        self.send(GDBMessage(HELLO_MSG), self.broadcast)
+
     def _init_mrnet_rank_map(self):
         """Initialize the mappings from MPI ranks to MRNet ranks."""
         self.mpirank_to_mrnrank_map = {}
@@ -407,6 +411,7 @@ class CommunicatorFE (Communicator):
         self._wait_for_nodes()
         self._init_shared_mrnet()
         self._init_mrnet_rank_map()
+        self._send_mrnet_hello()
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
