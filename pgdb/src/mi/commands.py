@@ -22,6 +22,11 @@ class Command(object):
         if not self.args:
             self.args = []
         self.annotations = None
+        str_opts = {}
+        for opt in self.opts:
+            str_opts[str(opt)] = self.opts[opt]
+        self.opts = str_opts
+        self.args = map(lambda x: str(x), self.args)
 
     def generate_mi_command(self):
         """Generate a machine interface command from this Command."""
