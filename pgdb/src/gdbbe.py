@@ -130,7 +130,7 @@ class GDBBE:
         ranks = self.comm.get_mpiranks()
         if hasattr(msg, "ranks"):
             ranks = msg.ranks
-        if not self.run_gdb_command(msg.command.command, msg.ranks, token = token):
+        if not self.run_gdb_command(msg.command, ranks, token = token):
             # TODO: Send die message.
             print "Managed to get a bad command '{0}'.".format(msg.cmd)
 
