@@ -13,6 +13,7 @@ from mi.gdbmi import *
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
+from interval import Interval
 import signal, os
 
 class GDBBE:
