@@ -286,6 +286,10 @@ class Interval(object):
         """
         return Interval(intervals = [(self.intervals[0][0], self.intervals[-1][1])], is_sorted = True)
 
+    def empty(self):
+        """Return whether this interval is empty or not."""
+        return len(self.intervals) == 0
+
     def __contains__(self, i):
         """Invoke in_interval."""
         return self.in_interval(i)
@@ -299,7 +303,7 @@ class Interval(object):
         if not isinstance(other, Interval):
             return NotImplemented
         return all(map(lambda x: x[0] == x[1], zip(self.intervals, other.intervals)))
-    
+
     def __ne__(self, other):
         """Return the negation of what __eq__ returns."""
         return not self.__eq__(other)
