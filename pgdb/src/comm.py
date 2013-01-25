@@ -84,10 +84,6 @@ class Communicator (object):
         """Return an interval of MPI ranks. If on the back-end, this is local only."""
         return Interval(lis = self.mpiranks)
 
-    def mpirank_to_mrnrank(self, rank):
-        """Convert an MPI rank to an MRNet rank. Only works on front-end."""
-        return self.mpirank_to_mrnrank_map[rank]
-
     def _multi_payload_split(self, msg):
         """Given a message, split it into multi-messages if needed."""
         if len(msg) > gdbconf.multi_len:
@@ -433,6 +429,10 @@ class CommunicatorFE (Communicator):
         """Shut down the communication infrastructure."""
         del self.mrnet
         self.been_shutdown = True
+
+    def mpirank_to_mrnrank(self, rank):
+        """Convert an MPI rank to an MRNet rank. Only works on front-end."""
+        return self.mpirank_to_mrnrank_map[rank]
 
     def get_mrnet_network_size(self):
         """Return the size of the MRNet network."""
