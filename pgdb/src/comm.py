@@ -73,6 +73,10 @@ class Communicator (object):
         """Return the set of hosts on which LaunchMON runs."""
         return list(set(map(lambda x: x.pd.host_name, self.proctab)))
 
+    def get_mpiranks(self):
+        """Return a list of MPI ranks. Only works on the front-end."""
+        return self.mpiranks
+
     def mpirank_to_mrnrank(self, rank):
         """Convert an MPI rank to an MRNet rank. Only works on front-end."""
         return self.mpirank_to_mrnrank_map[rank]
@@ -391,11 +395,13 @@ class CommunicatorFE (Communicator):
     def _init_mrnet_rank_map(self):
         """Initialize the mappings from MPI ranks to MRNet ranks."""
         self.mpirank_to_mrnrank_map = {}
+        self.mpiranks = []
         hostname_to_mrnrank = {}
         self.mrnet_endpoints = self.broadcast_communicator.get_EndPoints()
         for endpoint in self.mrnet_endpoints:
             hostname_to_mrnrank[socket.getfqdn(endpoint.get_HostName())] = endpoint.get_Rank()
         for proc in self.get_proctab():
+            self.mpiranks.append(proc.mpirank)
             self.mpirank_to_mrnrank_map[proc.mpirank] = hostname_to_mrnrank[socket.getfqdn(proc.pd.host_name)]
 
     def init_mrnet(self):

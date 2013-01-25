@@ -46,7 +46,7 @@ class GDBFE (GDBMICmd):
         self.comm.init_mrnet()
         self.identifier = GDBMIRecordIdentifier()
         self.varobjs = {}
-        for rank in self.mpiranks:
+        for rank in self.comm.get_mpiranks():
             self.varobjs[rank] = VariableObjectManager()
         self.init_handlers()
         self.pprinter = GDBMIPrettyPrinter(self.identifier)
@@ -214,7 +214,7 @@ class GDBFE (GDBMICmd):
             return
         # This is quite inefficient and will not scale.
         for target in to_block.members():
-            if target not in self.blocks and target in self.mpiranks:
+            if target not in self.blocks and target in self.comm.get_mpiranks():
                 self.blocks.append(target)
 
     def do_unblock(self, cmd, targets = None):
