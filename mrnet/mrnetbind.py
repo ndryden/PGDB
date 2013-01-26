@@ -53,26 +53,26 @@ class EventCallbackParam(Parameter):
         # We cannot delete this reference here! At present, we leak this memory if the callback is removed.
         wrapper.call_params.append(cb)
 
-class UIntRefParam(inttype.UnsignedIntParam):
-    DIRECTIONS = [Parameter.DIRECTION_IN, Parameter.DIRECTION_OUT,
-                  Parameter.DIRECTION_IN | Parameter.DIRECTION_OUT]
-    CTYPES = ["unsigned int&", "uint32_t&"]
-
-    def convert_c_to_python(self, wrapper):
-        assert isinstance(wrapper, ReverseWrapperBase)
-        if self.direction & self.DIRECTION_IN:
-            wrapper.build_params.add_parameter("I", [self.value])
-        if self.direction & self.DIRECTION_OUT:
-            wrapper.build_params.add_parameter("I", [self.value], self.name)
-
-    def convert_python_to_c(self, wrapper):
-        assert isinstance(wrapper, ForwardWrapperBase)
-        name = wrapper.declarations.declare_variable(self.ctype_no_const[:-1], self.name)
-        wrapper.call_params.append(name)
-        if self.direction & self.DIRECTION_IN:
-            wrapper.parse_params.add_parameter("I", ["&" + name], self.name)
-        if self.direction & self.DIRECTION_OUT:
-            wrapper.build_params.add_parameter("I", [name])
+#class UIntRefParam(inttype.UnsignedIntParam):
+#    DIRECTIONS = [Parameter.DIRECTION_IN, Parameter.DIRECTION_OUT,
+#                  Parameter.DIRECTION_IN | Parameter.DIRECTION_OUT]
+#    CTYPES = ["unsigned int&", "uint32_t&"]
+#
+#    def convert_c_to_python(self, wrapper):
+#        assert isinstance(wrapper, ReverseWrapperBase)
+#        if self.direction & self.DIRECTION_IN:
+#            wrapper.build_params.add_parameter("I", [self.value])
+#        if self.direction & self.DIRECTION_OUT:
+#            wrapper.build_params.add_parameter("I", [self.value], self.name)
+#
+#    def convert_python_to_c(self, wrapper):
+#        assert isinstance(wrapper, ForwardWrapperBase)
+#        name = wrapper.declarations.declare_variable(self.ctype_no_const[:-1], self.name)
+#        wrapper.call_params.append(name)
+#        if self.direction & self.DIRECTION_IN:
+#            wrapper.parse_params.add_parameter("I", ["&" + name], self.name)
+#        if self.direction & self.DIRECTION_OUT:
+#            wrapper.build_params.add_parameter("I", [name])
 
 class StreamStarStar(PointerParameter):
     DIRECTIONS = [Parameter.DIRECTION_OUT]
