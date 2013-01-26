@@ -57,9 +57,9 @@ mrnet_extract = extract_tgz
 mrnet_config = ""
 
 # PyBindGen sources.
-pybindgen_url = "http://pybindgen.googlecode.com/files/pybindgen-0.15.0.zip"
-pybindgen_dist = "pybindgen-0.15.0.zip"
-pybindgen_dir = pybindgen_dist.replace(".zip", "")
+pybindgen_url = "http://pybindgen.googlecode.com/files/pybindgen-0.16.0.tar.bz2"
+pybindgen_dist = "pybindgen-0.16.0.tar.bz2"
+pybindgen_dir = pybindgen_dist.replace(".tar.bz2", "")
 pybindgen_extract = extract_zip
 pybindgen_config = ""
 
