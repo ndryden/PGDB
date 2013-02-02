@@ -242,7 +242,7 @@ class GDBFE (GDBMICmd):
     def do_varprint(self, cmd, targets = None):
         """Run the varprint command."""
         if not targets:
-            targets = self.all_ranks
+            targets = self.comm.get_mpiranks()
         cmd_split = cmd.split(" ")
         var = cmd
         # Strip quotes, if present.
@@ -253,7 +253,7 @@ class GDBFE (GDBMICmd):
     def do_varassign(self, cmd, targets = None):
         """Run the varassign command."""
         if not targets:
-            targets = self.all_ranks
+            targets = self.comm.get_mpiranks()
         split = cmd.split("=")
         if len(split) != 2:
             print "varassign format is: var = val"
