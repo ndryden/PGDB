@@ -5,6 +5,11 @@ and the like.
 
 """
 
+from conf import gdbconf
+from mi.commands import Command
+from mi.varobj import VariableObjectManager
+from gdb_shared import *
+
 class VariablePrinter:
     """Manage variable printing on the back-end."""
 
@@ -99,7 +104,7 @@ class VariablePrinter:
                                         print "Could not add child varobj!"
                                         return True
             self.varprint_handler2(name, rank)
-        tokens = self.run_gdb_command(Command("var_update", args = ("1", "*")), rank)
+        tokens = self.run_gdb_command(Command("var-update", args = ("1", "*")), rank)
         self.be.add_token_handler(tokens[rank], _update_handler)
 
     def varprint_start(self, rank, name, max_depth = gdbconf.varprint_max_depth,
@@ -123,12 +128,12 @@ class VariablePrinter:
             if int(varobj.num_child) > 0 or varobj.is_dynamic:
                 # Set up our stack.
                 self.varprint_stacks[v_id] = [(varobj, 0)]
-                tokens = self.run_gdb_command(Command("var_list_children", args = ("1", record.results["name"])),
+                tokens = self.run_gdb_command(Command("var-list-children", args = ("1", record.results["name"])),
                                               rank)
                 self.be.add_token_handler(tokens[rank], _list_handler)
             else:
                 self.comm.send(GDBMessage(VARPRINT_RES_MSG, varobj = varobj, rank = rank, err = False), self.comm.frontend)
-        tokens = self.run_gdb_command(Command("var_create", args = (base_name, "*", base_name)), rank)
+        tokens = self.run_gdb_command(Command("var-create", args = (base_name, "*", base_name)), rank)
         self.be.add_token_handler(tokens[rank], _create_handler)
 
     def varprint_start_no_create(self, rank, varobj, name, max_depth = gdbconf.varprint_max_depth,
@@ -142,7 +147,7 @@ class VariablePrinter:
             return self.varprint_dfs(record, rank, v_id, name, max_depth = max_depth,
                                      max_children = max_children, reset_maxes = reset_maxes,
                                      branch_depth = branch_depth, branch_name = name)
-        tokens = self.run_gdb_command(Command("var_list_children", args = ("1", '"' + varobj.name + '"')), rank)
+        tokens = self.run_gdb_command(Command("var-list-children", args = ("1", '"' + varobj.name + '"')), rank)
         self.be.add_token_handler(tokens[rank], _list_handler)
 
     def varprint_dfs(self, record, rank, v_id, name, max_depth = gdbconf.varprint_max_depth,
@@ -206,5 +211,5 @@ class VariablePrinter:
                     return self.varprint_dfs(record, rank, v_id, name, max_depth = max_depth,
                                              max_children = max_children, reset_maxes = reset_maxes,
                                              branch_depth = branch_depth, branch_name = branch_name)
-            tokens = self.run_gdb_command(Command("var_list_children", args = ("1", '"' + to_list.name + '"')), rank)
+            tokens = self.run_gdb_command(Command("var-list-children", args = ("1", '"' + to_list.name + '"')), rank)
             self.be.add_token_handler(tokens[rank], _list_handler)

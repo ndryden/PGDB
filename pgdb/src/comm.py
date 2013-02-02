@@ -107,6 +107,8 @@ class Communicator (object):
         elif interval == self.broadcast:
             return self.mrnet_broadcast_stream
         else:
+            if isinstance(interval, int):
+                interval = Interval(lis = [interval])
             stream = None
             mrnet_ranks = []
             for rank in interval.members():

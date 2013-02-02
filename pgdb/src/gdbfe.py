@@ -261,7 +261,7 @@ class GDBFE (GDBMICmd):
                 print "Variable not found on rank {0}.".format(rank)
                 continue
             self.comm.send(GDBMessage(CMD_MSG,
-                                      command = Command("var_assign",
+                                      command = Command("var-assign",
                                                         args = ('"' + full_name + '"', '"' + val + '"')),
                                       ranks = rank),
                            rank)
@@ -271,8 +271,8 @@ class GDBFE (GDBMICmd):
         if not targets:
             # Because this makes the most sense, unless told otherwise, we run this on one processor.
             targets = 0
-        self.comm.send(GDBMessage(CMD_MSG, Command("interpreter_exec",
-                                                   args = ("console", '"help ' + cmd + '"')),
+        self.comm.send(GDBMessage(CMD_MSG, command = Command("interpreter-exec",
+                                                             args = ("console", '"help ' + cmd + '"')),
                                   ranks = targets),
                        targets)
 
