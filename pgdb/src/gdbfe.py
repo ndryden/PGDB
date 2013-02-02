@@ -241,7 +241,7 @@ class GDBFE (GDBMICmd):
         # Strip quotes, if present.
         if var[0] == '"' and var[-1] == '"':
             var = var[1:-1]
-        self.comm.send(GDBMessage(VARPRINT_MSG, name = var), targets)
+        self.comm.send(GDBMessage(VARPRINT_MSG, name = var, ranks = targets), targets)
 
     def do_varassign(self, cmd, targets = None):
         """Run the varassign command."""
