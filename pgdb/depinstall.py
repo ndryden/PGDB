@@ -60,7 +60,7 @@ mrnet_config = ""
 pybindgen_url = "http://pybindgen.googlecode.com/files/pybindgen-0.16.0.tar.bz2"
 pybindgen_dist = "pybindgen-0.16.0.tar.bz2"
 pybindgen_dir = pybindgen_dist.replace(".tar.bz2", "")
-pybindgen_extract = extract_zip
+pybindgen_extract = extract_tbz2
 pybindgen_config = ""
 
 # mpi4py sources.
