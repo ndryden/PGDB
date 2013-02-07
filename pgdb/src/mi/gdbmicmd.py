@@ -1,7 +1,6 @@
 """A generic implementation of Cmd for use with GDB."""
 
 import cmd
-from mpi4py import MPI
 from commands import Commands
 
 class GDBMICmd (cmd.Cmd):
