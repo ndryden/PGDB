@@ -66,7 +66,7 @@ pybindgen_config = ""
 # MRNet bindings.
 mrnetbind_url = None
 mrnetbind_dist = None
-mrnetbind_dir = "mrnet-bind"
+mrnetbind_dir = "../mrnet"
 mrnetbind_extract = None
 mrnetbind_config = ""
 
