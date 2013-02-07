@@ -63,6 +63,8 @@ class GDBFE (GDBMICmd):
         self.is_shutdown = False
         # Need to disable readline.
         self.completekey = None
+        # Event triggered when remote_init completes in the remote thread..
+        self.remote_up = threading.Event()
 
     def parse_args(self):
         """Parse the command-line arguments and set appropriate variables."""
@@ -314,6 +316,8 @@ class GDBFE (GDBMICmd):
         """
         # Must do the init inside of this thread, or else LaunchMON steals stdin.
         self.remote_init()
+        # Signal main thread we can use stdin.
+        self.remote_up.set()
         print "GDB deployed to {0} hosts and {1} processors.".format(self.comm.get_mrnet_network_size(),
                                                                      self.comm.get_proctab_size())
         recvd = False
@@ -335,6 +339,8 @@ class GDBFE (GDBMICmd):
 
     def local_body(self):
         """The local command input loop."""
+        # Wait until we can use stdin.
+        self.remote_up.wait()
         try:
             self.cmdloop()
         except KeyboardInterrupt:
