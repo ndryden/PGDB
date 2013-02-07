@@ -323,7 +323,7 @@ class CommunicatorFE (Communicator):
             host_list = list(set(map(lambda x: x.pd.host_name, self.proctab)))
         cur_host = socket.gethostname()
         if cur_host in host_list:
-            print "Cannot have the front-end on the same machine as a pack-end daemon."
+            print "Cannot have the front-end on the same machine as a back-end daemon."
             sys.exit(1)
         cur_parents = [cur_host]
         self.mrnet_topo_path = "{0}/topo_{1}".format(gdbconf.topology_path, os.getpid())
