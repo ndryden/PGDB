@@ -340,6 +340,13 @@ class CommunicatorFE (Communicator):
                                         " ".join(map(lambda x: fmt.format(x), children)) + " ;\n")
                 cur_parents = new_parents
 
+    def _construct_local_node_topology(self):
+        """Construct a topology for MRNet that just uses the local node."""
+        cur_host = socket.gethostname()
+        self.mrnet_topo_path = "{0}/topo_{1}".format(gdbconf.topology_path, os.getpid())
+        with open(self.mrnet_topo_path, "w+") as topo_file:
+            topo_file.write(cur_host + ":0 => " + cur_host + ":1 ;\n")
+
     def _assign_mrnet_leaves(self):
         """Assign debugger processes to MRNet leaves.
 
@@ -409,9 +416,16 @@ class CommunicatorFE (Communicator):
         for proc in self.get_proctab():
             self.mpirank_to_mrnrank_map[proc.mpirank] = hostname_to_mrnrank[socket.getfqdn(proc.pd.host_name)]
 
-    def init_mrnet(self):
-        """Initialize MRNet."""
-        self._construct_mrnet_topology()
+    def init_mrnet(self, local = False):
+        """Initialize MRNet.
+
+        local is whether to initialize for a cluster or just this node.
+
+        """
+        if local:
+            self._construct_local_node_topology()
+        else:
+            self._construct_mrnet_topology()
         self.mrnet = MRN.Network.CreateNetworkFE(self.mrnet_topo_path)
         self.node_joins = 0
         self.node_exits = 0

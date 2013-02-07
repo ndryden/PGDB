@@ -43,7 +43,7 @@ class GDBFE (GDBMICmd):
         self.comm.init_lmon(self.lmon_attach, pid = self.lmon_pid,
                             launcher = self.lmon_launcher,
                             launcher_args = self.lmon_launcher_argv)
-        self.comm.init_mrnet()
+        self.comm.init_mrnet(local = self.local_launch)
         self.identifier = GDBMIRecordIdentifier()
         self.varobjs = {}
         for rank in self.comm.get_mpiranks():
@@ -71,6 +71,7 @@ class GDBFE (GDBMICmd):
         self.lmon_pid = None
         self.lmon_launcher = None
         self.lmon_launcher_argv = None
+        self.local_launch = False
         for i in range(1, len(sys.argv)):
             if sys.argv[i] == "-p" or sys.argv[i] == "--pid":
                 self.lmon_attach = True
@@ -89,6 +90,8 @@ class GDBFE (GDBMICmd):
                     sys.exit(0)
                 self.lmon_launcher = sys.argv[i + 1]
                 i += 1
+            elif sys.argv[i] == "--local":
+                self.local_launch = True
             elif sys.argv[i] == "-a":
                 if not hasattr(self, "lmon_launcher"):
                     self.lmon_launcher = "srun"
@@ -100,6 +103,7 @@ class GDBFE (GDBMICmd):
             print "-p, --pid <pid>: attach to srun process <pid>"
             print "-a <options>: pass <options> verbatim to the resource manager for launching."
             print "--launcher <launcher>: use binary <launcher> to launch."
+            print "--local: deploy for debugging just on the local node"
             sys.exit(0)
 
     def shutdown(self):
