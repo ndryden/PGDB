@@ -63,13 +63,6 @@ pybindgen_dir = pybindgen_dist.replace(".tar.bz2", "")
 pybindgen_extract = extract_tbz2
 pybindgen_config = ""
 
-# mpi4py sources.
-mpi4py_url = "http://mpi4py.googlecode.com/files/mpi4py-1.3.tar.gz"
-mpi4py_dist = "mpi4py-1.3.tar.gz"
-mpi4py_dir = mpi4py_dist.replace(".tar.gz", "")
-mpi4py_extract = extract_tgz
-mpi4py_config = ""
-
 # MRNet bindings.
 mrnetbind_url = None
 mrnetbind_dist = None
@@ -201,12 +194,6 @@ def do_build():
     print "=========="
     download_build_install(pybindgen_url, pybindgen_dist, pybindgen_dir, pybindgen_extract,
                            waf_build_install, config_opts + " " + pybindgen_config)
-    # Build mpi4py.
-    print "=========="
-    print "Building mpi4py."
-    print "=========="
-    download_build_install(mpi4py_url, mpi4py_dist, mpi4py_dir, mpi4py_extract, pydist_build_install,
-                           config_opts + " " + mpi4py_config)
     # Return to the regular directory for building the MRNet bindings.
     os.chdir(cwd)
     # Build the MRNet bindings.
@@ -240,8 +227,6 @@ def do_clean():
     clean(mrnet_dist, mrnet_dir)
     # Clean PyBindGen.
     clean(pybindgen_dist, pybindgen_dir)
-    # Clean mpi4py.
-    clean(mpi4py_dist, mpi4py_dir)
     # Return to the regular directory.
     os.chdir(cwd)
     # Clean the MRNet bindings.
