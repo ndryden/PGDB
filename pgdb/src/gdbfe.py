@@ -291,6 +291,8 @@ class GDBFE (GDBMICmd):
 
     def dispatch_gdbmi_command(self, command):
         """Send a GDB command."""
+        if self.comm.is_shutdown():
+            return False
         return self.comm.send(GDBMessage(CMD_MSG, command = command), self.comm.broadcast)
 
     def handle_msg(self, msg):
