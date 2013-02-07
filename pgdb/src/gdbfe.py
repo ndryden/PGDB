@@ -5,7 +5,7 @@ this.
 
 """
 
-import threading, thread
+import os, threading, thread
 from collections import deque
 from conf import gdbconf
 from gdb_shared import *
@@ -341,6 +341,8 @@ class GDBFE (GDBMICmd):
         """The local command input loop."""
         # Wait until we can use stdin.
         self.remote_up.wait()
+        os.dup2(self.stdin_copy, 0)
+        os.close(self.stdin_copy)
         try:
             self.cmdloop()
         except KeyboardInterrupt:
@@ -350,6 +352,8 @@ class GDBFE (GDBMICmd):
     def run(self):
         """Start the remote thread and run the local command input loop."""
         self.parse_args()
+        self.stdin_copy = os.dup(0)
+        os.close(0)
         self.remote_thread = threading.Thread(target = self.remote_body)
         self.remote_thread.daemon = True
         self.remote_thread.start()
