@@ -27,15 +27,24 @@ class GDBBE:
         self.varobjs = {}
 
         enable_pprint_cmd = Command("enable-pretty-printing")
+        enable_target_async_cmd = Command("gdb-set", args = ["target-async", "on"])
+        disable_pagination_cmd = Command("gdb-set", args = ["pagination", "off"])
+        enable_non_stop_cmd = Command("gdb-set", args = ["non-stop", "on"])
         for proc in self.comm.get_proctab():
             self.gdb[proc.mpirank] = GDBMachineInterface(gdb_args = ["-x", gdbconf.gdb_init_path])
-            # Attach to the process.
-            if not self.run_gdb_command(Command("target-attach", args = [proc.pd.pid]), Interval(lis = [proc.mpirank])):
-                raise RuntimeError("Could not attach to rank {0}!".format(proc.mpirank))
             # Enable pretty-printing by default.
             # TODO: Make this optional.
             if not self.run_gdb_command(enable_pprint_cmd, Interval(lis = [proc.mpirank])):
                 raise RuntimeError("Could not enable pretty printing on rank {0}!".format(proc.mpirank))
+            if not self.run_gdb_command(enable_target_async_cmd, Interval(lis = [proc.mpirank])):
+                raise RuntimeError("Could not enable target-async on rank {0}!".format(proc.mpirank))
+            if not self.run_gdb_command(disable_pagination_cmd, Interval(lis = [proc.mpirank])):
+                raise RuntimeError("Could not disable pagination on rank {0}!".format(proc.mpirank))
+            if not self.run_gdb_command(enable_non_stop_cmd, Interval(lis = [proc.mpirank])):
+                raise RuntimeError("Could not enable non-stop on rank {0}!".format(proc.mpirank))
+            # Attach to the process.
+            if not self.run_gdb_command(Command("target-attach", args = [proc.pd.pid]), Interval(lis = [proc.mpirank])):
+                raise RuntimeError("Could not attach to rank {0}!".format(proc.mpirank))
             self.varobjs[proc.mpirank] = VariableObjectManager()
 
     def quit_all(self):
