@@ -138,8 +138,8 @@ sys.path.append('/home/ndryden/PGDB/pgdb/src')\n");
 		}
 		// Convert the result to a usable string.
 		// Note this string may not be modified.
-		char* new_packet_data = PyString_AsString(ret_data);
-		if (ret_data == NULL) {
+		char* python_packet_data = PyString_AsString(ret_data);
+		if (python_packet_data == NULL) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
 							  packets_in[0]->get_Tag(),
@@ -150,6 +150,8 @@ sys.path.append('/home/ndryden/PGDB/pgdb/src')\n");
 			Py_DECREF(arguments);
 			return;
 		}
+		char* new_packet_data = malloc(sizeof(char) * (strlen(python_packet_data) + 1));
+		strcpy(new_packet_data, python_packet_data);
 		// Construct the new packet.
 		PacketPtr new_packet(new Packet(packets_in[0]->get_StreamId(),
 										packets_in[0]->get_Tag(),
