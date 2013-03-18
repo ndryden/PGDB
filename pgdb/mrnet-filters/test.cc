@@ -28,9 +28,9 @@ extern "C" {
 		// TODO: Don't hard-code this.
 		PyRun_SimpleString(
 "import sys\n\
-sys.path.append('/home/ndryden/PGDB/pgdb/src')\n");
+sys.path.append('/home/ndryden/PGDB/pgdb/mrnet-filters')\n");
 		// Load the relevant file.
-		PyObject* module = PyImport_ImportModule("mi.gdbmiarec");
+		PyObject* module = PyImport_ImportModule("filter_hook");
 		if (module == NULL) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
