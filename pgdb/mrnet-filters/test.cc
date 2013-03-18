@@ -150,7 +150,7 @@ sys.path.append('/home/ndryden/PGDB/pgdb/src')\n");
 			Py_DECREF(arguments);
 			return;
 		}
-		char* new_packet_data = malloc(sizeof(char) * (strlen(python_packet_data) + 1));
+		char* new_packet_data = (char*) malloc(sizeof(char) * (strlen(python_packet_data) + 1));
 		strcpy(new_packet_data, python_packet_data);
 		// Construct the new packet.
 		PacketPtr new_packet(new Packet(packets_in[0]->get_StreamId(),
