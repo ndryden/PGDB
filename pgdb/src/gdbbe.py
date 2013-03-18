@@ -13,6 +13,7 @@ from mi.gdbmi import *
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
+from mi.gdbmiarec import GDBMIAggregatedRecord
 from interval import Interval
 from varprint import VariablePrinter
 import signal, os
@@ -234,7 +235,8 @@ class GDBBE:
                 for record in gdb.read():
                     if not self.is_filterable(record):
                         self._call_token_handler(record)
-                        self.comm.send(GDBMessage(OUT_MSG, record = record, rank = rank), self.comm.frontend)
+                        arec = GDBMIAggregatedRecord(record, rank)
+                        self.comm.send(GDBMessage(OUT_MSG, record = arec, rank = rank), self.comm.frontend)
 
             # Sleep a bit to reduce banging on the CPU.
             time.sleep(0.01)
