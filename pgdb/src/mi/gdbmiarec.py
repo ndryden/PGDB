@@ -87,6 +87,9 @@ class Substitution:
                 counter_dict[v] += 1
             else:
                 counter_dict[v] = 1
+        # Catch if there are no entries.
+        if not counter_dict:
+            return (my_old_default, my_old_dict)
         # Compute the value that has the maximum number of appearances.
         max_value = max(counter_dict.iterkeys(), key = lambda x: counter_dict[x])
         max_count = counter_dict[max_value]
