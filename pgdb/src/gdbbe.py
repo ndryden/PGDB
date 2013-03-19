@@ -236,7 +236,7 @@ class GDBBE:
                     if not self.is_filterable(record):
                         self._call_token_handler(record)
                         arec = GDBMIAggregatedRecord(record, rank)
-                        self.comm.send(GDBMessage(OUT_MSG, record = arec, rank = rank), self.comm.frontend)
+                        self.comm.send(GDBMessage(OUT_MSG, record = arec), self.comm.frontend)
 
             # Sleep a bit to reduce banging on the CPU.
             time.sleep(0.01)
