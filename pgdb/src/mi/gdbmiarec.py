@@ -336,9 +336,9 @@ class GDBMIAggregatedRecord:
         if rec.record_type == RESULT:
             rec.results = _undo_substitutions(vid, rec.results, self.substitutions)
         elif rec.record_type in [ASYNC_EXEC, ASYNC_STATUS, ASYNC_NOTIFY]:
-            rec.results = _undo_substitutions(vid, rec.output, self.substitutions)
+            rec.output = _undo_substitutions(vid, rec.output, self.substitutions)
         elif rec.record_type in [STREAM_CONSOLE, STREAM_TARGET, STREAM_LOG]:
-            rec.results = _undo_substitutions(vid, rec.string, self.substitutions)
+            rec.string = _undo_substitutions(vid, rec.string, self.substitutions)
         return rec
 
     def get_ids(self):
