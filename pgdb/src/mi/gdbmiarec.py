@@ -42,6 +42,10 @@ class Substitution:
             return self.substitutions[key][1][vid]
         return self.substitutions[key][0]
 
+    def get_ids(self):
+        """Return the interval of IDs for which this is a substitution."""
+        return self.ids
+
     def merge_substitution(self, other, my_key, other_key):
         """Merge the substitution referred to by my_key and other_key together.
 
@@ -336,3 +340,7 @@ class GDBMIAggregatedRecord:
         elif rec.record_type in [STREAM_CONSOLE, STREAM_TARGET, STREAM_LOG]:
             rec.results = _undo_substitutions(vid, rec.string, self.substitutions)
         return rec
+
+    def get_ids(self):
+        """Return the interval of IDs associated with this record."""
+        return self.substitutions.get_ids()
