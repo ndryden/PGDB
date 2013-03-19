@@ -46,6 +46,13 @@ class Substitution:
         """Return the interval of IDs for which this is a substitution."""
         return self.ids
 
+    def add_id(self, vid):
+        """Add an ID to the substitution."""
+        if not self.ids:
+            self.ids = Interval(lis = [vid], is_sorted = True)
+        elif vid not in self.ids:
+            self.ids += Interval(lis = [vid], is_sorted = True)
+
     def merge_substitution(self, other, my_key, other_key):
         """Merge the substitution referred to by my_key and other_key together.
 
@@ -286,6 +293,9 @@ def _aggregate_record(record, vid):
         record.output = data
     elif record.record_type in [STREAM_CONSOLE, STREAM_TARGET, STREAM_LOG]:
         record.string = data
+    # Catch for things that have no data.
+    if len(subst.substitutions) == 0:
+        subst.add_id(vid)
     return record, subst
 
 def combine_aggregations(arec1, arec2):
