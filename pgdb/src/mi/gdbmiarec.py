@@ -321,7 +321,7 @@ def combine_aggregation_lists(l1, l2):
     type_dict = {}
     for v in l1:
         # Convert to tuple for immutability.
-        type_dict[tuple(identifier.identify(v.record))]) = v
+        type_dict[tuple(identifier.identify(v.record))] = v
     l = []
     for v in l2:
         ident = tuple(identifier.identify(v.record))
