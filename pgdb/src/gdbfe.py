@@ -131,11 +131,12 @@ class GDBFE (GDBMICmd):
 
     def out_handler(self, msg):
         """Handle an out message by pretty-printing the record."""
-        for rank in msg.record.get_ids():
-            if rank not in self.blocks:
-                record = msg.record.get_record(rank)
-                if self.record_handler.handle(record, rank = rank):
-                    self.pprinter.pretty_print(record, rank)
+        for arec in msg.record:
+            for rank in msg.record.get_ids():
+                if rank not in self.blocks:
+                    record = arec.get_record(rank)
+                    if self.record_handler.handle(record, rank = rank):
+                        self.pprinter.pretty_print(record, rank)
 
     def varprint_res_handler(self, msg):
         """Handle a varprint result message by pretty-printing the variable objects."""

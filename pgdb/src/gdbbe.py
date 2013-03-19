@@ -13,7 +13,7 @@ from mi.gdbmi import *
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
-from mi.gdbmiarec import GDBMIAggregatedRecord
+from mi.gdbmiarec import GDBMIAggregatedRecord, combine_aggregation_lists
 from interval import Interval
 from varprint import VariablePrinter
 import signal, os
@@ -231,12 +231,17 @@ class GDBBE:
                 else:
                     print "Got a message {0} with no handler.".format(msg.msg_type)
 
+            arec_list = []
             for rank, gdb in self.gdb.items():
                 for record in gdb.read():
                     if not self.is_filterable(record):
                         self._call_token_handler(record)
-                        arec = GDBMIAggregatedRecord(record, rank)
-                        self.comm.send(GDBMessage(OUT_MSG, record = arec), self.comm.frontend)
+                        arec_list.append([GDBMIAggregatedRecord(record, rank)])
+            if arec_list:
+                combined_list = arec_list.pop(0)
+                for arec in arec_list:
+                    combined_list = combine_aggregation_lists(combined_list, arec)
+                self.comm.send(GDBMessage(OUT_MSG, record = combined_list), self.comm.frontend)
 
             # Sleep a bit to reduce banging on the CPU.
             time.sleep(0.01)
