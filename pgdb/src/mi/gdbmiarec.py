@@ -320,10 +320,11 @@ def combine_aggregation_lists(l1, l2):
     """
     type_dict = {}
     for v in l1:
-        type_dict[identifier.identify(v.record)] = v
+        # Convert to tuple for immutability.
+        type_dict[tuple(identifier.identify(v.record)]) = v
     l = []
     for v in l2:
-        ident = identifier.identify(v.record)
+        ident = tuple(identifier.identify(v.record))
         if ident in type_dict:
             l.append(combine_aggregations(type_dict[ident], v))
             del type_dict[ident]
