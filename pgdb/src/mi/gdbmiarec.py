@@ -319,10 +319,10 @@ def combine_aggregation_lists(l1, l2):
 
     """
     type_dict = {}
-    for v in l1.iteritems():
+    for v in l1:
         type_dict[identifier.identify(v)] = v
     l = []
-    for v in list(l2.iteritems()):
+    for v in l2:
         ident = identifier.identify(v)
         if ident in type_dict:
             l.append(combine_aggregations(type_dict[ident], v))
