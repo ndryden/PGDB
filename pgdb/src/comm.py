@@ -116,7 +116,7 @@ class Communicator (object):
             # Since multiple MPI ranks correspond to one MRNet rank, eliminate duplicates.
             mrnet_ranks = list(set(mrnet_ranks))
             comm = self.mrnet.new_Communicator(mrnet_ranks)
-            return self.mrnet.new_Stream(comm, 0, 0, 0)
+            return self.mrnet.new_Stream(comm, self.filter_id, 0, 0)
 
     def send(self, message, targets):
         """Send data over MRNet.
@@ -399,7 +399,7 @@ class CommunicatorFE (Communicator):
     def _init_mrnet_streams(self):
         """Initialize basic MRNet streams."""
         self.broadcast_communicator = self.mrnet.get_BroadcastCommunicator()
-        self.mrnet_broadcast_stream = self.mrnet.new_Stream(self.broadcast_communicator, 0, 0, 0)
+        self.mrnet_broadcast_stream = self.mrnet.new_Stream(self.broadcast_communicator, self.filter_id, 0, 0)
         self.mrnet_frontend_stream = None # Not used here.
 
     def _send_mrnet_hello(self):
@@ -435,6 +435,10 @@ class CommunicatorFE (Communicator):
         self.mrnet.register_EventCallback(MRN.Event.TOPOLOGY_EVENT,
                                           MRN.TopologyEvent.TOPOL_REMOVE_NODE,
                                           self._mrnet_node_removed_cb)
+        self.filter_id = self.mrnet.load_FilterFunc("/home/ndryden/PGDB/pgdb/mrnet-filters/test.so", "test")
+        if self.filter_id == -1:
+            print "Failed to load filter!"
+            sys.exit(1)
         self._send_mrnet_topology()
         self._wait_for_nodes()
         self._init_shared_mrnet()
