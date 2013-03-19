@@ -308,7 +308,7 @@ def combine_aggregations(arec1, arec2):
     This returns a new aggregated record.
 
     """
-    arec1.combine_substitutions(arec2)
+    arec1.substitutions.combine_substitutions(arec2.substitutions)
     return arec1
 
 def combine_aggregation_lists(l1, l2):
