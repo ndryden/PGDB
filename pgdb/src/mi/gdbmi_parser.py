@@ -239,16 +239,28 @@ class GDBMIAsyncRecord(GDBMIRecord):
     output_class = None
     output = None
 
+    def __str__(self):
+        return "{0} ASYNC[{1}]: {2}".format(self.token, self.output_class, self.output)
+
 class GDBMIStreamRecord(GDBMIRecord):
     """A stream record."""
     string = ""
+
+    def __str__(self):
+        return "{0} STREAM: {1}".format(self.token, self.string)
 
 class GDBMIResultRecord(GDBMIRecord):
     """A result record."""
     result_class = None
     results = {}
 
+    def __str__(self):
+        return "{0} RESULT[{1}]: {2}".format(self.token, self.result_class, self.results)
+
 class GFBMIUnknownRecord(GDBMIRecord):
     """Some other type of record."""
     output = None
+
+    def __str__(self):
+        return "{0} UNKNOWN: {1}".format(self.token, self.output)
 
