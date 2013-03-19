@@ -132,7 +132,7 @@ class GDBFE (GDBMICmd):
     def out_handler(self, msg):
         """Handle an out message by pretty-printing the record."""
         for arec in msg.record:
-            for rank in msg.record.get_ids():
+            for rank in arec.get_ids():
                 if rank not in self.blocks:
                     record = arec.get_record(rank)
                     if self.record_handler.handle(record, rank = rank):
