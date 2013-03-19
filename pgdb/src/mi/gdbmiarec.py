@@ -1,5 +1,6 @@
 """Handles aggregated records."""
 
+import copy
 from mi.gdbmi_parser import *
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from interval import Interval
@@ -198,6 +199,10 @@ def _is_str(v):
     """Check whether an object is a string."""
     return isinstance(v, str)
 
+def _is_int(v):
+    """Check whether an object is an integer."""
+    return isinstance(v, int)
+
 def _is_primitive(v):
     """Check whether an object is a primitive.
 
@@ -205,6 +210,14 @@ def _is_primitive(v):
 
     """
     return _is_str(v) or (_is_list(v) and all(map(lambda x: _is_str(x), v)))
+
+def _is_subst_key(v):
+    """Check whether an object is a substitution key.
+
+    A substitution key is an integer.
+
+    """
+    return _is_int(v)
 
 def _do_substitution(vid, data, subst):
     """Recursive helper for doing substitutions."""
@@ -222,6 +235,22 @@ def _do_substitution(vid, data, subst):
             data[k] = new_v
         return data, subst
     return None, None
+
+def _undo_substitution(vid, data, subst):
+    """Recursive helper for undoing substitutions."""
+    if _is_subst_key(data):
+        return subst.get_substitution(data, vid)
+    if _is_list(data):
+        for k, v in enumerate(data):
+            new_v = _undo_substitution(vid, v, subst)
+            data[k] = new_v
+        return data
+    if _is_dict(data):
+        for k, v in list(data.items()):
+            new_v = _undo_substitution(vid, v, subst)
+            data[k] = new_v
+        return data
+    return data
 
 def _aggregate_record(record, vid):
     """Given a record, construct a Substitution for it.
@@ -296,3 +325,14 @@ class GDBMIAggregatedRecord:
     def __init__(self, record, vid):
         """Initialization."""
         self.record, self.substitutions = _aggregate_record(record, vid)
+
+    def get_record(self, vid):
+        """Return a substituted-in version of the record for the given VID."""
+        rec = copy.deepcopy(self.record)
+        if rec.record_type == RESULT:
+            rec.results = _undo_substitutions(vid, rec.results, self.substitutions)
+        elif rec.record_type in [ASYNC_EXEC, ASYNC_STATUS, ASYNC_NOTIFY]:
+            rec.results = _undo_substitutions(vid, rec.output, self.substitutions)
+        elif rec.record_type in [STREAM_CONSOLE, STREAM_TARGET, STREAM_LOG]:
+            rec.results = _undo_substitutions(vid, rec.string, self.substitutions)
+        return rec
