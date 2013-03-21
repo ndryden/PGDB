@@ -138,7 +138,7 @@ class GDBFE (GDBMICmd):
                 record = arec.get_record(subst_classes[subst][0])
                 # Note that this may not work if things don't support lists of ranks.
                 if self.record_handler.handle(record, rank = subst_classes[subst]):
-                    self.pprinter.pretty_print(record, rank)
+                    self.pprinter.pretty_print(record, subst_classes[subst])
             #for rank in arec.get_ids():
             #    if rank not in self.blocks:
             #        record = arec.get_record(rank)
