@@ -42,6 +42,28 @@ class Substitution:
             return self.substitutions[key][1][vid]
         return self.substitutions[key][0]
 
+    def get_substitutions_for_vid(self, vid):
+        """Get the set of substitution values for a vid."""
+        substs = {}
+        for k in self.substitutions:
+            if vid in self.substitutions[k][1]:
+                substs[k] = self.substitutions[k][1][vid]
+            else:
+                substs[k] = self.substitutions[k][0]
+        return substs
+
+    def get_substitution_classes(self):
+        """Get the sets of VIDs that have the same set of substitutions."""
+        subst_classes = {}
+        for vid in self.ids:
+            # Convert to a tuple to be immutable.
+            subst = tuple(self.get_substitution_for_vid(vid).items())
+            if subst in subst_classes:
+                subst_classes[subst].append(vid)
+            else:
+                subst_classes[subst] = [vid]
+        return subst_classes
+
     def get_ids(self):
         """Return the interval of IDs for which this is a substitution."""
         return self.ids
@@ -358,3 +380,7 @@ class GDBMIAggregatedRecord:
     def get_ids(self):
         """Return the interval of IDs associated with this record."""
         return self.substitutions.get_ids()
+
+    def get_substitution_classes(self):
+        """Return the substitution classes."""
+        return self.substitutions.get_substitution_classes()
