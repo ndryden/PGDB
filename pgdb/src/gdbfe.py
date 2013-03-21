@@ -137,7 +137,7 @@ class GDBFE (GDBMICmd):
                 # Just get first VID, since all subsitutions for it are the same.
                 record = arec.get_record(subst_classes[subst][0])
                 # Note that this may not work if things don't support lists of ranks.
-                if self.record_handler.handle(record, subst_classes[subst]):
+                if self.record_handler.handle(record, rank = subst_classes[subst]):
                     self.pprinter.pretty_print(record, rank)
             #for rank in arec.get_ids():
             #    if rank not in self.blocks:
