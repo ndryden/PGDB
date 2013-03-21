@@ -57,7 +57,7 @@ class Substitution:
         subst_classes = {}
         for vid in self.ids:
             # Convert to a tuple to be immutable.
-            subst = tuple(self.get_substitution_for_vid(vid).items())
+            subst = tuple(self.get_substitutions_for_vid(vid).items())
             if subst in subst_classes:
                 subst_classes[subst].append(vid)
             else:
