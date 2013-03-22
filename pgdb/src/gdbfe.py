@@ -133,12 +133,12 @@ class GDBFE (GDBMICmd):
         """Handle an out message by pretty-printing the record."""
         for arec in msg.record:
             subst_classes = arec.get_substitution_classes()
-            for subst in subst_classes:
+            for subst_class in subst_classes:
                 # Just get first VID, since all subsitutions for it are the same.
-                record = arec.get_record(subst_classes[subst][0])
+                record = arec.get_record(subst_class[0])
                 # Note that this may not work if things don't support lists of ranks.
-                if self.record_handler.handle(record, rank = subst_classes[subst]):
-                    self.pprinter.pretty_print(record, subst_classes[subst])
+                if self.record_handler.handle(record, rank = subst_class):
+                    self.pprinter.pretty_print(record, subst_class)
             #for rank in arec.get_ids():
             #    if rank not in self.blocks:
             #        record = arec.get_record(rank)

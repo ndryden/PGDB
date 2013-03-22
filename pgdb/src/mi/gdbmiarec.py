@@ -56,13 +56,13 @@ class Substitution:
         """Get the sets of VIDs that have the same set of substitutions."""
         subst_classes = {}
         for vid in self.ids:
-            # Convert to a tuple to be immutable.
-            subst = tuple(self.get_substitutions_for_vid(vid).items())
+            # Convert to a string to be immutable.
+            subst = repr(self.get_substitutions_for_vid(vid).items()
             if subst in subst_classes:
                 subst_classes[subst].append(vid)
             else:
                 subst_classes[subst] = [vid]
-        return subst_classes
+        return subst_classes.values()
 
     def get_ids(self):
         """Return the interval of IDs for which this is a substitution."""
