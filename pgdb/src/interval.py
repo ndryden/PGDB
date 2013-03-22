@@ -325,7 +325,10 @@ class Interval(object):
         """Get a string representation of the set."""
         s = ""
         for i in self.intervals:
-            s += "{0}-{1},".format(i[0], i[1])
+            if i[0] == i[1]:
+                s += "{0},".format(i[0])
+            else:
+                s += "{0}-{1},".format(i[0], i[1])
         return s[:-1]
         #return str(self.intervals)
 
