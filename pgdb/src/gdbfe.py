@@ -136,9 +136,10 @@ class GDBFE (GDBMICmd):
             for subst_class in subst_classes:
                 # Just get first VID, since all subsitutions for it are the same.
                 record = arec.get_record(subst_class[0])
+                ranks = Interval(lis = subst_class)
                 # Note that this may not work if things don't support lists of ranks.
-                if self.record_handler.handle(record, rank = subst_class):
-                    self.pprinter.pretty_print(record, subst_class)
+                if self.record_handler.handle(record, rank = ranks):
+                    self.pprinter.pretty_print(record, ranks)
             #for rank in arec.get_ids():
             #    if rank not in self.blocks:
             #        record = arec.get_record(rank)
