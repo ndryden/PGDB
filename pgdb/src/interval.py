@@ -323,7 +323,11 @@ class Interval(object):
 
     def __str__(self):
         """Get a string representation of the set."""
-        return str(self.intervals)
+        s = ""
+        for i in self.intervals:
+            s += "{0}-{1},".format(i[0], i[1])
+        return s[:-1]
+        #return str(self.intervals)
 
     def __repr__(self):
         """Get a raw representation of the set."""
