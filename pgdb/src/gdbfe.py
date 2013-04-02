@@ -139,7 +139,7 @@ class GDBFE (GDBMICmd):
         else:
             self.arec_list = msg.record
 
-    def process_out_messages(self, msg):
+    def process_out_messages(self):
         """Go through the temporary arec_list and pretty-print records."""
         for arec in self.arec_list:
             subst_classes = arec.get_substitution_classes()
