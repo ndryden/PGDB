@@ -355,7 +355,7 @@ def combine_aggregation_lists(l1, l2):
             del type_dict[ident]
         else:
             l.append(v)
-    for v in type_dict.iteritems():
+    for v in type_dict.itervalues():
         l.append(v)
     return l
 
