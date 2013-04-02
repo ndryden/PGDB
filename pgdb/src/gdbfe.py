@@ -17,6 +17,7 @@ from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
+from mi.gdbmiarec import GDBMIAggregatedRecord, combine_aggregation_lists
 from pprinter import GDBMIPrettyPrinter
 from interval import Interval
 
@@ -65,6 +66,8 @@ class GDBFE (GDBMICmd):
         self.completekey = None
         # Event triggered when remote_init completes in the remote thread..
         self.remote_up = threading.Event()
+        # Temporary list for building up aggregated records from OUT messages.
+        self.arec_list = []
 
     def parse_args(self):
         """Parse the command-line arguments and set appropriate variables."""
@@ -130,8 +133,15 @@ class GDBFE (GDBMICmd):
         pass
 
     def out_handler(self, msg):
-        """Handle an out message by pretty-printing the record."""
-        for arec in msg.record:
+        """Handle an out message by adding the arec to the temporary list."""
+        if self.arec_list:
+            self.arec_list = combine_aggregation_lists(self.arec_list, msg.record)
+        else:
+            self.arec_list = msg.record
+
+    def process_out_messages(self, msg):
+        """Go through the temporary arec_list and pretty-print records."""
+        for arec in self.arec_list:
             subst_classes = arec.get_substitution_classes()
             for subst_class in subst_classes:
                 # Just get first VID, since all subsitutions for it are the same.
@@ -140,11 +150,7 @@ class GDBFE (GDBMICmd):
                 # Note that this may not work if things don't support lists of ranks.
                 if self.record_handler.handle(record, rank = ranks):
                     self.pprinter.pretty_print(record, ranks)
-            #for rank in arec.get_ids():
-            #    if rank not in self.blocks:
-            #        record = arec.get_record(rank)
-            #        if self.record_handler.handle(record, rank = rank):
-            #            self.pprinter.pretty_print(record, rank)
+        self.arec_list = []
 
     def varprint_res_handler(self, msg):
         """Handle a varprint result message by pretty-printing the variable objects."""
@@ -344,6 +350,7 @@ class GDBFE (GDBMICmd):
 
             # Keep from beating up the CPU too much.
             if not recvd:
+                self.process_out_messages()
                 time.sleep(self.sleep_time)
         self.shutdown()
         thread.interrupt_main()
