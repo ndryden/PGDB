@@ -353,6 +353,7 @@ class GDBFE (GDBMICmd):
                 self.process_out_messages()
                 time.sleep(self.sleep_time)
         self.shutdown()
+        print "Remote shut down."
         thread.interrupt_main()
 
     def local_body(self):

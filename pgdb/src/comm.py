@@ -463,6 +463,7 @@ class CommunicatorFE (Communicator):
     def shutdown(self):
         """Shut down the communication infrastructure."""
         del self.mrnet
+        self.lmon.shutdownDaemons(self.lmon_session)
         self.been_shutdown = True
 
     def mpirank_to_mrnrank(self, rank):
