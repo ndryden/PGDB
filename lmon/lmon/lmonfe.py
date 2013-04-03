@@ -39,6 +39,9 @@ class LMON_fe(object):
         # We use c_void_p here because ctypes isn't good at resolving the multiple-pointers.
         self.lib.LMON_fe_getProctable.argtypes = [c_int, c_void_p,
                                                   POINTER(c_uint), c_uint]
+        self.lib.LMON_fe_detach = [c_int]
+        self.lib.LMON_fe_shutdownDaemons = [c_int]
+        self.lib.LMON_fe_kill = [c_int]
 
     def init(self):
         """Invoke LMON_fe_init."""
@@ -149,3 +152,15 @@ class LMON_fe(object):
         size = c_uint()
         lmon.call(self.lib.LMON_fe_getProctable, session, byref(proctab), byref(size), c_uint(maxsize))
         return proctab, size.value
+
+    def detach(self, session):
+        """Detach from the resource manager but leave daemons running."""
+        lmon.call(self.lib.LMON_fe_detach, session)
+
+    def shutdownDaemons(self, session):
+        """Detach from the resource manager and shut down daemons."""
+        lmon.call(self.lib.LMON_fe_shutdownDaemons, session)
+
+    def kill(self, session):
+        """Destroy all resources associated with the session."""
+        lmon.call(self.lib.LMON_fe_kill, session)
