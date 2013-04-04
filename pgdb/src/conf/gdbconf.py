@@ -41,3 +41,5 @@ multi_len = 10240
 # A list of tuples of the form (path, function), where path is a path to an MRNet filter
 # and function is the name of the filter function.
 mrnet_filters = [("/home/ndryden/PGDB/mrnet-filters/test.so", "test")]
+# Whether to enable collection of MRNet performance data or not.
+mrnet_collect_perf_data = True

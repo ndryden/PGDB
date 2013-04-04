@@ -51,6 +51,102 @@ class Communicator (object):
         for proc in self.proctab:
             self.mpiranks.append(proc.mpirank)
 
+    def _enable_mrnet_perf_data(self):
+        """Enable MRNet performance data."""
+        if gdbconf.mrnet_collect_perf_data:
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
+                                              MRN.PERFDATA_CTX_SEND)
+            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
+                                              MRN.PERFDATA_CTX_SEND)
+
+    def _disable_mrnet_perf_data(self):
+        """Disable MRNet performance data."""
+        if gdbconf.mrnet_collect_perf_data:
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
+                                               MRN.PERFDATA_CTX_SEND)
+            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
+                                               MRN.PERFDATA_CTX_SEND)
+
+    def _mrnet_log_perf_data(self):
+        """Log MRNet performance data."""
+        if gdbconf.mrnet_collect_perf_data:
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
+                                             MRN.PERFDATA_CTX_SEND)
+            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
+                                             MRN.PERFDATA_CTX_SEND)
+
     def init_mrnet(self):
         """Initialize MRNet. Should be over-ridden by children."""
         raise NotImplemented
@@ -67,6 +163,7 @@ class Communicator (object):
         """Initialze some common MRNet stuff."""
         self.packet_stash = []
         self._init_mrnet_streams()
+        self._enable_mrnet_perf_data()
 
     def get_proctab_size(self):
         """Return the size of the process table from LaunchMON"""
@@ -259,6 +356,8 @@ class CommunicatorBE (Communicator):
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
+        self._mrnet_disable_perf_data()
+        self._mrnet_log_perf_data()
         self.lmon.finalize()
         self.mrnet.waitfor_ShutDown()
         del self.mrnet
@@ -462,6 +561,8 @@ class CommunicatorFE (Communicator):
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
+        self._mrnet_disable_perf_data()
+        self._mrnet_log_perf_data()
         del self.mrnet
         self.lmon.shutdownDaemons(self.lmon_session)
         self.been_shutdown = True
