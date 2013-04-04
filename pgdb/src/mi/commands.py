@@ -286,7 +286,7 @@ class Commands(object):
                                  ("-n", "store")],
             "data-read-memory-bytes": [("-o", "store")],
             "trace-save": [("-r", "store_true")],
-            "-list-thread-groups": [("--available", "store_true"),
+            "list-thread-groups": [("--available", "store_true"),
                                     ("--recurse", "store")]
             }
         # Pre-generate option parsers and maps for all commands and store in self.option_parsers/maps.
