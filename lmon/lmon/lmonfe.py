@@ -39,9 +39,9 @@ class LMON_fe(object):
         # We use c_void_p here because ctypes isn't good at resolving the multiple-pointers.
         self.lib.LMON_fe_getProctable.argtypes = [c_int, c_void_p,
                                                   POINTER(c_uint), c_uint]
-        self.lib.LMON_fe_detach = [c_int]
-        self.lib.LMON_fe_shutdownDaemons = [c_int]
-        self.lib.LMON_fe_kill = [c_int]
+        self.lib.LMON_fe_detach.argtypes = [c_int]
+        self.lib.LMON_fe_shutdownDaemons.argtypes = [c_int]
+        self.lib.LMON_fe_kill.argtypes = [c_int]
 
     def init(self):
         """Invoke LMON_fe_init."""
