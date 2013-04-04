@@ -163,7 +163,6 @@ class Communicator (object):
         """Initialze some common MRNet stuff."""
         self.packet_stash = []
         self._init_mrnet_streams()
-        self._enable_mrnet_perf_data()
 
     def get_proctab_size(self):
         """Return the size of the process table from LaunchMON"""
@@ -356,8 +355,6 @@ class CommunicatorBE (Communicator):
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
-        self._disable_mrnet_perf_data()
-        self._log_mrnet_perf_data()
         self.lmon.finalize()
         self.mrnet.waitfor_ShutDown()
         del self.mrnet
@@ -556,6 +553,7 @@ class CommunicatorFE (Communicator):
         self._send_mrnet_topology()
         self._wait_for_nodes()
         self._init_shared_mrnet()
+        self._enable_mrnet_perf_data()
         self._init_mrnet_rank_map()
         self._send_mrnet_hello()
 
