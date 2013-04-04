@@ -345,7 +345,27 @@ Network.add_method("send", retval("int"),
                     param("const char*", "iformat_str", transfer_ownership = False),
                     param("const char*", "serialized", transfer_ownership = False)])
 Network.add_method("flush", retval("int"), [], is_const = True)
-# TODO: PerformanceData.
+MRN.add_enum("perfdata_metric_t", ["PERFDATA_MET_BYTES", "PERFDATA_MET_PKTS", "PERFDATA_MET_ELAPSED_SEC",
+                                   "PERFDATA_MET_CPU_SYS_PCT", "PERFDATA_MET_CPU_USR_PCT",
+                                   "PERFDATA_MET_MEM_VIRT_KB", "PERFDATA_MET_MEM_PHYS_KB",
+                                   "PERFDATA_MAX_MET"])
+MRN.add_enum("perfdata_context_t", ["PERFDATA_CTX_NONE", "PERFDATA_CTX_SEND", "PERFDATA_CTX_RECV",
+                                    "PERFDATA_CTX_FILT_IN", "PERFDATA_CTX_FILT_OUT", "PERFDATA_CTX_SYNCFILT_IN",
+                                    "PERFDATA_CTX_SYNCFILT_OUT", "PERFDATA_CTX_PKT_RECV", "PERFDATA_CTX_PKT_SEND",
+                                    "PERFDATA_CTX_PKT_NET_SENDCHILD", "PERFDATA_CTX_PKT_NET_SENDPAR",
+                                    "PERFDATA_CTX_PKT_INT_DATAPAR", "PERFDATA_CTX_PKT_INT_DATACHILD",
+                                    "PERFDATA_CTX_PKT_FILTER", "PERFDATA_CTX_PKT_RECV_TO_FILTER",
+                                    "PERFDATA_CTX_PKT_FILTER_TO_SEND", "PERFDATA_MAX_CTX"])
+Network.add_method("enable_PerformanceData", retval("bool"),
+                   [param("perfdata_metric_t", "metric"),
+                    param("perfdata_context_t", "context")])
+Network.add_method("disable_PerformanceData", retval("bool"),
+                   [param("perfdata_metric_t", "metric"),
+                    param("perfdata_context_t", "context")])
+# TODO: collect_PerformanceData.
+Network.add_method("print_PerformanceData", retval("void"),
+                   [param("perfdata_metric_t", "metric"),
+                    param("perfdata_context_t", "context")])
 Network.add_method("clear_Events", retval("void"), [])
 Network.add_method("num_EventsPending", retval("unsigned int"), [])
 Network.add_method("next_Event", retval("MRN::Event*", caller_owns_return = False), [])
