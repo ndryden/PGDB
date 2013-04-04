@@ -410,7 +410,7 @@ class Commands(object):
             canonical = self.command_aliases[cmd]
             command = Command(cmd)
             if cmd in self.alias_callbacks:
-                rest = self.alias_callbacks(command, rest)
+                rest = self.alias_callbacks[cmd](command, rest)
             if rest:
                 opts, args = self.option_parsers[canonical].parse_args(rest)
                 command.opts.update(self._optparse_to_dict(canonical, opts))
