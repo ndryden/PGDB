@@ -115,7 +115,7 @@ class Communicator (object):
             self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
                                                MRN.PERFDATA_CTX_SEND)
 
-    def _mrnet_log_perf_data(self):
+    def _log_mrnet_perf_data(self):
         """Log MRNet performance data."""
         if gdbconf.mrnet_collect_perf_data:
             self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
@@ -356,8 +356,8 @@ class CommunicatorBE (Communicator):
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
-        self._mrnet_disable_perf_data()
-        self._mrnet_log_perf_data()
+        self._disable_mrnet_perf_data()
+        self._log_mrnet_perf_data()
         self.lmon.finalize()
         self.mrnet.waitfor_ShutDown()
         del self.mrnet
@@ -561,8 +561,8 @@ class CommunicatorFE (Communicator):
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
-        self._mrnet_disable_perf_data()
-        self._mrnet_log_perf_data()
+        self._disable_mrnet_perf_data()
+        self._log_mrnet_perf_data()
         del self.mrnet
         self.lmon.shutdownDaemons(self.lmon_session)
         self.been_shutdown = True
