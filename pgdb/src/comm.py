@@ -418,21 +418,21 @@ class CommunicatorFE (Communicator):
 
     def _load_mrnet_filters(self):
         """Load MRNet filters."""
-        filter_path = "/home/ndryden/PGDB/pgdb/mrnet-filters/test.so"
-        if os.path.isfile(filter_path):
-            # Ensure the file actually still exists.
-            try:
-                with open(filter_path):
-                    self.filter_id = self.mrnet.load_FilterFunc(filter_path, "test")
-                    if self.filter_id == -1:
-                        print "Failed to load filter!"
-                        sys.exit(1)
-            except IOError:
-                print "Filter disappeared!"
+        for filter_path, filter_func in gdbconf.mrnet_filters:
+            if os.path.isfile(filter_path):
+                # Ensure the file actually still exists.
+                try:
+                    with open(filter_path):
+                        self.filter_id = self.mrnet.load_FilterFunc(filter_path, filter_func)
+                        if self.filter_id == -1:
+                            print "Failed to load filter {0}:{1}!".format(filter_path, filter_func)
+                            sys.exit(1)
+                except IOError:
+                    print "Filter {0} disappeared!".format(filter_path)
+                    sys.exit(1)
+            else:
+                print "Cannot find filter {0}!".format(filter_path)
                 sys.exit(1)
-        else:
-            print "Cannot find filter!"
-            sys.exit(1)
 
     def init_mrnet(self, local = False):
         """Initialize MRNet.

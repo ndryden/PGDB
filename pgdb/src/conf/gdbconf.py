@@ -38,3 +38,6 @@ mrnet_branch_factor = 32
 topology_transmit_size = 32768
 # The maximum length of a message before it is split into smaller messages for transmission over MRNet.
 multi_len = 10240
+# A list of tuples of the form (path, function), where path is a path to an MRNet filter
+# and function is the name of the filter function.
+mrnet_filters = [("/home/ndryden/PGDB/mrnet-filters/test.so", "test")]
