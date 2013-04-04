@@ -362,11 +362,11 @@ class Commands(object):
     def _split_command(self, string):
         """Given a string, split it into the command and arguments."""
         split = string.split()
-        cmd = ""
+        cmd = split.pop(0)
         while len(split):
             complete = self.complete(cmd)
             if not complete:
-                cmd += split.pop(0)
+                cmd += " " + split.pop(0)
             else:
                 return complete, split
         complete = self.complete(cmd)
