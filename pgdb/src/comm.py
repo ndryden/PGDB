@@ -423,7 +423,7 @@ class CommunicatorFE (Communicator):
             # Ensure the file actually still exists.
             try:
                 with open(filter_path):
-                    self.filter_id = self.mrnet.load_FilterFunc(, "test")
+                    self.filter_id = self.mrnet.load_FilterFunc(filter_path, "test")
                     if self.filter_id == -1:
                         print "Failed to load filter!"
                         sys.exit(1)
