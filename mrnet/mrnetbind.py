@@ -345,7 +345,7 @@ Network.add_method("send", retval("int"),
                     param("const char*", "iformat_str", transfer_ownership = False),
                     param("const char*", "serialized", transfer_ownership = False)])
 Network.add_method("flush", retval("int"), [], is_const = True)
-MRN.add_enum("perfdata_metric_t", ["PERFDATA_MET_BYTES", "PERFDATA_MET_PKTS", "PERFDATA_MET_ELAPSED_SEC",
+MRN.add_enum("perfdata_metric_t", ["PERFDATA_MET_NUM_BYTES", "PERFDATA_MET_NUM_PKTS", "PERFDATA_MET_ELAPSED_SEC",
                                    "PERFDATA_MET_CPU_SYS_PCT", "PERFDATA_MET_CPU_USR_PCT",
                                    "PERFDATA_MET_MEM_VIRT_KB", "PERFDATA_MET_MEM_PHYS_KB",
                                    "PERFDATA_MAX_MET"])
