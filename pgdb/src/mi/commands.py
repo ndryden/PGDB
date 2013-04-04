@@ -294,7 +294,9 @@ class Commands(object):
         # This is the set of callbacks for canonical MI commands.
         self.canonical_callbacks = {}
         # This is the set of callbacks for alias commands.
-        self.alias_callbacks = {}
+        self.alias_callbacks = {
+            "print": self._print_callback
+        }
         # This is the list searched for completions. Canonical MI commands are in here with
         # both their original name and hyphens replaced with spaces. Aliases are in here verbatim.
         self.completions = self.canonical_mi_commands + map(lambda x: x.replace("-", " "),
@@ -419,3 +421,10 @@ class Commands(object):
             # Something went wrong, we should never get here.
             print "Completed a command but it's not a canonical or an alias! Got '{0}'.".format(cmd)
             return None
+
+    def _print_callback(self, command, rest):
+        """Fill out print command with quotation marks for ease."""
+        rest[0] = '"' + rest[0]
+        rest[-1] = rest[-1] + '"'
+        command.args = rest
+        return None
