@@ -231,6 +231,10 @@ def _is_list(v):
     """Check whether an object is a list."""
     return isinstance(v, list)
 
+def _is_tuple(v):
+    """Check whether an object is a tuple."""
+    return isinstance(v, tuple)
+
 def _is_str(v):
     """Check whether an object is a string."""
     return isinstance(v, str)
@@ -245,7 +249,7 @@ def _is_primitive(v):
     An object is primitive if it is a string or list of strings.
 
     """
-    return _is_str(v) or (_is_list(v) and all(map(lambda x: _is_str(x), v)))
+    return _is_str(v) or (_is_list(v) and all(map(lambda x: _is_str(x), v))) or (_is_tuple(v) and all(map(lambda x: _is_str(x), v)))
 
 def _is_subst_key(v):
     """Check whether an object is a substitution key.
@@ -265,6 +269,13 @@ def _do_substitution(vid, data, subst):
             new_v, subst = _do_substitution(vid, v, subst)
             data[k] = new_v
         return data, subst
+    if _is_tuple(data):
+        # Convert to list and back to tuple so we can modify.
+        tmp_data = list(data)
+        for k, v in enumerate(tmp_data):
+            new_v, subst = _do_substitution(vid, v, subst)
+            tmp_data[k] = new_v
+        return tuple(tmp_data), subst
     if _is_dict(data):
         for k, v in list(data.items()):
             new_v, subst = _do_substitution(vid, v, subst)
@@ -281,6 +292,12 @@ def _undo_substitution(vid, data, subst):
             new_v = _undo_substitution(vid, v, subst)
             data[k] = new_v
         return data
+    if _is_tuple(data):
+        tmp_data = list(data)
+        for k, v in enumerate(tmp_data):
+            new_v = _undo_substitution(vid, v, subst)
+            tmp_data[k] = new_v
+        return tuple(data)
     if _is_dict(data):
         for k, v in list(data.items()):
             new_v = _undo_substitution(vid, v, subst)
