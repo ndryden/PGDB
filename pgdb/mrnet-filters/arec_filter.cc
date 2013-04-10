@@ -10,16 +10,16 @@ extern "C" {
 
 	using namespace MRN;
 
-	const char* test_format_string = "%s";
+	const char* arec_filter_format_string = "%s";
 
 	void send_error_packet(unsigned int stream_id, int tag, std::vector<PacketPtr> &packets_out) {
 		PacketPtr err_packet(new Packet(stream_id, tag, "%s", "ERROR"));
 		packets_out.push_back(err_packet);
 	}
 
-	void test(std::vector<PacketPtr> &packets_in, std::vector<PacketPtr> &packets_out,
-			  std::vector<PacketPtr> &packets_out_reverse, void** state, PacketPtr& config_params,
-			  const TopologyLocalInfo& topo_info) {
+	void arec_filter(std::vector<PacketPtr> &packets_in, std::vector<PacketPtr> &packets_out,
+					 std::vector<PacketPtr> &packets_out_reverse, void** state, PacketPtr& config_params,
+					 const TopologyLocalInfo& topo_info) {
 		// Ensure Python is initialized; if it is, this does nothing.
 		Py_Initialize();
 		// We must serialize access to the Python interpreter.
