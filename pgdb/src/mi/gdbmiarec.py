@@ -297,7 +297,7 @@ def _undo_substitution(vid, data, subst):
         for k, v in enumerate(tmp_data):
             new_v = _undo_substitution(vid, v, subst)
             tmp_data[k] = new_v
-        return tuple(data)
+        return tuple(tmp_data)
     if _is_dict(data):
         for k, v in list(data.items()):
             new_v = _undo_substitution(vid, v, subst)
