@@ -3166,6 +3166,24 @@ _wrap_PyMRNNetwork_send(PyMRNNetwork *self, PyObject *args, PyObject *kwargs)
 
 
 PyObject *
+_wrap_PyMRNNetwork_print_PerformanceData(PyMRNNetwork *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    MRN::perfdata_metric_t metric;
+    MRN::perfdata_context_t context;
+    const char *keywords[] = {"metric", "context", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "ii", (char **) keywords, &metric, &context)) {
+        return NULL;
+    }
+    self->obj->print_PerformanceData(metric, context);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    return py_retval;
+}
+
+
+PyObject *
 _wrap_PyMRNNetwork_next_Event(PyMRNNetwork *self)
 {
     PyObject *py_retval;
@@ -3211,6 +3229,24 @@ _wrap_PyMRNNetwork_get_LocalRank(PyMRNNetwork *self)
 
     retval = self->obj->get_LocalRank();
     py_retval = Py_BuildValue((char *) "N", PyLong_FromUnsignedLong(retval));
+    return py_retval;
+}
+
+
+PyObject *
+_wrap_PyMRNNetwork_disable_PerformanceData(PyMRNNetwork *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    bool retval;
+    MRN::perfdata_metric_t metric;
+    MRN::perfdata_context_t context;
+    const char *keywords[] = {"metric", "context", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "ii", (char **) keywords, &metric, &context)) {
+        return NULL;
+    }
+    retval = self->obj->disable_PerformanceData(metric, context);
+    py_retval = Py_BuildValue((char *) "N", PyBool_FromLong(retval));
     return py_retval;
 }
 
@@ -3811,6 +3847,24 @@ _wrap_PyMRNNetwork_clear_EventNotificationFd(PyMRNNetwork *self, PyObject *args,
 
 
 PyObject *
+_wrap_PyMRNNetwork_enable_PerformanceData(PyMRNNetwork *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    bool retval;
+    MRN::perfdata_metric_t metric;
+    MRN::perfdata_context_t context;
+    const char *keywords[] = {"metric", "context", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "ii", (char **) keywords, &metric, &context)) {
+        return NULL;
+    }
+    retval = self->obj->enable_PerformanceData(metric, context);
+    py_retval = Py_BuildValue((char *) "N", PyBool_FromLong(retval));
+    return py_retval;
+}
+
+
+PyObject *
 _wrap_PyMRNNetwork_get_LocalHostName(PyMRNNetwork *self)
 {
     PyObject *py_retval;
@@ -3836,9 +3890,11 @@ static PyMethodDef PyMRNNetwork_methods[] = {
     {(char *) "CreateNetworkBE", (PyCFunction) _wrap_PyMRNNetwork_CreateNetworkBE, METH_KEYWORDS|METH_VARARGS|METH_STATIC, NULL },
     {(char *) "register_EventCallback", (PyCFunction) _wrap_PyMRNNetwork_register_EventCallback, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "send", (PyCFunction) _wrap_PyMRNNetwork_send, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "print_PerformanceData", (PyCFunction) _wrap_PyMRNNetwork_print_PerformanceData, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "next_Event", (PyCFunction) _wrap_PyMRNNetwork_next_Event, METH_NOARGS, NULL },
     {(char *) "load_FilterFunc", (PyCFunction) _wrap_PyMRNNetwork_load_FilterFunc, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "get_LocalRank", (PyCFunction) _wrap_PyMRNNetwork_get_LocalRank, METH_NOARGS, NULL },
+    {(char *) "disable_PerformanceData", (PyCFunction) _wrap_PyMRNNetwork_disable_PerformanceData, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "CreateNetworkFE", (PyCFunction) _wrap_PyMRNNetwork_CreateNetworkFE, METH_KEYWORDS|METH_VARARGS|METH_STATIC, NULL },
     {(char *) "new_Communicator", (PyCFunction) _wrap_PyMRNNetwork_new_Communicator, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "is_LocalNodeInternal", (PyCFunction) _wrap_PyMRNNetwork_is_LocalNodeInternal, METH_NOARGS, NULL },
@@ -3853,6 +3909,7 @@ static PyMethodDef PyMRNNetwork_methods[] = {
     {(char *) "remove_EventCallbacks", (PyCFunction) _wrap_PyMRNNetwork_remove_EventCallbacks, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "is_LocalNodeChild", (PyCFunction) _wrap_PyMRNNetwork_is_LocalNodeChild, METH_NOARGS, NULL },
     {(char *) "clear_EventNotificationFd", (PyCFunction) _wrap_PyMRNNetwork_clear_EventNotificationFd, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "enable_PerformanceData", (PyCFunction) _wrap_PyMRNNetwork_enable_PerformanceData, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "get_LocalHostName", (PyCFunction) _wrap_PyMRNNetwork_get_LocalHostName, METH_NOARGS, NULL },
     {NULL, NULL, 0, NULL}
 };
@@ -4357,6 +4414,10 @@ PyTypeObject PyMRNErrorDef_Type = {
 
 
 
+
+
+
+
 static PyObject *
 initMRNet_MRN(void)
 {
@@ -4505,6 +4566,31 @@ initMRNet_MRN(void)
     PyModule_AddIntConstant(m, (char *) "ERR_INTERNAL", MRN::ERR_INTERNAL);
     PyModule_AddIntConstant(m, (char *) "ERR_SYSTEM", MRN::ERR_SYSTEM);
     PyModule_AddIntConstant(m, (char *) "ERR_CODE_LAST", MRN::ERR_CODE_LAST);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_NUM_BYTES", MRN::PERFDATA_MET_NUM_BYTES);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_NUM_PKTS", MRN::PERFDATA_MET_NUM_PKTS);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_ELAPSED_SEC", MRN::PERFDATA_MET_ELAPSED_SEC);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_CPU_SYS_PCT", MRN::PERFDATA_MET_CPU_SYS_PCT);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_CPU_USR_PCT", MRN::PERFDATA_MET_CPU_USR_PCT);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_MEM_VIRT_KB", MRN::PERFDATA_MET_MEM_VIRT_KB);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_MEM_PHYS_KB", MRN::PERFDATA_MET_MEM_PHYS_KB);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MAX_MET", MRN::PERFDATA_MAX_MET);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_NONE", MRN::PERFDATA_CTX_NONE);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_SEND", MRN::PERFDATA_CTX_SEND);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_RECV", MRN::PERFDATA_CTX_RECV);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_FILT_IN", MRN::PERFDATA_CTX_FILT_IN);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_FILT_OUT", MRN::PERFDATA_CTX_FILT_OUT);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_SYNCFILT_IN", MRN::PERFDATA_CTX_SYNCFILT_IN);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_SYNCFILT_OUT", MRN::PERFDATA_CTX_SYNCFILT_OUT);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_RECV", MRN::PERFDATA_CTX_PKT_RECV);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_SEND", MRN::PERFDATA_CTX_PKT_SEND);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_NET_SENDCHILD", MRN::PERFDATA_CTX_PKT_NET_SENDCHILD);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_NET_SENDPAR", MRN::PERFDATA_CTX_PKT_NET_SENDPAR);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_INT_DATAPAR", MRN::PERFDATA_CTX_PKT_INT_DATAPAR);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_INT_DATACHILD", MRN::PERFDATA_CTX_PKT_INT_DATACHILD);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_FILTER", MRN::PERFDATA_CTX_PKT_FILTER);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_RECV_TO_FILTER", MRN::PERFDATA_CTX_PKT_RECV_TO_FILTER);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_CTX_PKT_FILTER_TO_SEND", MRN::PERFDATA_CTX_PKT_FILTER_TO_SEND);
+    PyModule_AddIntConstant(m, (char *) "PERFDATA_MAX_CTX", MRN::PERFDATA_MAX_CTX);
     return m;
 }
 static PyMethodDef MRNet_functions[] = {
