@@ -183,7 +183,7 @@ sys.path.append('/home/ndryden/PGDB/pgdb/mrnet-filters')\n");
 		Py_DECREF(ret_data);
 		// Release the Python interpreter.
 		if (py_state != NULL) {
-			PyGILState_Release(gstate);
+			py_state = PyEval_SaveThread();
 		}
 		else {
 			PyGILState_Release(gstate);
