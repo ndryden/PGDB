@@ -1,6 +1,6 @@
 """Primary communication class for managing LaunchMON and MRNet communication."""
 
-import cPickle, os, sys, socket, threading
+import cPickle, os, sys, socket, threading, time
 from gdb_shared import *
 from conf import gdbconf
 from lmon import lmon
@@ -222,6 +222,8 @@ class Communicator (object):
         self.frontend or self.broadcast.
 
         """
+        if gdbconf.mrnet_collect_perf_data:
+            message._send_time = time.time()
         msg = cPickle.dumps(message, 0)
         self._lock()
         send_list = self._multi_payload_split(msg)
@@ -251,6 +253,10 @@ class Communicator (object):
             print "Filter error!"
             sys.exit(1)
         msg = cPickle.loads(serialized)
+        # Compute time from sending to receiving.
+        if gdbconf.mrnet_collect_perf_data:
+            cur = time.time()
+            print "Packet time: {0} - {1} = {2}".format(cur, msg._send_time, cur - msg._send_time)
         # This keeps Python from garbage-collecting these.
         self.packet_stash.append(packet)
         self._unlock()
