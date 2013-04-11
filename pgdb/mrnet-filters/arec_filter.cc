@@ -11,6 +11,7 @@ extern "C" {
 	using namespace MRN;
 
 	const char* arec_filter_format_string = "%s";
+	PyThreadState* py_state;
 
 	void send_error_packet(unsigned int stream_id, int tag, std::vector<PacketPtr> &packets_out) {
 		PacketPtr err_packet(new Packet(stream_id, tag, "%s", "ERROR"));
@@ -23,7 +24,22 @@ extern "C" {
 		// Ensure Python is initialized; if it is, this does nothing.
 		Py_Initialize();
 		// We must serialize access to the Python interpreter.
-		PyGILState_STATE gstate = PyGILState_Ensure();
+		// This deals with both the cases where threads are not initialized,
+		// which occurs when running on remote comm nodes, and the case where
+		// they are already initialized, which occurs on the front-end.
+		PyGILState_STATE gstate;
+		if (PyEval_ThreadsInitialized() == 0) {
+			PyEval_InitThreads();
+			py_state = PyThreadState_Get();
+		}
+		else {
+			if (py_state != NULL) {
+				PyEval_RestoreThread(py_state);
+			}
+			else {
+				gstate = PyGILState_Ensure();
+			}
+		}
 		// Add the relevant search path to the Python module search path.
 		// TODO: Don't hard-code this.
 		PyRun_SimpleString(
@@ -166,7 +182,12 @@ sys.path.append('/home/ndryden/PGDB/pgdb/mrnet-filters')\n");
 		Py_DECREF(arguments);
 		Py_DECREF(ret_data);
 		// Release the Python interpreter.
-		PyGILState_Release(gstate);
+		if (py_state != NULL) {
+			PyGILState_Release(gstate);
+		}
+		else {
+			PyGILState_Release(gstate);
+		}
 		/*size_t i;
 		for (i = 0; i < packets_in.size(); ++i) {
 			packets_out.push_back(packets_in[i]);
