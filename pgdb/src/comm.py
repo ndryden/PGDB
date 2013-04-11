@@ -514,6 +514,7 @@ class CommunicatorFE (Communicator):
 
     def _load_mrnet_filters(self):
         """Load MRNet filters."""
+        self.filter_id = 0
         for filter_path, filter_func in gdbconf.mrnet_filters:
             if os.path.isfile(filter_path):
                 # Ensure the file actually still exists.
