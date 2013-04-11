@@ -246,6 +246,10 @@ class Communicator (object):
         if ret == -1:
             print "Could not unpack packet."
             sys.exit(1)
+        # Check for filter errors.
+        if serialized == "ERROR":
+            print "Filter error!"
+            sys.exit(1)
         msg = cPickle.loads(serialized)
         # This keeps Python from garbage-collecting these.
         self.packet_stash.append(packet)
