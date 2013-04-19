@@ -58,30 +58,10 @@ class Communicator (object):
                                               MRN.PERFDATA_CTX_SEND)
             self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
-                                              MRN.PERFDATA_CTX_SEND)
             self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
-                                              MRN.PERFDATA_CTX_SEND)
+                                              MRN.PERFDATA_CTX_RECV)
             self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
-                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.enable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
-                                              MRN.PERFDATA_CTX_SEND)
+                                              MRN.PERFDATA_CTX_RECV)
 
     def _disable_mrnet_perf_data(self):
         """Disable MRNet performance data."""
@@ -90,30 +70,10 @@ class Communicator (object):
                                                MRN.PERFDATA_CTX_SEND)
             self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
                                                MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
-                                               MRN.PERFDATA_CTX_SEND)
             self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
-                                               MRN.PERFDATA_CTX_SEND)
+                                               MRN.PERFDATA_CTX_RECV)
             self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
-                                               MRN.PERFDATA_CTX_SEND)
-            self.mrnet.disable_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
-                                               MRN.PERFDATA_CTX_SEND)
+                                               MRN.PERFDATA_CTX_RECV)
 
     def _log_mrnet_perf_data(self):
         """Log MRNet performance data."""
@@ -122,30 +82,10 @@ class Communicator (object):
                                              MRN.PERFDATA_CTX_SEND)
             self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
                                              MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
-                                             MRN.PERFDATA_CTX_SEND)
             self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_BYTES,
-                                             MRN.PERFDATA_CTX_SEND)
+                                             MRN.PERFDATA_CTX_RECV)
             self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_ELAPSED_SEC,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_CPU_SYS_PCT,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_CPU_USR_PCT,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_MEM_VIRT_KB,
-                                             MRN.PERFDATA_CTX_SEND)
-            self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_MEM_PHYS_KB,
-                                             MRN.PERFDATA_CTX_SEND)
+                                             MRN.PERFDATA_CTX_RECV)
 
     def init_mrnet(self):
         """Initialize MRNet. Should be over-ridden by children."""
