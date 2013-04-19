@@ -16,6 +16,7 @@ def filter_hook(packet_list):
     new_time = None
     if hasattr(msg_list[0], '_send_time'):
         new_time = min(msg_list, key = lambda x: x._send_time)
+        new_time = new_time._send_time
     arec_list = map(lambda x: x.record, msg_list)
     new_list = arec_list.pop(0)
     for l in arec_list:
