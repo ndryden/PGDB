@@ -23,6 +23,8 @@ class Communicator (object):
         self.been_shutdown = False
         self.recv_stash = []
         self.use_locking = locking
+        self.packet_count = 0
+        self.send_time_sum = 0
         if self.use_locking:
             self.lock = threading.RLock()
 
@@ -86,6 +88,7 @@ class Communicator (object):
                                              MRN.PERFDATA_CTX_RECV)
             self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
                                              MRN.PERFDATA_CTX_RECV)
+            print "Received {0} packets. Average send time = {1}. Recv stash size = {2}.".format(self.packet_count, self.send_time_sum / self.packet_count, size(self.recv_stash))
 
     def init_mrnet(self):
         """Initialize MRNet. Should be over-ridden by children."""
@@ -196,6 +199,8 @@ class Communicator (object):
         # Compute time from sending to receiving.
         if gdbconf.mrnet_collect_perf_data:
             cur = time.time()
+            self.packet_count += 1
+            self.send_time_sum += max(cur - msg._send_time, 0)
             print "Packet time: {0} - {1} = {2}".format(cur, msg._send_time, cur - msg._send_time)
         # This keeps Python from garbage-collecting these.
         self.packet_stash.append(packet)
