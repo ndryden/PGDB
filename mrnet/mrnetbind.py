@@ -245,6 +245,13 @@ Packet.add_binary_comparison_operator("==")
 Packet.add_binary_comparison_operator("!=")
 
 # Set up Stream.
+# No TFILTER_EPK_UNIFY, causes undefined symbol errors.
+MRN.add_enum("FilterId", ["TFILTER_NULL", "TFILTER_SUM", "TFILTER_AVG", "TFILTER_MIN",
+                          "TFILTER_MAX", "TFILTER_ARRAY_CONCAT", "TFILTER_INT_EQ_CLASS",
+                          "TFILTER_PERFDATA", "TFILTER_TOPO_UPDATE",
+                          "TFILTER_TOPO_UPDATE_DOWNSTREAM",
+                          "SFILTER_DONTWAIT", "SFILTER_WAITFORALL", "SFILTER_TIMEOUT"])
+MRN.add_enum("FilterType", ["FILTER_DOWNSTREAM_TRANS", "FILTER_UPSTREAM_TRANS", "FILTER_UPSTREAM_SYNC"])
 Stream.add_method("send", retval("int"),
                   [param("int", "itag"),
                    param("const char*", "format_string", transfer_ownership = False),
@@ -262,6 +269,10 @@ Stream.add_method("get_DataNotificationFd", retval("int"), [])
 Stream.add_method("clear_DataNotificationFd", retval("void"), [])
 Stream.add_method("close_DataNotificationFd", retval("void"), [])
 # TODO: set_FilterParameters: variadic version.
+Stream.add_method("set_FilterParameters", retval("int"),
+                  [param("MRN::FilterType", "ftype"),
+                   param("const char*", "format", transfer_ownership = False),
+                   param("int", "val")])
 # TODO: PerformanceData functions.
 Stream.add_method("is_Closed", retval("bool"), [], is_const = True)
 

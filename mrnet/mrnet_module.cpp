@@ -2726,6 +2726,25 @@ _wrap_PyMRNStream_close_DataNotificationFd(PyMRNStream *self)
 
 
 PyObject *
+_wrap_PyMRNStream_set_FilterParameters(PyMRNStream *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    int retval;
+    MRN::FilterType ftype;
+    char const *format;
+    int val;
+    const char *keywords[] = {"ftype", "format", "val", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "isi", (char **) keywords, &ftype, &format, &val)) {
+        return NULL;
+    }
+    retval = self->obj->set_FilterParameters(ftype, format, val);
+    py_retval = Py_BuildValue((char *) "i", retval);
+    return py_retval;
+}
+
+
+PyObject *
 _wrap_PyMRNStream_has_Data(PyMRNStream *self)
 {
     PyObject *py_retval;
@@ -2806,6 +2825,7 @@ static PyMethodDef PyMRNStream_methods[] = {
     {(char *) "get_DataNotificationFd", (PyCFunction) _wrap_PyMRNStream_get_DataNotificationFd, METH_NOARGS, NULL },
     {(char *) "flush", (PyCFunction) _wrap_PyMRNStream_flush, METH_NOARGS, NULL },
     {(char *) "close_DataNotificationFd", (PyCFunction) _wrap_PyMRNStream_close_DataNotificationFd, METH_NOARGS, NULL },
+    {(char *) "set_FilterParameters", (PyCFunction) _wrap_PyMRNStream_set_FilterParameters, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "has_Data", (PyCFunction) _wrap_PyMRNStream_has_Data, METH_NOARGS, NULL },
     {(char *) "recv", (PyCFunction) _wrap_PyMRNStream_recv, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "clear_DataNotificationFd", (PyCFunction) _wrap_PyMRNStream_clear_DataNotificationFd, METH_NOARGS, NULL },
@@ -4418,6 +4438,10 @@ PyTypeObject PyMRNErrorDef_Type = {
 
 
 
+
+
+
+
 static PyObject *
 initMRNet_MRN(void)
 {
@@ -4566,6 +4590,22 @@ initMRNet_MRN(void)
     PyModule_AddIntConstant(m, (char *) "ERR_INTERNAL", MRN::ERR_INTERNAL);
     PyModule_AddIntConstant(m, (char *) "ERR_SYSTEM", MRN::ERR_SYSTEM);
     PyModule_AddIntConstant(m, (char *) "ERR_CODE_LAST", MRN::ERR_CODE_LAST);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_NULL", MRN::TFILTER_NULL);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_SUM", MRN::TFILTER_SUM);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_AVG", MRN::TFILTER_AVG);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_MIN", MRN::TFILTER_MIN);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_MAX", MRN::TFILTER_MAX);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_ARRAY_CONCAT", MRN::TFILTER_ARRAY_CONCAT);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_INT_EQ_CLASS", MRN::TFILTER_INT_EQ_CLASS);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_PERFDATA", MRN::TFILTER_PERFDATA);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_TOPO_UPDATE", MRN::TFILTER_TOPO_UPDATE);
+    PyModule_AddIntConstant(m, (char *) "TFILTER_TOPO_UPDATE_DOWNSTREAM", MRN::TFILTER_TOPO_UPDATE_DOWNSTREAM);
+    PyModule_AddIntConstant(m, (char *) "SFILTER_DONTWAIT", MRN::SFILTER_DONTWAIT);
+    PyModule_AddIntConstant(m, (char *) "SFILTER_WAITFORALL", MRN::SFILTER_WAITFORALL);
+    PyModule_AddIntConstant(m, (char *) "SFILTER_TIMEOUT", MRN::SFILTER_TIMEOUT);
+    PyModule_AddIntConstant(m, (char *) "FILTER_DOWNSTREAM_TRANS", MRN::FILTER_DOWNSTREAM_TRANS);
+    PyModule_AddIntConstant(m, (char *) "FILTER_UPSTREAM_TRANS", MRN::FILTER_UPSTREAM_TRANS);
+    PyModule_AddIntConstant(m, (char *) "FILTER_UPSTREAM_SYNC", MRN::FILTER_UPSTREAM_SYNC);
     PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_NUM_BYTES", MRN::PERFDATA_MET_NUM_BYTES);
     PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_NUM_PKTS", MRN::PERFDATA_MET_NUM_PKTS);
     PyModule_AddIntConstant(m, (char *) "PERFDATA_MET_ELAPSED_SEC", MRN::PERFDATA_MET_ELAPSED_SEC);
