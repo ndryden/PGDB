@@ -88,7 +88,7 @@ class Communicator (object):
                                              MRN.PERFDATA_CTX_RECV)
             self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
                                              MRN.PERFDATA_CTX_RECV)
-            print "Received {0} packets. Average send time = {1}. Recv stash size = {2}.".format(self.packet_count, self.send_time_sum / self.packet_count, size(self.recv_stash))
+            print "Received {0} packets. Average send time = {1}. Recv stash size = {2}.".format(self.packet_count, self.send_time_sum / self.packet_count, len(self.recv_stash))
 
     def init_mrnet(self):
         """Initialize MRNet. Should be over-ridden by children."""
