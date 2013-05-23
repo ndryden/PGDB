@@ -518,6 +518,9 @@ class CommunicatorFE (Communicator):
         self._enable_mrnet_perf_data()
         self._init_mrnet_rank_map()
         self._send_mrnet_hello()
+        if gdbconf.mrnet_topology_dot:
+            self.mrnet_topo = self.mrnet.get_NetworkTopology()
+            self.mrnet_topo.print_DOTGraph(gdbconf.mrnet_topology_dot)
 
     def shutdown(self):
         """Shut down the communication infrastructure."""

@@ -43,3 +43,5 @@ multi_len = 10240
 mrnet_filters = [("/home/ndryden/PGDB/mrnet-filters/arec_filter.so", "arec_filter")]
 # Whether to enable collection of MRNet performance data or not.
 mrnet_collect_perf_data = True
+# Whether to write a DOT file of the topology. The path of the file if yes, None otherwise.
+mrnet_topology_dot = "/home/ndryden/topo.dot"
