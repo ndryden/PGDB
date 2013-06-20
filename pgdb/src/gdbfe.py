@@ -129,7 +129,7 @@ class GDBFE (GDBMICmd):
         pass
 
     def quit_handler(self, msg):
-        """Handle a die message. Presently does nothing."""
+        """Handle a quit message. Presently does nothing."""
         pass
 
     def out_handler(self, msg):
@@ -311,6 +311,11 @@ class GDBFE (GDBMICmd):
         # This always sends to all targets, for now.
         print "Sending SIGTERM to all inferiors. (May need to step them for them to die.)"
         self.comm.send(GDBMessage(KILL_MSG), self.comm.broadcast)
+
+    def do_quit(self, cmd, targets = None):
+        """Gracefully quit PGDB."""
+        self.quit = True
+        self.comm.send(GDBMessage(CMD_MSG, command = Command("gdb-exit"), self.comm.boradcast))
 
     def dispatch_gdbmi_command(self, command):
         """Send a GDB command."""
