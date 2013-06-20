@@ -252,6 +252,8 @@ class GDBBE:
                 exited = exited and (not gdb.is_running())
             if exited:
                 break
+        # Shut everything else down.
+        self.shutdown()
 
 def run():
     """Simple function to run the backend."""
