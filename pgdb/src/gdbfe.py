@@ -315,7 +315,7 @@ class GDBFE (GDBMICmd):
     def do_quit(self, cmd, targets = None):
         """Gracefully quit PGDB."""
         self.quit = True
-        self.comm.send(GDBMessage(CMD_MSG, command = Command("gdb-exit"), self.comm.boradcast))
+        self.comm.send(GDBMessage(CMD_MSG, command = Command("gdb-exit")), self.comm.broadcast)
 
     def dispatch_gdbmi_command(self, command):
         """Send a GDB command."""
