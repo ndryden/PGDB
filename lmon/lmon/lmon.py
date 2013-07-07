@@ -24,7 +24,10 @@ class LMONException(Exception):
         self.value = value
 
     def __str__(self):
-        return lmon_const_map[self.value]
+        if self.value in lmon_const_map:
+            return lmon_const_map[self.value]
+        else:
+            return "Unknown ({0})".format(self.value)
 
 class MPIR_PROCDESC(Structure):
     """A CTypes structure for the MPIR_PROCDESC structure."""
