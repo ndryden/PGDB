@@ -24,7 +24,7 @@ class LMONException(Exception):
         self.value = value
 
     def __str__(self):
-        return repr(self.value)
+        return lmon_const_map[self.value]
 
 class MPIR_PROCDESC(Structure):
     """A CTypes structure for the MPIR_PROCDESC structure."""
@@ -54,12 +54,55 @@ if lmonconf.use_lmon_10:
      LMON_ENEGCB, LMON_ENOPLD, LMON_EBDMSG, LMON_EDUNAV,
      LMON_ETRUNC, LMON_EBUG, LMON_NOTIMPL, LMON_YES,
      LMON_NO) = map(int, xrange(21))
+    lmon_const_map = [
+        "LMON_OK",
+        "LMON_EINVAL",
+        "LMON_EDBARG",
+        "LMON_ELNCHR",
+        "LMON_EINIT",
+        "LMON_ESYS",
+        "LMON_ESUBCOM",
+        "LMON_ESUBSYNC",
+        "LMON_ETOUT",
+        "LMON_ENOMEM",
+        "LMON_ENCLLB",
+        "LMON_ECLLB",
+        "LMON_ENEGCB",
+        "LMON_ENOPLD",
+        "LMON_EBDMSG",
+        "LMON_EDUNAV",
+        "LMON_ETRUNC",
+        "LMON_EBUG",
+        "LMON_NOTIMPL",
+        "LMON_YES",
+        "LMON_NO"
+    ]
 else:
     (LMON_OK, LMON_EINVAL, LMON_EBDARG, LMON_ELNCHR,
      LMON_EINIT, LMON_ESYS, LMON_ESUBCOM, LMON_ETOUT,
      LMON_ENOMEM, LMON_ENCLLB, LMON_ECLLB, LMON_ENEGCB,
      LMON_ENOPLD, LMON_EBDMSG, LMON_EDUNAV, LMON_EBUG,
      LMON_YES, LMON_NO) = map(int, xrange(18))
+    lmon_const_map = [
+        "LMON_OK",
+        "LMON_EINVAL",
+        "LMON_EDBARG",
+        "LMON_ELNCHR",
+        "LMON_EINIT",
+        "LMON_ESYS",
+        "LMON_ESUBCOM",
+        "LMON_ETOUT",
+        "LMON_ENOMEM",
+        "LMON_ENCLLB",
+        "LMON_ECLLB",
+        "LMON_ENEGCB",
+        "LMON_ENOPLD",
+        "LMON_EBDMSG",
+        "LMON_EDUNAV",
+        "LMON_EBUG",
+        "LMON_YES",
+        "LMON_NO"
+    ]
 
 def call(func, *args):
     """Call a LaunchMON function and handle raising exceptions.
