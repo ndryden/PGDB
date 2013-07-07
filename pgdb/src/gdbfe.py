@@ -5,7 +5,7 @@ this.
 
 """
 
-import os, threading, thread
+import os, threading, signal
 from collections import deque
 from conf import gdbconf
 from gdb_shared import *
@@ -68,6 +68,17 @@ class GDBFE (GDBMICmd):
         self.remote_up = threading.Event()
         # Temporary list for building up aggregated records from OUT messages.
         self.arec_list = []
+        # Get our PID for signals.
+        self.my_pid = os.getpid()
+
+    def interrupt_main(self):
+        """Interrupt the main thread.
+
+        This works because in Python, the main thread is the one that processes signals.
+        If using Python 3, this could be replaced with signal.pthread_kill (but this will
+        work in Python 3).
+        """
+        os.kill(self.my_pid, signal.SIGINT)
 
     def parse_args(self):
         """Parse the command-line arguments and set appropriate variables."""
@@ -359,7 +370,7 @@ class GDBFE (GDBMICmd):
                 time.sleep(self.sleep_time)
         self.shutdown()
         print "Remote shut down."
-        thread.interrupt_main()
+        self.interrupt_main()
 
     def local_body(self):
         """The local command input loop."""
@@ -376,6 +387,7 @@ class GDBFE (GDBMICmd):
     def run(self):
         """Start the remote thread and run the local command input loop."""
         self.parse_args()
+        # This is part of a hack to keep LaunchMON from stealing stdin.
         self.stdin_copy = os.dup(0)
         os.close(0)
         self.remote_thread = threading.Thread(target = self.remote_body)
