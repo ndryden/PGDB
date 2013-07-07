@@ -9,8 +9,6 @@ import os, threading, signal
 from collections import deque
 from conf import gdbconf
 from gdb_shared import *
-from lmon.lmonfe import LMON_fe
-from lmon import lmon
 from comm import *
 from mi.gdbmicmd import GDBMICmd
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
