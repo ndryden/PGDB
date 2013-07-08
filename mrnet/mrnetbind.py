@@ -347,7 +347,7 @@ Network.add_method("new_Communicator", retval("MRN::Communicator*",
                                               reference_existing_object = True),
                    [param("std::set<MRN::CommunicationNode*>&", "set")])
 Network.add_method("get_EndPoint", retval("MRN::CommunicationNode*",
-                                          caller_owns_return = False
+                                          caller_owns_return = False,
                                           reference_existing_object = True),
                    [param("uint32_t", "rank")],
                    is_const = True)
