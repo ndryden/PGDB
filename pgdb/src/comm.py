@@ -368,8 +368,8 @@ class CommunicatorFE (Communicator):
                                                 gdbconf.backend_bin,
                                                 gdbconf.backend_args,
                                                 None, None)
-                self.proctab_size = self.lmon.getProctableSize(self.lmon_session)
-                self.proctab, unused = self.lmon.getProctable(self.lmon_session, self.proctab_size)
+            self.proctab_size = self.lmon.getProctableSize(self.lmon_session)
+            self.proctab, unused = self.lmon.getProctable(self.lmon_session, self.proctab_size)
         except LMONException as e:
             e.print_lmon_error()
             traceback.print_exc()
