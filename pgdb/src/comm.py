@@ -273,7 +273,7 @@ class CommunicatorBE (Communicator):
             self.proctab_size = self.lmon.getMyProctabSize()
             self.proctab, unused = self.lmon.getMyProctab(self.proctab_size)
         except LMONException as e:
-            e.lmon_print_error()
+            e.print_lmon_error()
             traceback.print_exc()
             return False
         self._init_mpiranks()
@@ -455,7 +455,7 @@ class CommunicatorFE (Communicator):
         try:
             self.lmon.sendUsrDataBe(self.lmon_session, node_info)
         except LMONException as e:
-            e.lmon_print_error()
+            e.print_lmon_error()
             traceback.print_exc()
             return False
         self.mrnet_network_size = len(node_info)
