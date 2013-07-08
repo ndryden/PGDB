@@ -43,12 +43,15 @@ class GDBFE (GDBMICmd):
                                   launcher = self.lmon_launcher,
                                   launcher_args = self.lmon_launcher_argv)
         if not ret:
-            # Terminate. Note at this point main is still waiting on the remote_up event.
+            # Terminate. Note at this point main is still waiting on the remote_up event,
+            # so we have to set it.
+            self.remote_up.set()
             self.interrupt_main()
             return False
         ret = self.comm.init_mrnet(local = self.local_launch)
         if not ret:
-            # Terminate. See prior comment.
+            # Terminate. See prior comment about remote_up.
+            self.remote_up.set()
             self.interrupt_main()
             return False
         self.identifier = GDBMIRecordIdentifier()
