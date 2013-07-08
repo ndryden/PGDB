@@ -272,7 +272,7 @@ class CommunicatorBE (Communicator):
             self.lmon_master = self.lmon.amIMaster()
             self.proctab_size = self.lmon.getMyProctabSize()
             self.proctab, unused = self.lmon.getMyProctab(self.proctab_size)
-        except LMONException e:
+        except LMONException as e:
             e.lmon_print_error()
             traceback.print_exc()
             return False
@@ -305,7 +305,7 @@ class CommunicatorBE (Communicator):
             else:
                 # Receive scattered topology.
                 local_node_info = self.lmon.scatter(None, 256)
-        except LMONException e:
+        except LMONException as e:
             e.print_lmon_error()
             traceback.print_exc()
             return False
@@ -370,7 +370,7 @@ class CommunicatorFE (Communicator):
                                                 None, None)
                 self.proctab_size = self.lmon.getProctableSize(self.lmon_session)
                 self.proctab, unused = self.lmon.getProctable(self.lmon_session, self.proctab_size)
-        except LMONException e:
+        except LMONException as e:
             e.print_lmon_error()
             traceback.print_exc()
             return False
@@ -453,7 +453,7 @@ class CommunicatorFE (Communicator):
         node_info = self._assign_mrnet_leaves()
         try:
             self.lmon.sendUsrDataBe(self.lmon_session, node_info)
-        except LMONException e:
+        except LMONException as e:
             e.lmon_print_error()
             traceback.print_exc()
             return False
@@ -554,7 +554,7 @@ class CommunicatorFE (Communicator):
         del self.mrnet
         try:
             self.lmon.shutdownDaemons(self.lmon_session)
-        except LMONException e:
+        except LMONException as e:
             e.print_lmon_error()
             traceback.print_exc()
             return False
