@@ -107,8 +107,11 @@ class GDBBE:
         self.quit = False
         self.token_handlers = {}
         self.comm = CommunicatorBE()
-        self.comm.init_lmon(sys.argv)
-        self.comm.init_mrnet()
+        if not self.comm.init_lmon(sys.argv):
+            sys.exit(1)
+        if not self.comm.init_mrnet():
+            # TODO: This should cleanly terminate LaunchMON, but does not.
+            sys.exit(1)
         self.init_gdb()
         self.init_handlers()
         self.init_filters()

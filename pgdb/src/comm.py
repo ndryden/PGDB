@@ -1,6 +1,6 @@
 """Primary communication class for managing LaunchMON and MRNet communication."""
 
-import cPickle, os, sys, socket, threading, time
+import cPickle, os, sys, socket, threading, time, traceback
 from gdb_shared import *
 from conf import gdbconf
 from lmon import lmon
@@ -261,16 +261,21 @@ class CommunicatorBE (Communicator):
 
         """
         self.lmon = LMON_be()
-        self.lmon.init(len(argv), argv)
-        self.lmon.regPackForBeToFe(lmon.pack)
-        self.lmon.regUnpackForFeToBe(lmon.unpack)
-        self.lmon.handshake(None)
-        self.lmon.ready(None)
-        self.lmon_rank = self.lmon.getMyRank()
-        self.lmon_size = self.lmon.getSize()
-        self.lmon_master = self.lmon.amIMaster()
-        self.proctab_size = self.lmon.getMyProctabSize()
-        self.proctab, unused = self.lmon.getMyProctab(self.proctab_size)
+        try:
+            self.lmon.init(len(argv), argv)
+            self.lmon.regPackForBeToFe(lmon.pack)
+            self.lmon.regUnpackForFeToBe(lmon.unpack)
+            self.lmon.handshake(None)
+            self.lmon.ready(None)
+            self.lmon_rank = self.lmon.getMyRank()
+            self.lmon_size = self.lmon.getSize()
+            self.lmon_master = self.lmon.amIMaster()
+            self.proctab_size = self.lmon.getMyProctabSize()
+            self.proctab, unused = self.lmon.getMyProctab(self.proctab_size)
+        except LMONException e:
+            e.lmon_print_error()
+            traceback.print_exc()
+            return False
         self._init_mpiranks()
 
     def _wait_for_hello(self):
@@ -290,15 +295,20 @@ class CommunicatorBE (Communicator):
     def init_mrnet(self):
         """Initialize MRNet."""
         local_node_info = None
-        if self.lmon_master:
-            # Receive topology information from front-end.
-            node_info = self.lmon.recvUsrData(gdbconf.topology_transmit_size)
-            # Scatter topology information to back-end.
-            # Presently uses a node info size of 256.
-            local_node_info = self.lmon.scatter(node_info, 256)
-        else:
-            # Receive scattered topology.
-            local_node_info = self.lmon.scatter(None, 256)
+        try:
+            if self.lmon_master:
+                # Receive topology information from front-end.
+                node_info = self.lmon.recvUsrData(gdbconf.topology_transmit_size)
+                # Scatter topology information to back-end.
+                # Presently uses a node info size of 256.
+                local_node_info = self.lmon.scatter(node_info, 256)
+            else:
+                # Receive scattered topology.
+                local_node_info = self.lmon.scatter(None, 256)
+        except LMONException e:
+            e.print_lmon_error()
+            traceback.print_exc()
+            return False
         # Construct MRNet arguments and create network.
         argv= [sys.argv[0], # Program name.
                 str(local_node_info.host), # Comm node host.
@@ -310,6 +320,7 @@ class CommunicatorBE (Communicator):
         self.mrnet = MRN.Network.CreateNetworkBE(6, argv)
         self._init_shared_mrnet()
         self._wait_for_hello()
+        return True
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
@@ -335,34 +346,40 @@ class CommunicatorFE (Communicator):
         """
         os.environ.update(gdbconf.environ)
         self.lmon = LMON_fe()
-        self.lmon.init()
-        self.lmon_session = self.lmon.createSession()
-        self.lmon.putToBeDaemonEnv(self.lmon_session, gdbconf.environ.items())
-        self.lmon.regPackForFeToBe(self.lmon_session, lmon.pack)
-        self.lmon.regUnpackForBeToFe(self.lmon_session, lmon.unpack)
-        if attach:
-            self.lmon.attachAndSpawnDaemons(self.lmon_session,
-                                            socket.getfqdn(),
-                                            kwargs["pid"],
-                                            gdbconf.backend_bin,
-                                            gdbconf.backend_args,
-                                            None, None)
-        else:
-            launcher_argv = [kwargs["launcher"]] + kwargs["launcher_args"]
-            self.lmon.launchAndSpawnDaemons(self.lmon_session,
-                                            socket.getfqdn(),
-                                            kwargs["launcher"],
-                                            launcher_argv,
-                                            gdbconf.backend_bin,
-                                            gdbconf.backend_args,
-                                            None, None)
-        self.proctab_size = self.lmon.getProctableSize(self.lmon_session)
-        self.proctab, unused = self.lmon.getProctable(self.lmon_session, self.proctab_size)
+        try:
+            self.lmon.init()
+            self.lmon_session = self.lmon.createSession()
+            self.lmon.putToBeDaemonEnv(self.lmon_session, gdbconf.environ.items())
+            self.lmon.regPackForFeToBe(self.lmon_session, lmon.pack)
+            self.lmon.regUnpackForBeToFe(self.lmon_session, lmon.unpack)
+            if attach:
+                self.lmon.attachAndSpawnDaemons(self.lmon_session,
+                                                socket.getfqdn(),
+                                                kwargs["pid"],
+                                                gdbconf.backend_bin,
+                                                gdbconf.backend_args,
+                                                None, None)
+            else:
+                launcher_argv = [kwargs["launcher"]] + kwargs["launcher_args"]
+                self.lmon.launchAndSpawnDaemons(self.lmon_session,
+                                                socket.getfqdn(),
+                                                kwargs["launcher"],
+                                                launcher_argv,
+                                                gdbconf.backend_bin,
+                                                gdbconf.backend_args,
+                                                None, None)
+                self.proctab_size = self.lmon.getProctableSize(self.lmon_session)
+                self.proctab, unused = self.lmon.getProctable(self.lmon_session, self.proctab_size)
+        except LMONException e:
+            e.print_lmon_error()
+            traceback.print_exc()
+            return False
         # These are meaningless for the front-end.
         self.lmon_rank = None
         self.lmon_size = None
         self.lmon_master = None
         self._init_mpiranks()
+        return True
 
     def _construct_mrnet_topology(self, comm_nodes = None):
         """Construct the topology to be used for MRNet.
@@ -434,7 +451,12 @@ class CommunicatorFE (Communicator):
     def _send_mrnet_topology(self):
         """Send the MRNet topology to the back-end daemons."""
         node_info = self._assign_mrnet_leaves()
-        self.lmon.sendUsrDataBe(self.lmon_session, node_info)
+        try:
+            self.lmon.sendUsrDataBe(self.lmon_session, node_info)
+        except LMONException e:
+            e.lmon_print_error()
+            traceback.print_exc()
+            return False
         self.mrnet_network_size = len(node_info)
 
     def _mrnet_node_joined_cb(self):
@@ -512,7 +534,9 @@ class CommunicatorFE (Communicator):
                                           MRN.TopologyEvent.TOPOL_REMOVE_NODE,
                                           self._mrnet_node_removed_cb)
         self._load_mrnet_filters()
-        self._send_mrnet_topology()
+        ret = self._send_mrnet_topology()
+        if not ret:
+            return False
         self._wait_for_nodes()
         self._init_shared_mrnet()
         self._enable_mrnet_perf_data()
@@ -521,14 +545,21 @@ class CommunicatorFE (Communicator):
         if gdbconf.mrnet_topology_dot:
             self.mrnet_topo = self.mrnet.get_NetworkTopology()
             self.mrnet_topo.print_DOTGraph(gdbconf.mrnet_topology_dot)
+        return True
 
     def shutdown(self):
         """Shut down the communication infrastructure."""
         self._disable_mrnet_perf_data()
         self._log_mrnet_perf_data()
         del self.mrnet
-        self.lmon.shutdownDaemons(self.lmon_session)
+        try:
+            self.lmon.shutdownDaemons(self.lmon_session)
+        except LMONException e:
+            e.print_lmon_error()
+            traceback.print_exc()
+            return False
         self.been_shutdown = True
+        return True
 
     def mpirank_to_mrnrank(self, rank):
         """Convert an MPI rank to an MRNet rank. Only works on front-end."""

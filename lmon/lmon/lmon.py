@@ -29,6 +29,10 @@ class LMONException(Exception):
         else:
             return "Unknown ({0})".format(self.value)
 
+    def print_lmon_error(self):
+        """Print a short error message."""
+        print "Caught LaunchMON error, code = {0} ({1})".format(self, self.value)
+
 class MPIR_PROCDESC(Structure):
     """A CTypes structure for the MPIR_PROCDESC structure."""
     _fields_ = [("host_name", c_char_p),

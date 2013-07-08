@@ -39,10 +39,18 @@ class GDBFE (GDBMICmd):
         self.comm = CommunicatorFE(True) # Initialize with locking.
         # One of {pid} and {launcher, launcher_args} will not be none, based
         # upon the command line input parsing.
-        self.comm.init_lmon(self.lmon_attach, pid = self.lmon_pid,
-                            launcher = self.lmon_launcher,
-                            launcher_args = self.lmon_launcher_argv)
-        self.comm.init_mrnet(local = self.local_launch)
+        ret = self.comm.init_lmon(self.lmon_attach, pid = self.lmon_pid,
+                                  launcher = self.lmon_launcher,
+                                  launcher_args = self.lmon_launcher_argv)
+        if not ret:
+            # Terminate. Note at this point main is still waiting on the remote_up event.
+            self.interrupt_main()
+            return False
+        ret = self.comm.init_mrnet(local = self.local_launch)
+        if not ret:
+            # Terminate. See prior comment.
+            self.interrupt_main()
+            return False
         self.identifier = GDBMIRecordIdentifier()
         self.varobjs = {}
         for rank in self.comm.get_mpiranks():
@@ -346,7 +354,8 @@ class GDBFE (GDBMICmd):
 
         """
         # Must do the init inside of this thread, or else LaunchMON steals stdin.
-        self.remote_init()
+        if not self.remote_init():
+            return False
         # Signal main thread we can use stdin.
         self.remote_up.set()
         print "GDB deployed to {0} hosts and {1} processors.".format(self.comm.get_mrnet_network_size(),
@@ -373,10 +382,10 @@ class GDBFE (GDBMICmd):
     def local_body(self):
         """The local command input loop."""
         # Wait until we can use stdin.
-        self.remote_up.wait()
-        os.dup2(self.stdin_copy, 0)
-        os.close(self.stdin_copy)
         try:
+            self.remote_up.wait()
+            os.dup2(self.stdin_copy, 0)
+            os.close(self.stdin_copy)
             self.cmdloop()
         except KeyboardInterrupt:
             print "Terminating."
