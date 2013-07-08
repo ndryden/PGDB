@@ -62,6 +62,7 @@ class GDBFE (GDBMICmd):
         try:
             self.blocks += gdbconf.default_blocks
         except AttributeError: pass
+        return True
 
     def __init__(self):
         """Initialize some local things; the remote initialization must be done seperately."""
