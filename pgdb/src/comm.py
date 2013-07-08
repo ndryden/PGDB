@@ -458,6 +458,7 @@ class CommunicatorFE (Communicator):
             traceback.print_exc()
             return False
         self.mrnet_network_size = len(node_info)
+        return True
 
     def _mrnet_node_joined_cb(self):
         """An MRNet callback invoked whenever a back-end node joins."""
