@@ -6,7 +6,7 @@ import sys
 class CharStarStarParam(PointerParameter):
     DIRECTIONS = [Parameter.DIRECTION_IN, Parameter.DIRECTION_OUT]
     CTYPES = ["char**"]
-    
+
     def convert_c_to_python(self, wrapper):
         raise NotImplementedError
 
@@ -40,7 +40,7 @@ class EventCallbackParam(Parameter):
 
     def convert_c_to_python(self, wrapper):
         raise NotImplementedError
-    
+
     def convert_python_to_c(self, wrapper):
         assert isinstance(wrapper, ForwardWrapperBase)
         cb = wrapper.declarations.declare_variable("PyObject*", self.name)
@@ -120,9 +120,9 @@ packet_ptr = mod.add_class("boost::shared_ptr", template_parameters = ["MRN::Pac
 MRN.add_class("EventData")
 
 mod.add_container("std::map<std::string, std::string>", ("std::string", "std::string"), "map")
-mod.add_container("std::set<MRN::CommunicationNode*>", retval("MRN::CommunicationNode*", caller_owns_return = False), "set")
-mod.add_container("std::set<MRN::NetworkTopology::Node*>", retval("MRN::NetworkTopology::Node*", caller_owns_return = False), "set")
-mod.add_container("std::vector<MRN::NetworkTopology::Node*>", retval("MRN::NetworkTopology::Node*", caller_owns_return = False), "vector")
+mod.add_container("std::set<MRN::CommunicationNode*>", retval("MRN::CommunicationNode*", caller_owns_return = False, reference_existing_object = True), "set")
+mod.add_container("std::set<MRN::NetworkTopology::Node*>", retval("MRN::NetworkTopology::Node*", caller_owns_return = False, reference_existing_object = True), "set")
+mod.add_container("std::vector<MRN::NetworkTopology::Node*>", retval("MRN::NetworkTopology::Node*", caller_owns_return = False, reference_existing_object = True), "vector")
 mod.add_container("std::set<uint32_t>", "uint32_t", "set")
 #mod.add_container("std::vector<const char*>", retval("const char*", caller_owns_return = True), "vector")
 mod.add_container("std::vector<int>", "int", "vector")
@@ -130,7 +130,10 @@ mod.add_container("std::vector<int>", "int", "vector")
 # Set up packet_ptr.
 packet_ptr.add_constructor([])
 packet_ptr.add_constructor([param("MRN::Packet*", "packet", transfer_ownership = True)])
-packet_ptr.add_method("get", retval("MRN::Packet*", caller_owns_return = False), [], is_const = True)
+packet_ptr.add_method("get", retval("MRN::Packet*",
+                                    caller_owns_return = False,
+                                    reference_existing_object = True),
+                      [], is_const = True)
 
 # Set up CommunicationNode.
 CommunicationNode.add_method("get_HostName", retval("std::string"), [], is_const = True)
@@ -164,7 +167,9 @@ Error.add_method("get_ErrorStr", retval("const char*", caller_owns_return = Fals
 # Set up Event.
 Event.add_method("get_Class", retval("int"), [], is_const = True)
 Event.add_method("get_Type", retval("int"), [], is_const = True)
-Event.add_method("get_Data", retval("MRN::EventData*", caller_owns_return = False), [], is_const = True)
+Event.add_method("get_Data", retval("MRN::EventData*",
+                                    caller_owns_return = False,
+                                    reference_existing_object = True), [], is_const = True)
 Event.add_static_attribute("EVENT_CLASS_ALL", "int")
 Event.add_static_attribute("DATA_EVENT", "int")
 Event.add_static_attribute("TOPOLOGY_EVENT", "int")
@@ -204,8 +209,13 @@ NetworkTopology.add_method("get_TreeStatistics", retval("void"),
                             param("unsigned int&", "omax_fanout", direction = Parameter.DIRECTION_OUT),
                             param("double&", "oavg_fanout", direction = Parameter.DIRECTION_OUT),
                             param("double&", "ostddev_fanout", direction = Parameter.DIRECTION_OUT)])
-NetworkTopology.add_method("get_Root", retval("MRN::NetworkTopology::Node*", caller_owns_return = False), [], is_const = True)
-NetworkTopology.add_method("find_Node", retval("MRN::NetworkTopology::Node*", caller_owns_return = False),
+NetworkTopology.add_method("get_Root", retval("MRN::NetworkTopology::Node*",
+                                              caller_owns_return = False,
+                                              reference_existing_object = True),
+                           [], is_const = True)
+NetworkTopology.add_method("find_Node", retval("MRN::NetworkTopology::Node*",
+                                               caller_owns_return = False,
+                                               reference_existing_object = True),
                            [param("uint32_t", "rank")],
                            is_const = True)
 NetworkTopology.add_method("get_Leaves", retval("void"),
@@ -299,7 +309,10 @@ Network.add_method("CreateNetworkBE", retval("MRN::Network*", caller_owns_return
                    [param("int", "argc"),
                     param("char**", "argv", transfer_ownership = False)],
                    is_static = True)
-Network.add_method("get_NetworkTopology", retval("MRN::NetworkTopology*", caller_owns_return = False), [], is_const = True)
+Network.add_method("get_NetworkTopology", retval("MRN::NetworkTopology*",
+                                                 caller_owns_return = False,
+                                                 reference_existing_object = True),
+                   [], is_const = True)
 Network.add_method("is_ShutDown", retval("bool"), [], is_const = True)
 Network.add_method("waitfor_ShutDown", retval("void"), [], is_const = True)
 Network.add_method("print_error", retval("void"),
@@ -312,16 +325,30 @@ Network.add_method("is_LocalNodeParent", retval("bool"), [], is_const = True)
 Network.add_method("is_LocalNodeInternal", retval("bool"), [], is_const = True)
 Network.add_method("is_LocalNodeFrontEnd", retval("bool"), [], is_const = True)
 Network.add_method("is_LocalNodeBackEnd", retval("bool"), [], is_const = True)
-Network.add_method("get_BroadcastCommunicator", retval("MRN::Communicator*", caller_owns_return = False), [], is_const = True)
+Network.add_method("get_BroadcastCommunicator", retval("MRN::Communicator*",
+                                                       caller_owns_return = False,
+                                                       reference_existing_object = True),
+                   [], is_const = True)
 # Note: I am unsure of the correct ownership tranfer for the new_Communicator functions.
-Network.add_method("new_Communicator", retval("MRN::Communicator*", caller_owns_return = False), [])
-Network.add_method("new_Communicator", retval("MRN::Communicator*", caller_owns_return = False),
+Network.add_method("new_Communicator", retval("MRN::Communicator*",
+                                              caller_owns_return = False,
+                                              reference_existing_object = True)
+                   , [])
+Network.add_method("new_Communicator", retval("MRN::Communicator*",
+                                              caller_owns_return = False,
+                                              reference_existing_object = True),
                    [param("Communicator&", "communicator")])
-Network.add_method("new_Communicator", retval("MRN::Communicator*", caller_owns_return = False),
+Network.add_method("new_Communicator", retval("MRN::Communicator*",
+                                              caller_owns_return = False,
+                                              reference_existing_object = True),
                    [param("const std::set<uint32_t>&", "set")])
-Network.add_method("new_Communicator", retval("MRN::Communicator*", caller_owns_return = False),
+Network.add_method("new_Communicator", retval("MRN::Communicator*",
+                                              caller_owns_return = False,
+                                              reference_existing_object = True),
                    [param("std::set<MRN::CommunicationNode*>&", "set")])
-Network.add_method("get_EndPoint", retval("MRN::CommunicationNode*", caller_owns_return = False),
+Network.add_method("get_EndPoint", retval("MRN::CommunicationNode*",
+                                          caller_owns_return = False
+                                          reference_existing_object = True),
                    [param("uint32_t", "rank")],
                    is_const = True)
 Network.add_method("load_FilterFunc", retval("int"),
@@ -332,17 +359,23 @@ Network.add_method("load_FilterFunc", retval("int"),
 #                    param("const std::vector<const char*>", "functions"),
 #                    param("std::vector<int>", "filter_ids")])
 # TODO: Filter IDs and default values.
-Network.add_method("new_Stream", retval("MRN::Stream*", caller_owns_return = False),
+Network.add_method("new_Stream", retval("MRN::Stream*",
+                                        caller_owns_return = False,
+                                        reference_existing_object = True),
                    [param("Communicator*", "communicator", transfer_ownership = False),
                     param("int", "us_filter_id"),
                     param("int", "sync_id"),
                     param("int", "ds_filter_id")])
-Network.add_method("new_Stream", retval("MRN::Stream*", caller_owns_return = False),
+Network.add_method("new_Stream", retval("MRN::Stream*",
+                                        caller_owns_return = False,
+                                        reference_existing_object = True),
                    [param("Communicator*", "communicator", transfer_ownership = False),
                     param("std::string", "us_filters"),
                     param("std::string", "sync_filters"),
                     param("std::string", "ds_filters")])
-Network.add_method("get_Stream", retval("MRN::Stream*", caller_owns_return = False),
+Network.add_method("get_Stream", retval("MRN::Stream*",
+                                        caller_owns_return = False,
+                                        reference_existing_object = True),
                    [param("unsigned int", "iid")],
                    is_const = True)
 Network.add_method("recv", retval("int"),
@@ -379,7 +412,10 @@ Network.add_method("print_PerformanceData", retval("void"),
                     param("perfdata_context_t", "context")])
 Network.add_method("clear_Events", retval("void"), [])
 Network.add_method("num_EventsPending", retval("unsigned int"), [])
-Network.add_method("next_Event", retval("MRN::Event*", caller_owns_return = False), [])
+Network.add_method("next_Event", retval("MRN::Event*",
+                                        caller_owns_return = False,
+                                        reference_existing_object = True),
+                   [])
 Network.add_method("get_EventNotificationFd", retval("int"),
                    [param("int", "etype")])
 Network.add_method("clear_EventNotificationFd", retval("void"),
