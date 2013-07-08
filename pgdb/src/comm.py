@@ -277,6 +277,7 @@ class CommunicatorBE (Communicator):
             traceback.print_exc()
             return False
         self._init_mpiranks()
+        return True
 
     def _wait_for_hello(self):
         """Wait until we receive a HELLO message on MRnet from the front-end."""
