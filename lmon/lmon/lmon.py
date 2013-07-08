@@ -21,10 +21,10 @@ class LMONException(Exception):
 
     """
     def __init__(self, value):
-        self.value = value
+        self.value = int(value)
 
     def __str__(self):
-        if self.value in lmon_const_map:
+        if self.value < len(lmon_const_map):
             return lmon_const_map[self.value]
         else:
             return "Unknown ({0})".format(self.value)
