@@ -550,6 +550,8 @@ class CommunicatorFE (Communicator):
         """Shut down the communication infrastructure."""
         self._disable_mrnet_perf_data()
         self._log_mrnet_perf_data()
+        # Shut this stream down.
+        del self.mrnet_broadcast_stream
         del self.mrnet
         try:
             self.lmon.shutdownDaemons(self.lmon_session)

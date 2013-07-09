@@ -360,22 +360,19 @@ Network.add_method("load_FilterFunc", retval("int"),
 #                    param("std::vector<int>", "filter_ids")])
 # TODO: Filter IDs and default values.
 Network.add_method("new_Stream", retval("MRN::Stream*",
-                                        caller_owns_return = False,
-                                        reference_existing_object = True),
+                                        caller_owns_return = False),
                    [param("Communicator*", "communicator", transfer_ownership = False),
                     param("int", "us_filter_id"),
                     param("int", "sync_id"),
                     param("int", "ds_filter_id")])
 Network.add_method("new_Stream", retval("MRN::Stream*",
-                                        caller_owns_return = False,
-                                        reference_existing_object = True),
+                                        caller_owns_return = False),
                    [param("Communicator*", "communicator", transfer_ownership = False),
                     param("std::string", "us_filters"),
                     param("std::string", "sync_filters"),
                     param("std::string", "ds_filters")])
 Network.add_method("get_Stream", retval("MRN::Stream*",
-                                        caller_owns_return = False,
-                                        reference_existing_object = True),
+                                        caller_owns_return = False),
                    [param("unsigned int", "iid")],
                    is_const = True)
 Network.add_method("recv", retval("int"),
