@@ -88,7 +88,7 @@ class Communicator (object):
                                              MRN.PERFDATA_CTX_RECV)
             self.mrnet.print_PerformanceData(MRN.PERFDATA_MET_NUM_PKTS,
                                              MRN.PERFDATA_CTX_RECV)
-            print "Received {0} packets. Average send time = {1}. Packet stash size = {2}.".format(self.packet_count, self.send_time_sum / self.packet_count, len(self.packet_stash))
+            print "Received {0} packets. Average send time = {1}.".format(self.packet_count, self.send_time_sum / self.packet_count)
 
     def init_mrnet(self):
         """Initialize MRNet. Should be over-ridden by children."""
@@ -104,7 +104,6 @@ class Communicator (object):
 
     def _init_shared_mrnet(self):
         """Initialze some common MRNet stuff."""
-        self.packet_stash = []
         self._init_mrnet_streams()
 
     def get_proctab_size(self):
@@ -205,8 +204,6 @@ class Communicator (object):
             self.packet_count += 1
             self.send_time_sum += max(cur - msg._send_time, 0)
             print "Packet time: {0} - {1} = {2}".format(cur, msg._send_time, cur - msg._send_time)
-        # This keeps Python from garbage-collecting these.
-        self.packet_stash.append(packet)
         self._unlock()
         return msg, stream
 
