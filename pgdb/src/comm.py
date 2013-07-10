@@ -423,11 +423,11 @@ class CommunicatorFE (Communicator):
         in debuggers for communication purposes.
 
         """
-        self.topology = self.mrnet.get_NetworkTopology()
+        topology = self.mrnet.get_NetworkTopology()
         # Note: This assumes that leaves gives us a list.
-        self.mrnet_leaves = self.topology.get_Leaves()
-        leaves = list(self.mrnet_leaves)
-        num_nodes = self.topology.get_NumNodes() + 1 # Add 1 to make sure we're good.
+        mrnet_leaves = topology.get_Leaves()
+        leaves = list(mrnet_leaves)
+        num_nodes = topology.get_NumNodes() + 1 # Add 1 to make sure we're good.
         node_info = []
         local_rank = self.mrnet.get_LocalRank()
         leaf_idx = 0
@@ -488,8 +488,8 @@ class CommunicatorFE (Communicator):
         """Initialize the mappings from MPI ranks to MRNet ranks."""
         self.mpirank_to_mrnrank_map = {}
         hostname_to_mrnrank = {}
-        self.mrnet_endpoints = self.broadcast_communicator.get_EndPoints()
-        for endpoint in self.mrnet_endpoints:
+        mrnet_endpoints = self.broadcast_communicator.get_EndPoints()
+        for endpoint in mrnet_endpoints:
             hostname_to_mrnrank[socket.getfqdn(endpoint.get_HostName())] = endpoint.get_Rank()
         for proc in self.get_proctab():
             self.mpirank_to_mrnrank_map[proc.mpirank] = hostname_to_mrnrank[socket.getfqdn(proc.pd.host_name)]
