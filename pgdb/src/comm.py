@@ -542,8 +542,8 @@ class CommunicatorFE (Communicator):
         self._init_mrnet_rank_map()
         self._send_mrnet_hello()
         if gdbconf.mrnet_topology_dot:
-            self.mrnet_topo = self.mrnet.get_NetworkTopology()
-            self.mrnet_topo.print_DOTGraph(gdbconf.mrnet_topology_dot)
+            topo = self.mrnet.get_NetworkTopology()
+            topo.print_DOTGraph(gdbconf.mrnet_topology_dot)
         return True
 
     def shutdown(self):
