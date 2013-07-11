@@ -1,6 +1,6 @@
 """Primary communication class for managing LaunchMON and MRNet communication."""
 
-import cPickle, os, sys, socket, threading, time, traceback, math
+import cPickle, os, sys, socket, threading, time, traceback
 from gdb_shared import *
 from conf import gdbconf
 from lmon import lmon
@@ -390,7 +390,8 @@ class CommunicatorFE (Communicator):
         # Compute the minimum number of nodes we need given the branching factor.
         # This is the number of hosts LMON is deployed on, divided by the branching factor.
         lmon_hosts = list(set(map(lambda x: x.pd.host_name, self.proctab)))
-        num_nodes = int(math.ceil(len(lmon_hosts) / branch_factor))
+        # Add 1 because this is integer division and we want the ceil.
+        num_nodes = (len(lmon_hosts) / branch_factor) + 1
         host_list = comm_nodes
         if host_list:
             if len(host_list) < num_nodes:
