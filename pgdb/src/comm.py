@@ -1,6 +1,6 @@
 """Primary communication class for managing LaunchMON and MRNet communication."""
 
-import cPickle, os, sys, socket, threading, time, traceback
+import cPickle, os, sys, socket, threading, time, traceback, math
 from gdb_shared import *
 from conf import gdbconf
 from lmon import lmon
@@ -308,7 +308,7 @@ class CommunicatorBE (Communicator):
             traceback.print_exc()
             return False
         # Construct MRNet arguments and create network.
-        argv= [sys.argv[0], # Program name.
+        argv = [sys.argv[0], # Program name.
                 str(local_node_info.host), # Comm node host.
                 str(local_node_info.port), # Comm node port.
                 str(local_node_info.mrnrank), # Comm node rank.
@@ -387,9 +387,18 @@ class CommunicatorFE (Communicator):
 
         """
         branch_factor = gdbconf.mrnet_branch_factor
+        # Compute the minimum number of nodes we need given the branching factor.
+        # This is the number of hosts LMON is deployed on, divided by the branching factor.
+        lmon_hosts = list(set(map(lambda x: x.pd.host_name, self.proctab)))
+        num_nodes = int(math.ceil(len(lmon_hosts) / branch_factor))
         host_list = comm_nodes
-        if not host_list:
-            host_list = list(set(map(lambda x: x.pd.host_name, self.proctab)))
+        if host_list:
+            if len(host_list) < num_nodes:
+                print "Not enough comm nodes: {0} < {1} (branch factor = {2})!".format(len(host_list), num_nodes, branch_factor)
+                sys.exit(1)
+        else:
+            # We need to allocate comm nodes from among the back-end LMON hosts, so pick as many as needed.
+            host_list = lmon_hosts[0:num_nodes]
         cur_host = socket.gethostname()
         if cur_host in host_list:
             print "Cannot have the front-end on the same machine as a back-end daemon."
