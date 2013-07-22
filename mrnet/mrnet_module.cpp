@@ -64,16 +64,6 @@ typedef enum _PyBindGenWrapperFlags {
 
 typedef struct {
     PyObject_HEAD
-    boost::shared_ptr< MRN::Packet > *obj;
-    PyBindGenWrapperFlags flags:8;
-} PyBoostShared_ptr__MRNPacket;
-
-
-extern PyTypeObject PyBoostShared_ptr__MRNPacket_Type;
-
-
-typedef struct {
-    PyObject_HEAD
     std::map<std::string, std::string> *obj;
 } Pystd__map__lt__std__string__std__string__gt__;
 
@@ -304,6 +294,16 @@ typedef struct {
 
 
 extern PyTypeObject PyMRNNetwork_Type;
+
+
+typedef struct {
+    PyObject_HEAD
+    MRN::PacketPtr *obj;
+    PyBindGenWrapperFlags flags:8;
+} PyMRNPacketPtr;
+
+
+extern PyTypeObject PyMRNPacketPtr_Type;
 
 
 typedef struct {
@@ -1050,8 +1050,8 @@ _wrap_PyMRNEvent_get_Data(PyMRNEvent *self)
         return Py_None;
     }
     py_EventData = PyObject_New(PyMRNEventData, &PyMRNEventData_Type);
-    py_EventData->obj = new MRN::EventData((*retval));
-    py_EventData->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_EventData->obj = retval;
+    py_EventData->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_EventData);
     return py_retval;
 }
@@ -1943,8 +1943,8 @@ _wrap_PyMRNNetworkTopology_find_Node(PyMRNNetworkTopology *self, PyObject *args,
         return Py_None;
     }
     py_Node = PyObject_New(PyMRNNetworkTopologyNode, &PyMRNNetworkTopologyNode_Type);
-    py_Node->obj = new MRN::NetworkTopology::Node((*retval));
-    py_Node->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Node->obj = retval;
+    py_Node->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Node);
     return py_retval;
 }
@@ -2022,8 +2022,8 @@ _wrap_PyMRNNetworkTopology_get_Root(PyMRNNetworkTopology *self)
         return Py_None;
     }
     py_Node = PyObject_New(PyMRNNetworkTopologyNode, &PyMRNNetworkTopologyNode_Type);
-    py_Node->obj = new MRN::NetworkTopology::Node((*retval));
-    py_Node->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Node->obj = retval;
+    py_Node->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Node);
     return py_retval;
 }
@@ -2762,7 +2762,7 @@ _wrap_PyMRNStream_recv(PyMRNStream *self, PyObject *args, PyObject *kwargs)
     PyObject *py_retval;
     int retval;
     int  otag;
-    PyBoostShared_ptr__MRNPacket *opacket;
+    PyMRNPacketPtr *opacket;
     bool iblocking;
     PyObject *py_iblocking = NULL;
     const char *keywords[] = {"iblocking", NULL};
@@ -2770,8 +2770,8 @@ _wrap_PyMRNStream_recv(PyMRNStream *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|O", (char **) keywords, &py_iblocking)) {
         return NULL;
     }
-    opacket = PyObject_New(PyBoostShared_ptr__MRNPacket, &PyBoostShared_ptr__MRNPacket_Type);
-    opacket->obj = new boost::shared_ptr< MRN::Packet >();
+    opacket = PyObject_New(PyMRNPacketPtr, &PyMRNPacketPtr_Type);
+    opacket->obj = new MRN::PacketPtr();
     iblocking = py_iblocking? (bool) PyObject_IsTrue(py_iblocking) : true;
     retval = self->obj->recv(&otag, *opacket->obj, iblocking);
     opacket->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
@@ -2965,8 +2965,8 @@ _wrap_PyMRNNetwork_get_NetworkTopology(PyMRNNetwork *self)
         return Py_None;
     }
     py_NetworkTopology = PyObject_New(PyMRNNetworkTopology, &PyMRNNetworkTopology_Type);
-    py_NetworkTopology->obj = new MRN::NetworkTopology((*retval));
-    py_NetworkTopology->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_NetworkTopology->obj = retval;
+    py_NetworkTopology->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_NetworkTopology);
     return py_retval;
 }
@@ -3216,8 +3216,8 @@ _wrap_PyMRNNetwork_next_Event(PyMRNNetwork *self)
         return Py_None;
     }
     py_Event = PyObject_New(PyMRNEvent, &PyMRNEvent_Type);
-    py_Event->obj = new MRN::Event((*retval));
-    py_Event->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Event->obj = retval;
+    py_Event->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Event);
     return py_retval;
 }
@@ -3440,8 +3440,8 @@ _wrap_PyMRNNetwork_new_Communicator__0(PyMRNNetwork *self, PyObject *args, PyObj
         return Py_None;
     }
     py_Communicator = PyObject_New(PyMRNCommunicator, &PyMRNCommunicator_Type);
-    py_Communicator->obj = new MRN::Communicator((*retval));
-    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Communicator->obj = retval;
+    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Communicator);
     return py_retval;
 }
@@ -3470,8 +3470,8 @@ _wrap_PyMRNNetwork_new_Communicator__1(PyMRNNetwork *self, PyObject *args, PyObj
         return Py_None;
     }
     py_Communicator = PyObject_New(PyMRNCommunicator, &PyMRNCommunicator_Type);
-    py_Communicator->obj = new MRN::Communicator((*retval));
-    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Communicator->obj = retval;
+    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Communicator);
     return py_retval;
 }
@@ -3500,8 +3500,8 @@ _wrap_PyMRNNetwork_new_Communicator__2(PyMRNNetwork *self, PyObject *args, PyObj
         return Py_None;
     }
     py_Communicator = PyObject_New(PyMRNCommunicator, &PyMRNCommunicator_Type);
-    py_Communicator->obj = new MRN::Communicator((*retval));
-    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Communicator->obj = retval;
+    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Communicator);
     return py_retval;
 }
@@ -3530,8 +3530,8 @@ _wrap_PyMRNNetwork_new_Communicator__3(PyMRNNetwork *self, PyObject *args, PyObj
         return Py_None;
     }
     py_Communicator = PyObject_New(PyMRNCommunicator, &PyMRNCommunicator_Type);
-    py_Communicator->obj = new MRN::Communicator((*retval));
-    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Communicator->obj = retval;
+    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Communicator);
     return py_retval;
 }
@@ -3608,8 +3608,8 @@ _wrap_PyMRNNetwork_get_EndPoint(PyMRNNetwork *self, PyObject *args, PyObject *kw
         return Py_None;
     }
     py_CommunicationNode = PyObject_New(PyMRNCommunicationNode, &PyMRNCommunicationNode_Type);
-    py_CommunicationNode->obj = new MRN::CommunicationNode((*retval));
-    py_CommunicationNode->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_CommunicationNode->obj = retval;
+    py_CommunicationNode->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_CommunicationNode);
     return py_retval;
 }
@@ -3628,8 +3628,8 @@ _wrap_PyMRNNetwork_get_BroadcastCommunicator(PyMRNNetwork *self)
         return Py_None;
     }
     py_Communicator = PyObject_New(PyMRNCommunicator, &PyMRNCommunicator_Type);
-    py_Communicator->obj = new MRN::Communicator((*retval));
-    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Communicator->obj = retval;
+    py_Communicator->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Communicator);
     return py_retval;
 }
@@ -3641,7 +3641,7 @@ _wrap_PyMRNNetwork_recv(PyMRNNetwork *self, PyObject *args, PyObject *kwargs)
     PyObject *py_retval;
     int retval;
     int  otag;
-    PyBoostShared_ptr__MRNPacket *opacket;
+    PyMRNPacketPtr *opacket;
     PyMRNStream *ostream;
     bool iblocking;
     PyObject *py_iblocking = NULL;
@@ -3650,16 +3650,16 @@ _wrap_PyMRNNetwork_recv(PyMRNNetwork *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|O", (char **) keywords, &py_iblocking)) {
         return NULL;
     }
-    opacket = PyObject_New(PyBoostShared_ptr__MRNPacket, &PyBoostShared_ptr__MRNPacket_Type);
-    opacket->obj = new boost::shared_ptr< MRN::Packet >();
+    opacket = PyObject_New(PyMRNPacketPtr, &PyMRNPacketPtr_Type);
+    opacket->obj = new MRN::PacketPtr();
     ostream = PyObject_New(PyMRNStream, &PyMRNStream_Type);
+    ostream->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     iblocking = py_iblocking? (bool) PyObject_IsTrue(py_iblocking) : true;
     retval = self->obj->recv(&otag, *opacket->obj, &(ostream->obj), iblocking);
     opacket->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
     if (!ostream) {
     	return Py_BuildValue((char*) "iOOO", retval, Py_None, Py_None, Py_None);
     }
-    Py_INCREF(ostream);
     py_retval = Py_BuildValue((char *) "iiNN", retval, otag, opacket, ostream);
     return py_retval;
 }
@@ -4017,6 +4017,198 @@ PyTypeObject PyMRNNetwork_Type = {
     (descrsetfunc)NULL,    /* tp_descr_set */
     0,                 /* tp_dictoffset */
     (initproc)_wrap_PyMRNNetwork__tp_init,             /* tp_init */
+    (allocfunc)PyType_GenericAlloc,           /* tp_alloc */
+    (newfunc)PyType_GenericNew,               /* tp_new */
+    (freefunc)0,             /* tp_free */
+    (inquiry)NULL,             /* tp_is_gc */
+    NULL,                              /* tp_bases */
+    NULL,                              /* tp_mro */
+    NULL,                              /* tp_cache */
+    NULL,                              /* tp_subclasses */
+    NULL,                              /* tp_weaklist */
+    (destructor) NULL                  /* tp_del */
+};
+
+
+
+
+
+static int
+_wrap_PyMRNPacketPtr__tp_init__0(PyMRNPacketPtr *self, PyObject *args, PyObject *kwargs, PyObject **return_exception)
+{
+    const char *keywords[] = {NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "", (char **) keywords)) {
+        {
+            PyObject *exc_type, *traceback;
+            PyErr_Fetch(&exc_type, return_exception, &traceback);
+            Py_XDECREF(exc_type);
+            Py_XDECREF(traceback);
+        }
+        return -1;
+    }
+    self->obj = new MRN::PacketPtr();
+    self->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    return 0;
+}
+
+static int
+_wrap_PyMRNPacketPtr__tp_init__1(PyMRNPacketPtr *self, PyObject *args, PyObject *kwargs, PyObject **return_exception)
+{
+    PyMRNPacket *packet;
+    MRN::Packet *packet_ptr;
+    const char *keywords[] = {"packet", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "O!", (char **) keywords, &PyMRNPacket_Type, &packet)) {
+        {
+            PyObject *exc_type, *traceback;
+            PyErr_Fetch(&exc_type, return_exception, &traceback);
+            Py_XDECREF(exc_type);
+            Py_XDECREF(traceback);
+        }
+        return -1;
+    }
+    packet_ptr = (packet ? packet->obj : NULL);
+    self->obj = new MRN::PacketPtr(packet_ptr);
+    self->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    if (packet) {
+        packet->obj = NULL;
+    }
+    return 0;
+}
+
+int _wrap_PyMRNPacketPtr__tp_init(PyMRNPacketPtr *self, PyObject *args, PyObject *kwargs)
+{
+    int retval;
+    PyObject *error_list;
+    PyObject *exceptions[2] = {0,};
+    retval = _wrap_PyMRNPacketPtr__tp_init__0(self, args, kwargs, &exceptions[0]);
+    if (!exceptions[0]) {
+        return retval;
+    }
+    retval = _wrap_PyMRNPacketPtr__tp_init__1(self, args, kwargs, &exceptions[1]);
+    if (!exceptions[1]) {
+        Py_DECREF(exceptions[0]);
+        return retval;
+    }
+    error_list = PyList_New(2);
+    PyList_SET_ITEM(error_list, 0, PyObject_Str(exceptions[0]));
+    Py_DECREF(exceptions[0]);
+    PyList_SET_ITEM(error_list, 1, PyObject_Str(exceptions[1]));
+    Py_DECREF(exceptions[1]);
+    PyErr_SetObject(PyExc_TypeError, error_list);
+    Py_DECREF(error_list);
+    return -1;
+}
+
+
+PyObject *
+_wrap_PyMRNPacketPtr_get(PyMRNPacketPtr *self)
+{
+    PyObject *py_retval;
+    MRN::Packet *retval;
+    PyMRNPacket *py_Packet;
+
+    retval = self->obj->get();
+    if (!(retval)) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    py_Packet = PyObject_New(PyMRNPacket, &PyMRNPacket_Type);
+    py_Packet->obj = retval;
+    py_Packet->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
+    py_retval = Py_BuildValue((char *) "N", py_Packet);
+    return py_retval;
+}
+
+static PyMethodDef PyMRNPacketPtr_methods[] = {
+    {(char *) "get", (PyCFunction) _wrap_PyMRNPacketPtr_get, METH_NOARGS, NULL },
+    {NULL, NULL, 0, NULL}
+};
+
+static void
+_wrap_PyMRNPacketPtr__tp_dealloc(PyMRNPacketPtr *self)
+{
+        MRN::PacketPtr *tmp = self->obj;
+        self->obj = NULL;
+        if (!(self->flags&PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED)) {
+            delete tmp;
+        }
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject*
+_wrap_PyMRNPacketPtr__tp_richcompare (PyMRNPacketPtr *PYBINDGEN_UNUSED(self), PyMRNPacketPtr *other, int opid)
+{
+
+    if (!PyObject_IsInstance((PyObject*) other, (PyObject*) &PyMRNPacketPtr_Type)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
+    switch (opid)
+    {
+    case Py_LT:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_LE:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_EQ:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_NE:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_GE:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_GT:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    } /* closes switch (opid) */
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
+}
+
+PyTypeObject PyMRNPacketPtr_Type = {
+    PyObject_HEAD_INIT(NULL)
+    0,                                 /* ob_size */
+    (char *) "MRNet.MRN.PacketPtr",            /* tp_name */
+    sizeof(PyMRNPacketPtr),                  /* tp_basicsize */
+    0,                                 /* tp_itemsize */
+    /* methods */
+    (destructor)_wrap_PyMRNPacketPtr__tp_dealloc,        /* tp_dealloc */
+    (printfunc)0,                      /* tp_print */
+    (getattrfunc)NULL,       /* tp_getattr */
+    (setattrfunc)NULL,       /* tp_setattr */
+    (cmpfunc)NULL,           /* tp_compare */
+    (reprfunc)NULL,             /* tp_repr */
+    (PyNumberMethods*)NULL,     /* tp_as_number */
+    (PySequenceMethods*)NULL, /* tp_as_sequence */
+    (PyMappingMethods*)NULL,   /* tp_as_mapping */
+    (hashfunc)NULL,             /* tp_hash */
+    (ternaryfunc)NULL,          /* tp_call */
+    (reprfunc)NULL,              /* tp_str */
+    (getattrofunc)NULL,     /* tp_getattro */
+    (setattrofunc)NULL,     /* tp_setattro */
+    (PyBufferProcs*)NULL,  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                      /* tp_flags */
+    NULL,                        /* Documentation string */
+    (traverseproc)NULL,     /* tp_traverse */
+    (inquiry)NULL,             /* tp_clear */
+    (richcmpfunc)_wrap_PyMRNPacketPtr__tp_richcompare,   /* tp_richcompare */
+    0,             /* tp_weaklistoffset */
+    (getiterfunc)NULL,          /* tp_iter */
+    (iternextfunc)NULL,     /* tp_iternext */
+    (struct PyMethodDef*)PyMRNPacketPtr_methods, /* tp_methods */
+    (struct PyMemberDef*)0,              /* tp_members */
+    0,                     /* tp_getset */
+    NULL,                              /* tp_base */
+    NULL,                              /* tp_dict */
+    (descrgetfunc)NULL,    /* tp_descr_get */
+    (descrsetfunc)NULL,    /* tp_descr_set */
+    0,                 /* tp_dictoffset */
+    (initproc)_wrap_PyMRNPacketPtr__tp_init,             /* tp_init */
     (allocfunc)PyType_GenericAlloc,           /* tp_alloc */
     (newfunc)PyType_GenericNew,               /* tp_new */
     (freefunc)0,             /* tp_free */
@@ -4560,6 +4752,11 @@ initMRNet_MRN(void)
         return NULL;
     }
     PyModule_AddObject(m, (char *) "Network", (PyObject *) &PyMRNNetwork_Type);
+    /* Register the 'MRN::PacketPtr' class */
+    if (PyType_Ready(&PyMRNPacketPtr_Type)) {
+        return NULL;
+    }
+    PyModule_AddObject(m, (char *) "PacketPtr", (PyObject *) &PyMRNPacketPtr_Type);
     /* Register the 'MRN::EventData' class */
     if (PyType_Ready(&PyMRNEventData_Type)) {
         return NULL;
@@ -4636,200 +4833,6 @@ initMRNet_MRN(void)
 static PyMethodDef MRNet_functions[] = {
     {NULL, NULL, 0, NULL}
 };
-/* --- classes --- */
-
-
-
-
-static int
-_wrap_PyBoostShared_ptr__MRNPacket__tp_init__0(PyBoostShared_ptr__MRNPacket *self, PyObject *args, PyObject *kwargs, PyObject **return_exception)
-{
-    const char *keywords[] = {NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "", (char **) keywords)) {
-        {
-            PyObject *exc_type, *traceback;
-            PyErr_Fetch(&exc_type, return_exception, &traceback);
-            Py_XDECREF(exc_type);
-            Py_XDECREF(traceback);
-        }
-        return -1;
-    }
-    self->obj = new boost::shared_ptr< MRN::Packet >();
-    self->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
-    return 0;
-}
-
-static int
-_wrap_PyBoostShared_ptr__MRNPacket__tp_init__1(PyBoostShared_ptr__MRNPacket *self, PyObject *args, PyObject *kwargs, PyObject **return_exception)
-{
-    PyMRNPacket *packet;
-    MRN::Packet *packet_ptr;
-    const char *keywords[] = {"packet", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "O!", (char **) keywords, &PyMRNPacket_Type, &packet)) {
-        {
-            PyObject *exc_type, *traceback;
-            PyErr_Fetch(&exc_type, return_exception, &traceback);
-            Py_XDECREF(exc_type);
-            Py_XDECREF(traceback);
-        }
-        return -1;
-    }
-    packet_ptr = (packet ? packet->obj : NULL);
-    self->obj = new boost::shared_ptr< MRN::Packet >(packet_ptr);
-    self->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
-    if (packet) {
-        packet->obj = NULL;
-    }
-    return 0;
-}
-
-int _wrap_PyBoostShared_ptr__MRNPacket__tp_init(PyBoostShared_ptr__MRNPacket *self, PyObject *args, PyObject *kwargs)
-{
-    int retval;
-    PyObject *error_list;
-    PyObject *exceptions[2] = {0,};
-    retval = _wrap_PyBoostShared_ptr__MRNPacket__tp_init__0(self, args, kwargs, &exceptions[0]);
-    if (!exceptions[0]) {
-        return retval;
-    }
-    retval = _wrap_PyBoostShared_ptr__MRNPacket__tp_init__1(self, args, kwargs, &exceptions[1]);
-    if (!exceptions[1]) {
-        Py_DECREF(exceptions[0]);
-        return retval;
-    }
-    error_list = PyList_New(2);
-    PyList_SET_ITEM(error_list, 0, PyObject_Str(exceptions[0]));
-    Py_DECREF(exceptions[0]);
-    PyList_SET_ITEM(error_list, 1, PyObject_Str(exceptions[1]));
-    Py_DECREF(exceptions[1]);
-    PyErr_SetObject(PyExc_TypeError, error_list);
-    Py_DECREF(error_list);
-    return -1;
-}
-
-
-PyObject *
-_wrap_PyBoostShared_ptr__MRNPacket_get(PyBoostShared_ptr__MRNPacket *self)
-{
-    PyObject *py_retval;
-    MRN::Packet *retval;
-    PyMRNPacket *py_Packet;
-
-    retval = self->obj->get();
-    if (!(retval)) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    py_Packet = PyObject_New(PyMRNPacket, &PyMRNPacket_Type);
-    py_Packet->obj = new MRN::Packet((*retval));
-    py_Packet->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
-    py_retval = Py_BuildValue((char *) "N", py_Packet);
-    return py_retval;
-}
-
-static PyMethodDef PyBoostShared_ptr__MRNPacket_methods[] = {
-    {(char *) "get", (PyCFunction) _wrap_PyBoostShared_ptr__MRNPacket_get, METH_NOARGS, NULL },
-    {NULL, NULL, 0, NULL}
-};
-
-static void
-_wrap_PyBoostShared_ptr__MRNPacket__tp_dealloc(PyBoostShared_ptr__MRNPacket *self)
-{
-        boost::shared_ptr< MRN::Packet > *tmp = self->obj;
-        self->obj = NULL;
-        if (!(self->flags&PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED)) {
-            delete tmp;
-        }
-    self->ob_type->tp_free((PyObject*)self);
-}
-
-static PyObject*
-_wrap_PyBoostShared_ptr__MRNPacket__tp_richcompare (PyBoostShared_ptr__MRNPacket *PYBINDGEN_UNUSED(self), PyBoostShared_ptr__MRNPacket *other, int opid)
-{
-
-    if (!PyObject_IsInstance((PyObject*) other, (PyObject*) &PyBoostShared_ptr__MRNPacket_Type)) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
-    switch (opid)
-    {
-    case Py_LT:
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    case Py_LE:
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    case Py_EQ:
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    case Py_NE:
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    case Py_GE:
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    case Py_GT:
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    } /* closes switch (opid) */
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
-}
-
-PyTypeObject PyBoostShared_ptr__MRNPacket_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                 /* ob_size */
-    (char *) "MRNet.BoostShared_ptr__MRNPacket",            /* tp_name */
-    sizeof(PyBoostShared_ptr__MRNPacket),                  /* tp_basicsize */
-    0,                                 /* tp_itemsize */
-    /* methods */
-    (destructor)_wrap_PyBoostShared_ptr__MRNPacket__tp_dealloc,        /* tp_dealloc */
-    (printfunc)0,                      /* tp_print */
-    (getattrfunc)NULL,       /* tp_getattr */
-    (setattrfunc)NULL,       /* tp_setattr */
-    (cmpfunc)NULL,           /* tp_compare */
-    (reprfunc)NULL,             /* tp_repr */
-    (PyNumberMethods*)NULL,     /* tp_as_number */
-    (PySequenceMethods*)NULL, /* tp_as_sequence */
-    (PyMappingMethods*)NULL,   /* tp_as_mapping */
-    (hashfunc)NULL,             /* tp_hash */
-    (ternaryfunc)NULL,          /* tp_call */
-    (reprfunc)NULL,              /* tp_str */
-    (getattrofunc)NULL,     /* tp_getattro */
-    (setattrofunc)NULL,     /* tp_setattro */
-    (PyBufferProcs*)NULL,  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                      /* tp_flags */
-    NULL,                        /* Documentation string */
-    (traverseproc)NULL,     /* tp_traverse */
-    (inquiry)NULL,             /* tp_clear */
-    (richcmpfunc)_wrap_PyBoostShared_ptr__MRNPacket__tp_richcompare,   /* tp_richcompare */
-    0,             /* tp_weaklistoffset */
-    (getiterfunc)NULL,          /* tp_iter */
-    (iternextfunc)NULL,     /* tp_iternext */
-    (struct PyMethodDef*)PyBoostShared_ptr__MRNPacket_methods, /* tp_methods */
-    (struct PyMemberDef*)0,              /* tp_members */
-    0,                     /* tp_getset */
-    NULL,                              /* tp_base */
-    NULL,                              /* tp_dict */
-    (descrgetfunc)NULL,    /* tp_descr_get */
-    (descrsetfunc)NULL,    /* tp_descr_set */
-    0,                 /* tp_dictoffset */
-    (initproc)_wrap_PyBoostShared_ptr__MRNPacket__tp_init,             /* tp_init */
-    (allocfunc)PyType_GenericAlloc,           /* tp_alloc */
-    (newfunc)PyType_GenericNew,               /* tp_new */
-    (freefunc)0,             /* tp_free */
-    (inquiry)NULL,             /* tp_is_gc */
-    NULL,                              /* tp_bases */
-    NULL,                              /* tp_mro */
-    NULL,                              /* tp_cache */
-    NULL,                              /* tp_subclasses */
-    NULL,                              /* tp_weaklist */
-    (destructor) NULL                  /* tp_del */
-};
-
-
 /* --- containers --- */
 
 
@@ -5155,8 +5158,8 @@ static PyObject* _wrap_Pystd__set__lt__MRN__CommunicationNode__star____gt__Iter_
         return Py_None;
     }
     py_CommunicationNode = PyObject_New(PyMRNCommunicationNode, &PyMRNCommunicationNode_Type);
-    py_CommunicationNode->obj = new MRN::CommunicationNode((*(*iter)));
-    py_CommunicationNode->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_CommunicationNode->obj = (*iter);
+    py_CommunicationNode->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_CommunicationNode);
     return py_retval;
 }
@@ -5402,8 +5405,8 @@ static PyObject* _wrap_Pystd__set__lt__MRN__NetworkTopology__Node__star____gt__I
         return Py_None;
     }
     py_Node = PyObject_New(PyMRNNetworkTopologyNode, &PyMRNNetworkTopologyNode_Type);
-    py_Node->obj = new MRN::NetworkTopology::Node((*(*iter)));
-    py_Node->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Node->obj = (*iter);
+    py_Node->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Node);
     return py_retval;
 }
@@ -5649,8 +5652,8 @@ static PyObject* _wrap_Pystd__vector__lt__MRN__NetworkTopology__Node__star____gt
         return Py_None;
     }
     py_Node = PyObject_New(PyMRNNetworkTopologyNode, &PyMRNNetworkTopologyNode_Type);
-    py_Node->obj = new MRN::NetworkTopology::Node((*(*iter)));
-    py_Node->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_Node->obj = (*iter);
+    py_Node->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;
     py_retval = Py_BuildValue((char *) "N", py_Node);
     return py_retval;
 }
@@ -6289,11 +6292,6 @@ initMRNet(void)
     if (m == NULL) {
         return;
     }
-    /* Register the 'boost::shared_ptr< MRN::Packet >' class */
-    if (PyType_Ready(&PyBoostShared_ptr__MRNPacket_Type)) {
-        return;
-    }
-    PyModule_AddObject(m, (char *) "shared_ptr", (PyObject *) &PyBoostShared_ptr__MRNPacket_Type);
     /* Register the 'std::map<std::string, std::string>' class */
     if (PyType_Ready(&Pystd__map__lt__std__string__std__string__gt___Type)) {
         return;

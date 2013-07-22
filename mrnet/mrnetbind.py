@@ -87,11 +87,13 @@ class StreamStarStar(PointerParameter):
         # Note: These typenames are hardcoded and could break if PyBindGen changes.
         name = wrapper.declarations.declare_variable("PyMRNStream*", self.name)
         wrapper.before_call.write_code(name + " = PyObject_New(PyMRNStream, &PyMRNStream_Type);")
+        # This should keep these objects from being deallocated.
+        wrapper.before_call.write_code(name + "->flags = PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED;")
         wrapper.call_params.append("&(" + name + "->obj)")
         wrapper.build_params.add_parameter("N", [name])
         wrapper.after_call.write_code("if (!" + name + ') {\n\treturn Py_BuildValue((char*) "iOOO", retval, Py_None, Py_None, Py_None);\n}')
         # This should keep Python from garbage-collecting this.
-        wrapper.after_call.write_code("Py_INCREF(" + name + ");")
+        #wrapper.after_call.write_code("Py_INCREF(" + name + ");")
 
 mod = Module("MRNet")
 mod.add_include('"mrnet/MRNet.h"')
@@ -109,7 +111,8 @@ Node = NetworkTopology.add_class("Node")
 Packet = MRN.add_class("Packet", parent = Error)
 Stream = MRN.add_class("Stream")
 Network = MRN.add_class("Network", parent = Error)
-packet_ptr = mod.add_class("boost::shared_ptr", template_parameters = ["MRN::Packet"], custom_name = "shared_ptr")
+#packet_ptr = mod.add_class("boost::shared_ptr", template_parameters = ["MRN::Packet"], custom_name = "shared_ptr")
+packet_ptr = MRN.add_class("PacketPtr")
 
 # Simple utility types.
 #MRN.add_class("Port") # Port is a uint16_t.
@@ -269,7 +272,8 @@ Stream.add_method("send", retval("int"),
 Stream.add_method("flush", retval("int"), [], is_const = True)
 Stream.add_method("recv", retval("int"),
                   [param("int*", "otag", transfer_ownership = False, direction = Parameter.DIRECTION_OUT),
-                   param("boost::shared_ptr<MRN::Packet>&", "opacket", direction = Parameter.DIRECTION_OUT),
+                   #param("boost::shared_ptr<MRN::Packet>&", "opacket", direction = Parameter.DIRECTION_OUT),
+                   param("MRN::PacketPtr&", "opacket", direction = Parameter.DIRECTION_OUT),
                    param("bool", "iblocking", default_value = "true")])
 Stream.add_method("get_EndPoints", retval("const std::set<uint32_t>"), [], is_const = True)
 Stream.add_method("get_Id", retval("unsigned int"), [], is_const = True)
@@ -377,7 +381,8 @@ Network.add_method("get_Stream", retval("MRN::Stream*",
                    is_const = True)
 Network.add_method("recv", retval("int"),
                    [param("int*", "otag", transfer_ownership = False, direction = Parameter.DIRECTION_OUT),
-                    param("boost::shared_ptr<MRN::Packet>&", "opacket", direction = Parameter.DIRECTION_OUT),
+                    #param("boost::shared_ptr<MRN::Packet>&", "opacket", direction = Parameter.DIRECTION_OUT),
+                    param("MRN::PacketPtr&", "opacket", direction = Parameter.DIRECTION_OUT),
                     param("Stream**", "ostream", transfer_ownership = False, direction = Parameter.DIRECTION_OUT),
                     param("bool", "iblocking", default_value = "true", direction = Parameter.DIRECTION_IN)])
 Network.add_method("send", retval("int"),

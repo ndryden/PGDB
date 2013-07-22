@@ -54,7 +54,13 @@ void _wrap_EventCallback(MRN::Event* e, void* data) {
 		gstate = PyGILState_Ensure();
 	}
 	PyObject* callback = (PyObject*) data;
-	PyObject_CallFunction(callback, NULL);
+	PyObject* ret = PyObject_CallFunction(callback, NULL);
+	if (ret == NULL) {
+	    // There was some sort of error. This is really ugly.
+	    exit(1);
+	}
+	// Discard the reference to the result.
+	Py_DECREF(ret);
 	if (threads_inited) {
 		PyGILState_Release(gstate);
 	}
