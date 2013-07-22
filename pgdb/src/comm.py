@@ -327,7 +327,7 @@ class CommunicatorBE (Communicator):
         """Shut down the communication infrastructure."""        
         while not self.mrnet_frontend_stream.is_Closed():
             time.sleep(0.1)
-        del self.mrnet_frontend_stream
+        #del self.mrnet_frontend_stream
         self.mrnet.waitfor_ShutDown()
         del self.mrnet
         self.lmon.finalize()
@@ -567,7 +567,7 @@ class CommunicatorFE (Communicator):
         self._disable_mrnet_perf_data()
         self._log_mrnet_perf_data()
         # Shut this stream down.
-        del self.mrnet_broadcast_stream
+        #del self.mrnet_broadcast_stream
         del self.mrnet
         try:
             self.lmon.shutdownDaemons(self.lmon_session)
