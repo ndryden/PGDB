@@ -6,7 +6,7 @@ from conf import gdbconf
 from lmon import lmon
 from lmon.lmonfe import LMON_fe
 from lmon.lmonbe import LMON_be
-from MRNet import MRN, shared_ptr
+from MRNet import MRN
 from interval import Interval
 
 class Communicator (object):
@@ -177,6 +177,9 @@ class Communicator (object):
             if stream.send(MSG_TAG, "%s", payload) == -1:
                 print "Fatal error on stream send."
                 sys.exit(1)
+            if stream.flush() == -1:
+                print "Fatal error on stream flush."
+                sys.exit(1)
         self._unlock()
 
     def _recv(self, blocking = True):
@@ -321,10 +324,13 @@ class CommunicatorBE (Communicator):
         return True
 
     def shutdown(self):
-        """Shut down the communication infrastructure."""
-        self.lmon.finalize()
+        """Shut down the communication infrastructure."""        
+        while not self.mrnet_frontend_stream.is_Closed():
+            time.sleep(0.1)
+        del self.mrnet_frontend_stream
         self.mrnet.waitfor_ShutDown()
         del self.mrnet
+        self.lmon.finalize()
         self.been_shutdown = True
 
 class CommunicatorFE (Communicator):
