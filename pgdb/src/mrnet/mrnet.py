@@ -1,2 +1,2 @@
-from MRNet import MRN, shared_ptr
+from MRNet import MRN
 import cPickle
