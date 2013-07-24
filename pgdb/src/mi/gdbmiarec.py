@@ -223,6 +223,10 @@ class Substitution:
             new_substitutions[k] = self.merge_substitution(other, k, key_map[k])
         self.substitutions = new_substitutions
 
+    def __str__(self):
+        """Return a string representation of this substitution."""
+        return "Substitution: ids = {0}, substitutions = {1}".format(self.ids, self.substitutions)
+
 def _is_dict(v):
     """Check whether an object is a dictionary."""
     return isinstance(v, dict)
@@ -401,3 +405,7 @@ class GDBMIAggregatedRecord:
     def get_substitution_classes(self):
         """Return the substitution classes."""
         return self.substitutions.get_substitution_classes()
+
+    def __str__(self):
+        """Return a string representation of this aggregated record."""
+        return "GDBMIAggregatedRecord: record = [{0}], substitutions = [{1}]".format(self.record, self.substitutions)

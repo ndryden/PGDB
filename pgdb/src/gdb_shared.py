@@ -1,4 +1,4 @@
-import sys, os, socket, time, cPickle
+import sys, os, socket, time, cPickle, inspect
 from mrnet.mrnet import *
 
 class NodeInfo:
@@ -44,3 +44,17 @@ class GDBMessage:
         self.msg_type = msg_type
         for k, v in kwargs.items():
             setattr(self, k, v)
+
+    def __str__(self):
+        """Produce a string representation of the message.
+
+        Prints the message type and then the keys and values.
+
+        """
+        s = ""
+        members = inspect.getmembers(self, lambda x: not inspect.isroutine(x))
+        for k, v in members:
+            if k[0:2] != "__":
+                # Keep out things like __doc__ and __module__.
+                s += "{0} = {1}, ".format(k, v)
+        return "GDBMessage: " + s[:-2]
