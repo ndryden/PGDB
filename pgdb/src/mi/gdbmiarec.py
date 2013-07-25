@@ -32,6 +32,10 @@ class Substitution:
             self.ids += Interval(lis = [vid], is_sorted = True)
         return key
 
+    def get_num_substitutions(self):
+        """Return the number of substitutions present."""
+        return len(self.substitutions)
+
     def get_all_substitution(self, key):
         """Get all the values associated with a key."""
         return [self.substitutions[key][0]] + self.substitutions[key][1].values()
@@ -85,6 +89,8 @@ class Substitution:
         Returns the new (default, dict) value to be used for this substitution.
 
         """
+        print "self.substitutions[{0}] = {1}".format(my_key, self.substitutions[my_key])
+        print "other.substitutions[{0}] = {1}".format(other_key, other.substitutions[other_key])
         my_old_default = self.substitutions[my_key][0]
         my_old_dict = self.substitutions[my_key][1]
         other_old_default = other.substitutions[other_key][0]
@@ -100,18 +106,39 @@ class Substitution:
 
         # Compute the counts of values in the old dicts.
         for v in my_old_dict.itervalues():
-            if v in counter_dict:
-                counter_dict[v] += 1
+            d = v
+            if _is_list(v):
+                # Convert to tuple for immutability.
+                d = tuple(v)
+            if d in counter_dict:
+                counter_dict[d] += 1
             else:
-                counter_dict[v] = 1
+                counter_dict[d] = 1
         for v in other_old_dict.itervalues():
-            if v in counter_dict:
-                counter_dict[v] += 1
+            d = v
+            if _is_list(v):
+                # Convert to tuple for immutability.
+                d = tuple(v)
+            if d in counter_dict:
+                counter_dict[d] += 1
             else:
-                counter_dict[v] = 1
-        # Catch if there are no entries.
+                counter_dict[d] = 1
+        # Catch if there are no non-default entries.
         if not counter_dict:
-            return (my_old_default, my_old_dict)
+            # Need to merge defaults. Keep as default the one with more IDs.
+            if my_old_default == other_old_default:
+                # If both defaults are the same, we don't have to do anything.
+                return (my_old_default, my_old_dict)
+            elif my_default_count >= other_default_count:
+                # Mine has more or the same number of IDs.
+                for vid in other.ids:
+                    my_old_dict[vid] = other_old_default
+                return (my_old_default, my_old_dict)
+            else:
+                # Other has more IDs.
+                for vid in self.ids:
+                    my_old_dict[vid] = my_old_default
+                return (other_old_default, my_old_dict)
         # Compute the value that has the maximum number of appearances.
         max_value = max(counter_dict.iterkeys(), key = lambda x: counter_dict[x])
         max_count = counter_dict[max_value]
@@ -216,9 +243,11 @@ class Substitution:
         if not key_map:
             key_map = dict(zip(self.substitutions.keys(), self.substitutions.keys()))
         # Update the set of ids.
+        print "Combining substitutions: my ids = {0}, other ids = {1}".format(self.ids, other.ids)
         self.ids += other.ids
         # Merge substitutions.
         new_substitutions = {}
+        print "Combining substitutions: *\n{0}\n{1}\n*".format(self.substitutions, other.substitutions)
         for k in self.substitutions:
             new_substitutions[k] = self.merge_substitution(other, k, key_map[k])
         self.substitutions = new_substitutions
@@ -354,6 +383,7 @@ def combine_aggregations(arec1, arec2):
     This returns a new aggregated record.
 
     """
+    print "Combining {0} \n with {1}".format(arec1, arec2)
     arec1.substitutions.combine_substitutions(arec2.substitutions)
     return arec1
 
@@ -369,9 +399,15 @@ def combine_aggregation_lists(l1, l2):
         # Convert to tuple for immutability.
         type_dict[tuple(identifier.identify(v.record))] = v
     l = []
+    print "Combining aggregation lists, type_dict = {0}".format(type_dict)
     for v in l2:
         ident = tuple(identifier.identify(v.record))
-        if ident in type_dict:
+        # The number of substitutions must be the same.
+        # Note that this can differ even among records that are identified as the same type.
+        # E.g., stops in functions with different numbers of arguments.
+        # Note that there may still be errors due to keys being in different orders.
+        if (ident in type_dict) and (v.substitutions.get_num_substitutions() == type_dict[ident].substitutions.get_num_substitutions()):
+            print "Ident {0}".format(ident)
             l.append(combine_aggregations(type_dict[ident], v))
             del type_dict[ident]
         else:
