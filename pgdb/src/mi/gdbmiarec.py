@@ -89,8 +89,6 @@ class Substitution:
         Returns the new (default, dict) value to be used for this substitution.
 
         """
-        print "self.substitutions[{0}] = {1}".format(my_key, self.substitutions[my_key])
-        print "other.substitutions[{0}] = {1}".format(other_key, other.substitutions[other_key])
         my_old_default = self.substitutions[my_key][0]
         my_old_dict = self.substitutions[my_key][1]
         other_old_default = other.substitutions[other_key][0]
@@ -230,6 +228,14 @@ class Substitution:
                     for vid in self.ids:
                         if vid not in my_old_dict:
                             new_dict[vid] = my_old_default
+        # This is a final passthrough to update the dict in the case that there are
+        # default values in it.
+        keys_to_del = []
+        for k, v in new_dict.iteritems():
+            if v == new_default:
+                keys_to_del.append(k)
+        for k in keys_to_del:
+            del new_dict[k]
         return (new_default, new_dict)
 
     def combine_substitutions(self, other, key_map = None):
@@ -242,15 +248,13 @@ class Substitution:
         """
         if not key_map:
             key_map = dict(zip(self.substitutions.keys(), self.substitutions.keys()))
-        # Update the set of ids.
-        print "Combining substitutions: my ids = {0}, other ids = {1}".format(self.ids, other.ids)
-        self.ids += other.ids
         # Merge substitutions.
         new_substitutions = {}
-        print "Combining substitutions: *\n{0}\n{1}\n*".format(self.substitutions, other.substitutions)
         for k in self.substitutions:
             new_substitutions[k] = self.merge_substitution(other, k, key_map[k])
         self.substitutions = new_substitutions
+        # Update the set of ids.
+        self.ids += other.ids
 
     def __str__(self):
         """Return a string representation of this substitution."""
@@ -383,7 +387,6 @@ def combine_aggregations(arec1, arec2):
     This returns a new aggregated record.
 
     """
-    print "Combining {0} \n with {1}".format(arec1, arec2)
     arec1.substitutions.combine_substitutions(arec2.substitutions)
     return arec1
 
@@ -399,7 +402,6 @@ def combine_aggregation_lists(l1, l2):
         # Convert to tuple for immutability.
         type_dict[tuple(identifier.identify(v.record))] = v
     l = []
-    print "Combining aggregation lists, type_dict = {0}".format(type_dict)
     for v in l2:
         ident = tuple(identifier.identify(v.record))
         # The number of substitutions must be the same.
@@ -407,7 +409,6 @@ def combine_aggregation_lists(l1, l2):
         # E.g., stops in functions with different numbers of arguments.
         # Note that there may still be errors due to keys being in different orders.
         if (ident in type_dict) and (v.substitutions.get_num_substitutions() == type_dict[ident].substitutions.get_num_substitutions()):
-            print "Ident {0}".format(ident)
             l.append(combine_aggregations(type_dict[ident], v))
             del type_dict[ident]
         else:

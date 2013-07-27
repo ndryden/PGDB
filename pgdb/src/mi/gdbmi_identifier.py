@@ -20,7 +20,9 @@ class GDBMIRecordIdentifier:
             RESULT: self.identify_result,
             ASYNC_EXEC: self.identify_async_exec,
             ASYNC_NOTIFY: self.identify_async_notify,
-            STREAM_CONSOLE: self.identify_stream_console
+            STREAM_CONSOLE: self.identify_stream_console,
+            STREAM_TARGET: self.identify_stream_target,
+            STREAM_LOG: self.identify_stream_log
             }
         self.result_iders = {
             RESULT_CLASS_ERROR: self.identify_result_error,
@@ -161,6 +163,10 @@ class GDBMIRecordIdentifier:
         """Identify a stream console record."""
         return ["stream-console"]
 
-    
+    def identify_stream_target(self, record):
+        """Identify a stream target record."""
+        return ["stream-target"]
 
-    
+    def identify_stream_log(self, record):
+        """Identify a stream log record."""
+        return ["stream-log"]

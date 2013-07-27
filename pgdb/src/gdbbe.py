@@ -240,7 +240,6 @@ class GDBBE:
                     if not self.is_filterable(record):
                         self._call_token_handler(record)
                         arec_list.append([GDBMIAggregatedRecord(record, rank)])
-                        print "New record: {0}".format(arec_list[-1][0])
             if arec_list:
                 combined_list = arec_list.pop(0)
                 for arec in arec_list:
