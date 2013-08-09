@@ -171,13 +171,26 @@ class GDBFE (GDBMICmd):
                 # Remove the last (oldest) element.
                 self.output_history.pop()
             subst_classes = arec.get_substitution_classes()
-            for subst_class in subst_classes:
-                # Just get first VID, since all subsitutions for it are the same.
-                record = arec.get_record(subst_class[0])
-                ranks = Interval(lis = subst_class)
-                # Note that this may not work if things don't support lists of ranks.
-                if self.record_handler.handle(record, rank = ranks):
-                    self.pprinter.pretty_print(record, ranks)
+            subst_key = 0
+            if len(subst_classes) > 1:
+                # For multiple substitution classes, we only print the largest.
+                # This gets the key of the largest substitution class.
+                subst_key = max(enumerate(subst_classes), key = lambda x: len(x[1]))[0]
+            # Just get the first VID, since all substitutions for it are the same.
+            record = arec.get_record(subst_classes[subst_key][0])
+            ranks = Interval(lis = subst_classes[subst_key])
+            # Note that this may not work if things don't support lists of ranks.
+            if self.record_handler.handle(record, rank = ranks):
+                self.pprinter.pretty_print(record, ranks)
+                if len(subst_classes) > 1:
+                    print "Some results from {0} omitted; use expand to view.".format(arec.get_ids())
+#            for subst_class in subst_classes:
+#                # Just get first VID, since all subsitutions for it are the same.
+#                record = arec.get_record(subst_class[0])
+#                ranks = Interval(lis = subst_class)
+#                # Note that this may not work if things don't support lists of ranks.
+#                if self.record_handler.handle(record, rank = ranks):
+#                    self.pprinter.pretty_print(record, ranks)
         self.arec_list = []
 
     def varprint_res_handler(self, msg):
