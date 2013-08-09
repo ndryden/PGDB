@@ -45,3 +45,5 @@ mrnet_filters = [("/home/ndryden/PGDB/mrnet-filters/arec_filter.so", "arec_filte
 mrnet_collect_perf_data = True
 # Whether to write a DOT file of the topology. The path of the file if yes, None otherwise.
 mrnet_topology_dot = "/home/ndryden/topo.dot"
+# The length of history to keep.
+history_length = 100

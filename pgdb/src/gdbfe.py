@@ -78,6 +78,8 @@ class GDBFE (GDBMICmd):
         self.remote_up = threading.Event()
         # Temporary list for building up aggregated records from OUT messages.
         self.arec_list = []
+        # Output history for expanding commands.
+        self.output_history = []
         # Get our PID for signals.
         self.my_pid = os.getpid()
 
@@ -163,6 +165,11 @@ class GDBFE (GDBMICmd):
     def process_out_messages(self):
         """Go through the temporary arec_list and pretty-print records."""
         for arec in self.arec_list:
+            # Add the record to the history.
+            self.output_history = [arec] + self.output_history
+            if len(self.output_history) > gdbconf.history_length:
+                # Remove the last (oldest) element.
+                self.output_history.pop()
             subst_classes = arec.get_substitution_classes()
             for subst_class in subst_classes:
                 # Just get first VID, since all subsitutions for it are the same.
@@ -337,6 +344,31 @@ class GDBFE (GDBMICmd):
         """Gracefully quit PGDB."""
         self.quit = True
         self.comm.send(GDBMessage(CMD_MSG, command = Command("gdb-exit")), self.comm.broadcast)
+
+    def do_expand(self, cmd, targets = None):
+        """Expand output.
+
+        Use: [proc <processor-spec>] expand [history-item]
+        Expand history-item for the given processors.
+
+        """
+        if not targets:
+            targets = self.comm.get_mpiranks()
+        split = cmd.split(" ")
+        history_item = 0
+        if len(split) > 1:
+            if not split[1].isdigit():
+                print "Incorrect history specificiation."
+                return
+            history_item = int(split[1])
+        if history_item >= len(self.output_history):
+            print "No such history item {0}".format(history_item)
+            return
+        arec = self.output_history[history_item]
+        # We only care about the IDs that are present in both.
+        ids = targets.intersect(arec.get_ids())
+        for vid in ids:
+            self.pprinter.pretty_print(arec.get_record(vid), Interval(lis = [vid]))
 
     def dispatch_gdbmi_command(self, command):
         """Send a GDB command."""
