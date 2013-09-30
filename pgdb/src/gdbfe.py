@@ -173,9 +173,9 @@ class GDBFE (GDBMICmd):
             subst_classes = arec.get_substitution_classes()
             subst_key = 0
             if len(subst_classes) > 1:
-                # For multiple substitution classes, we only print the largest.
-                # This gets the key of the largest substitution class.
-                subst_key = max(enumerate(subst_classes), key = lambda x: len(x[1]))[0]
+                # For multiple substitution classes, we only print the smallest.
+                # This gets the key of the smallest substitution class.
+                subst_key = min(enumerate(subst_classes), key = lambda x: len(x[1]))[0]
             # Just get the first VID, since all substitutions for it are the same.
             record = arec.get_record(subst_classes[subst_key][0])
             ranks = Interval(lis = subst_classes[subst_key])
