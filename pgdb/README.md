@@ -46,19 +46,19 @@ Usage
 PGDB can run in either attach or launch modes.
 
 In attach mode, PGDB will debug an already-running MPI job. PGDB will need to be
-run on the same machine that you run your `mpirun' command (or equivalent) from.
+run on the same machine that you run your `mpirun` command (or equivalent) from.
 You will need the PID of this process, which you can obtain with e.g.
-`ps x | grep mpirun'. You then need to run PGDB with `pgdb -p PID>' to begin
+`ps x | grep mpirun`. You then need to run PGDB with `pgdb -p PID` to begin
 debugging the job.
 
 In launch mode, PGDB will launch a new MPI job directly under its control. The
-syntax for this is `pgdb --launcher launcher -a args' where launcher is the MPI
-launcher to use (defaults to `srun' if not specified) and args are the arguments
+syntax for this is `pgdb --launcher launcher -a args` where launcher is the MPI
+launcher to use (defaults to `srun` if not specified) and args are the arguments
 you would typically pass to the launcher in order to launch the job.
 
 Additional information on using PGDB is available in the manual (see Further
 Documentation), and brief command-line documentation is available by running
-`pgdb -h'.
+`pgdb -h`.
 
 Further Documentation
 ---------------------
