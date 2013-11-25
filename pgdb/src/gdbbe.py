@@ -32,7 +32,8 @@ class GDBBE:
         disable_pagination_cmd = Command("gdb-set", args = ["pagination", "off"])
         enable_non_stop_cmd = Command("gdb-set", args = ["non-stop", "on"])
         for proc in self.comm.get_proctab():
-            self.gdb[proc.mpirank] = GDBMachineInterface(gdb_args = ["-x", gdbconf.gdb_init_path])
+            self.gdb[proc.mpirank] = GDBMachineInterface(gdb = gdbconf.gdb_path,
+                                                         gdb_args = ["-x", gdbconf.gdb_init_path])
             # Enable pretty-printing by default.
             # TODO: Make this optional.
             if not self.run_gdb_command(enable_pprint_cmd, Interval(lis = [proc.mpirank])):

@@ -15,6 +15,8 @@ environ["XPLAT_RSH"] = "rsh"
 #environ["LD_LIBRARY_PATH"] = "/usr/local/tools/mrnet-3.1.0/lib"
 environ["MRNET_COMM_PATH"] = "/collab/usr/global/tools/mrnet/chaos_5_x86_64_ib/mrnet-4.0.0/bin/mrnet_commnode"
 environ["LD_LIBRARY_PATH"] = "/collab/usr/global/tools/mrnet/chaos_5_x86_64_ib/mrnet-4.0.0/lib"
+# The path to the GDB binary.
+gdb_path = "gdb"
 # The path to the topology file for MRNet.
 topology_path = "."
 # The path to the GDB init file to use.
