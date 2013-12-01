@@ -36,7 +36,7 @@
 
 PGDB is the ``Parallel GDB''.
 
-PGDB is a parallelized version of GDB, the GNU Debugger, designed for debugging large-scale, parallelized code in HPC (high-performance computing) environments, such as MPI (message passing interface) programs.
+PGDB is a parallelized version of GDB, the GNU Debugger, designed for debugging large-scale, MPI (message passing interface) programs in HPC (high-performance computing) environments.
 
 PGDB aims to be familiar to users of vanilla GDB, maintaining the majority of its interface, command semantics, and functionality. It can be succinctly described as a convenient interface to ``GDB on a bunch of machines simultaneously''. Because of being built upon GDB, PGDB supports debugging the same set of targets as GDB does, and typically, if something works in GDB, it will work in PGDB as well.
 
@@ -66,13 +66,15 @@ This chapter details the installation process and subsequent configuration in or
 
 PGDB is designed to be portable, and in theory should work on any platform that supports its requirements.
 
-At present, PGDB has been tested only on the Linux clusters running CHAOS 5 Linux at Lawrence Livermore National Laboratory. It is very likely that PGDB will work on any reasonable Linux distribution and most UNIX distributions, however this has not yet been tested.
+At present, PGDB has been tested on various Linux clusters, including those at Lawrence Livermore National Laboratory and the University of Illinois at Urbana-Champaign. It is likely that PGDB will work on any reasonable UNIX-based distribution with little trouble.
 
 Support for other platforms is not available at present, but planned for in the future.
 
+PGDB supports the following MPI distributions: OpenMPI (at least 1.5), MPICH2, MVAPICH, Slurm, ALPS (untested), and Blue Gene systems (untested).
+
 \subsection{Obtaining PGDB}
 
-PGDB may be obtained from its project page at \ldots
+PGDB may be obtained from its project page at \url{https://github.com/ndryden/PGDB}.
 
 \subsection{Requirements}
 
@@ -91,19 +93,59 @@ The following are necessary for PGDB:
 \item MRNet 4.0.0
 
   \url{http://www.paradyn.org/mrnet/}
-\item PyBindGen 0.15.0 or greater
+\item PyBindGen 0.16.0 or greater (only needed for regenerating MRNet bindings)
 
   \url{http://code.google.com/p/pybindgen/}
-\item mpi4py 1.3 or greater
-
-  \url{http://mpi4py.scipy.org/}
 \end{itemize}
 
-Additionally, Python bindings for MRNet must be built and installed. These are included in the PGDB distribution and this process is documented below. A script is provided for automatically installing most of these dependencies and is documented below.
+This excludes the dependencies of the above. Additionally, Python bindings for LaunchMON and MRNet must be built and installed. These are included in the PGDB distribution and this process is documented below.
 
 \subsection{Installation}
 
-Installation is divided into three phases: installation of PGDB, installation of dependencies, and configuration of PGDB. These are covered in detail below.
+Installation of PGDB requires installing its dependencies, installing PGDB, and configuring PGDB. This process is presently completely manual and rather tedious; it is being automated. Documentation on this is additionally maintained on the project website, available at \url{https://github.com/ndryden/PGDB/wiki/Installation}. Check this page if you have problems following the procedure herein, as it may be more up-to-date.
+
+\subsubsection{Installing Dependencies}
+
+Python and GDB should either already be installed on your system, or should be easy to install. Refer to their documentation for further details. This section deals with only the installation of LaunchMON, MRNet, and PGDB's bindings for these, as external documentation on these is sparse and the typical installation process frequently fails.
+
+You will need all the standard tools for building packages from source, including a C and C++ compiler, automake, autoconf, and libtool. You will need Git and Subversion for checking out packages. The dependencies additionally have the following dependencies: libelf, libboost, libgpg-error, and ncurses (you will need the development versions of these). A remote shell will be required; depending upon your situation, either rsh or ssh can be used. An MPI distribution is additionally required; see above for details.
+
+The latest version of LaunchMON should be installed; at the time of this writing, while there is a stable version 0.7.2 available, it is recommended to use the release branch of the 1.0 version (\texttt{launchmon-1.0-release}), available from LaunchMON's Subversion repository. LaunchMON requires libelf, which can be installed either via your platform package manager or obtained from \url{http://www.mr511.de/software/english.html}. Due to current problems in building LaunchMON, some older versions of tools are required: gcc-4.4, g++-4.4, and binutils 2.20.1a. Your system package manager should be able to install gcc-4.4 and g++-4.4. Once this is done, ensure that it is the default compiler (e.g., by checking what \texttt{/usr/bin/gcc} and \texttt{/usr/bin/g++} points to and updating the symlink if needed).
+
+Binutils 2.20.1a can be obtained at \url{http://ftp.gnu.org/gnu/binutils/binutils-2.20.1a.tar.bz2}, and can be built from source without problems. It is recommended that this not be installed in the main system path, to avoid polluting your environment. Once this is done, you can proceed with installing LaunchMON as follows:
+
+\begin{itemize}
+\item Ensure that your \texttt{PATH} and \texttt{LD\_LIBRARY\_PATH} include your MPI distribution if it is not in a default path, as well as the old version of binutils installed above.
+\item Change to the \texttt{launchmon} directory (\texttt{cd launchmon}).
+\item Edit \texttt{launchmon/src/linux/Makefile.am}, on the line beginning with \texttt{launchmon\_LDADD}, append \texttt{-lgpg-error}.
+\item Edit \texttt{tools/Makefile.am}, change the line with \texttt{OPT\_GPG = libgpg-error} to \texttt{OPT\_GPG = }.
+\item Begin by running \texttt{./bootstrap} to ensure the configure scripts are suitable for the platform.
+\item Run \texttt{./configure --prefix=\emph{path}} and replace \emph{path} with the path to install LaunchMON to.
+\item Run \texttt{make}. If your MPI installation is not in a standard location, instead run \texttt{CFLAGS="-I\emph{path}"} where \emph{path} is the path to the MPI \texttt{include} directory.
+\item Run \texttt{make install}.
+\end{itemize}
+
+To install MRNet, download and extract it, then change to the extracted directory and:
+
+\begin{itemize}
+\item Edit \texttt{conf/install\_link.sh} and change \texttt{\#!/bin/sh} to \texttt{\#!/bin/bash} (this is due to some systems changing the default shell).
+\item Run \texttt{./configure --prefix=\emph{path}} and replace \emph{path} with the path to install MRNet to.
+\item Run \texttt{make}.
+\item Run \texttt{make install}.
+\item Change to the install directory. Due to problems with the installation script, you will need to move around a few files.
+\item Run \texttt{mv lib/mrnet-4.0.0/include/mrnet\_config.h include/mrnet/} then \texttt{rm -rf lib/mrnet-4.0.0}.
+\item Run \texttt{mv lib/xplat-4.0.0/include/xplat\_config.h include/xplat/} then \texttt{rm -rf lib/xplat-4.0.0}.
+\end{itemize}
+
+At this point, you will need to check out PGDB from the Git repository, then configure and install the MRNet and LaunchMON bindings. This process is currently in flux and being simplified, so please refer to the online installation guide for the latest information, \url{https://github.com/ndryden/PGDB/wiki/Installation}.
+
+If you need to manually regenerate the MRNet bindings, the process is as follows, from the \texttt{mrnet} directory. You will need PyBindGen installed. Run:
+
+\begin{Verbatim}
+python mrnetbind.py > mrnet_module.cpp
+\end{Verbatim}
+
+to generate the bindings and place them in the \texttt{mrnet\_module.cpp} file.
 
 \subsubsection{Installing PGDB}
 
@@ -115,62 +157,14 @@ mv pgdb /usr/local/
 
 You should ensure that whichever directory you choose is in your \texttt{\$PATH} environment variable for easy use.
 
-You may wish to pre-compile the Python files to corresponding `\texttt{.pyc}' files, both for performance and to prevent file permissions errors. The automatic installation script \texttt{depinstall.py} will do this, but if you choose not to use it, use the following command from the main PGDB directory:
+You may wish to pre-compile the Python files to corresponding `\texttt{.pyc}' files, both for performance and to prevent file permissions errors. This can be done with the following command from the main PGDB directory:
 \begin{Verbatim}
 python -m compileall ./
 \end{Verbatim}
 
-\subsubsection{Installing Dependencies}
-
-There are two routes to use when installing dependencies. The first is manual installation of all the above dependencies. The details of this process are beyond the scope of this manual, but all the above packages have installation instructions to guide you.
-
-Installation of Python and GDB must be done manually; refer to their documentation for details of this process. You should ensure that the version of GDB you install is compatible with your compiler version.
-
-If installing dependencies manually, note that the PyBindGen requirement is ``soft''. It is not necessary to install it unless you wish to regenerate the MRNet bindings.
-
-There exists an automatic installation process for most of these dependencies. This requires that Python already be installed; additionally, you will need the \texttt{curl}, \texttt{tar}, and \texttt{unzip} commands available within your environment. These are standard and should be installed already.
-
-Automatic installation is performed by the script \texttt{depinstall.py}. This will download, build, and install LaunchMON 0.7.2 (the 1.0 version is at present only available from version control; it is recommended to manually install this), MRNet 4.0.0, PyBindGen 0.15.0, and mpi4py 1.3. It will also build and install the bundled MRNet bindings.
-
-To use this, run
-
-\begin{Verbatim}
-python depinstall.py build [options]
-\end{Verbatim}
-
-The optional argument \texttt{options} may be provided to pass arbitrary configuration options to the configure scripts of the packages. Everything following `\texttt{build}' will be passed verbatim. This is useful in particular for specifying install locations via the standard `\texttt{--prefix}' option. For example,
-
-\begin{Verbatim}
-python depinstall.py build --prefix=/usr/local
-\end{Verbatim}
-
-To remove the downloaded data, use
-
-\begin{Verbatim}
-python depinstall.py clean
-\end{Verbatim}
-
-If you need to manually install the MRNet bindings, the process is as follows. First, \texttt{cd mrnet-bind} to enter the correct directory. There should be at least three files present: \texttt{mrnetbind.h}, \texttt{mrnetbind.py}, and \texttt{setup.py}. There may also be a fourth file, \texttt{mrnet\_module.cpp}. This is the generated module source. If it does not exist, or needs to be regenerated, run the following command:
-
-\begin{Verbatim}
-python mrnetbind.py > mrnet_module.cpp
-\end{Verbatim}
-
-The rest of the installation of the bindings makes use of the standard Python distutils installation system. See the relevant Python documentation for full details; a brief overview is provided here. To build the bindings,
-
-\begin{Verbatim}
-python setup.py build
-\end{Verbatim}
-
-and to install them,
-
-\begin{Verbatim}
-python setup.py install [--prefix prefix]
-\end{Verbatim}
-
-where \texttt{--prefix prefix} is an optional argument indicating the install location of the bindings.
-
 \subsubsection{Basic Configuration}
+
+\textbf{Note:} This section is currently somewhat out-of-date. The information needed to install PGDB is in the online guide referenced in the prior section. This is preserved for reference and will be updated in the future.
 
 The configuration process for PGDB involves editing two configuration files, both of which are located in the \texttt{conf} directory. The configuration files are regular Python scripts and may be treated as such if desired. Both files contain many comments inside them to provide assistance.
 
@@ -1352,6 +1346,25 @@ This controls the size of each broadcast of topology data, from both the front-e
 
 \lmargintt{multi\_len}
 This controls the maximum size of each message sent over MRNet. If a message is larger than this, it is split into multiple messages smaller than this value.
+
+\newpage
+
+\section{LaunchMON and MRNet Troubleshooting}
+
+LaunchMON and (to a lesser extent) MRNet can be troublesome to install. This section attempts to document some of the problems and their solutions.
+
+\subsection{LaunchMON}
+
+\subsubsection{Building LaunchMON}
+
+Most problems with building LaunchMON seem to be caused by incompatibilities between the versions of build software that it expects, and newer versions. This often manifests itself as, for example \texttt{undefined reference to symbol 'gpg\_strerror'}. This can be solved by switching LaunchMON to use an older environment for building. The exact process will depend upon the details of your system, but it involves:
+\begin{itemize}
+\item Switch to GCC 4.4. gcc-4.4.5 appears to work.
+\item Switch to ld-2.20.1. This will require installing binutils-2.20.1.
+\end{itemize}
+It is recommended that these changes not be made system-wide, but instead used only for building LaunchMON.
+
+\subsection{MRNet}
 
 % These are to get the TOC to display the right page number and link to the right page.
 \cleardoublepage
