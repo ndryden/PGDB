@@ -317,6 +317,10 @@ pgdb [--launcher launcher] -a args
 
 where \texttt{args} are the arguments you would normally pass to \texttt{srun} to launch the job and optionally \texttt{launcher} is the launcher to use, which defaults to \texttt{srun}. Note that everything provided after a \texttt{-a} is passed verbatim to the launcher.
 
+\subsection{Local Mode}
+
+Both of the above modes are designed for use on a cluster where PGDB is launched from a node on which the job is \emph{not} running. If this is not the case (e.g., you are debugging a job running on a single node), the \texttt{--local} argument can be given to either of the above modes to indicate this. PGDB will fail if it is not in local mode and its front-end and back-ends are deployed to the same machine.
+
 \subsection{Interaction}
 
 After starting the debugger, you will first get a report that ``GDB has been deployed to $x$ hosts and $y$ processors.'' This indicates that the debugger has successfully deployed and is now attaching to the target processes. Once this process is complete, you should, for each processor, see a ``Stopped.'' message, indicating that the application is stopped and ready for debugging. During this process, there may be a report along the lines of
@@ -333,7 +337,7 @@ In the interface, messages from a particular processor are indicated by prependi
 [0] Done.
 \end{Verbatim}
 
-is a message from processor 0.
+is a message from processor 0. Messages from multiple processors are indicated with ranges, e.g. \texttt{[0-4,6,8-9]} indicates processors 0 through 4, processor 6, and processors 8 and 9.
 
 Commands can be sent to a particular processor or subset of processors by prefixing the command with the \texttt{proc} command. For example,
 
@@ -342,6 +346,8 @@ proc 0 print "Hello, world!"
 \end{Verbatim}
 
 will print ``Hello, world!'' on processor 0. More details on the \texttt{proc} command can be found in the reference section.
+
+Output is ``deduplicated'', so similar output from multiple processors is printed only once. To expand, use the \texttt{expand} command (further documented in the reference section).
 
 There are some important things to note regarding the interface. First, unlike in GDB, pressing control-c does not interrupt the application being debugged. Secondly, the interface does not have readline support and is therefore not ``fancy''. If you find that backspace does not work, using control-h should work instead. Lastly, not all commands function exactly the same way as in regular GDB. There is on-going work to normalize the interface towards the standard GDB interface.
 
@@ -380,42 +386,13 @@ Now, we start PGDB and attach to the process. This may take some time, as the de
 \begin{Verbatim}
 # pgdb -p 96746
 GDB deployed to 2 hosts and 4 processors.
-[0] [Thread debugging using libthread_db enabled]
-[0] 
-[2] [Thread debugging using libthread_db enabled]
-[2] 
-[1] [Thread debugging using libthread_db enabled]
-[1] 
-[0] [New Thread 0x2aab45b9a700 (LWP 118885)]
-[0] 
-[1] [New Thread 0x2aab460a7700 (LWP 118886)]
-[1] 
-[3] [Thread debugging using libthread_db enabled]
-[3] 
-[2] [New Thread 0x2aab45b9a700 (LWP 100335)]
-[2] 
-[3] [New Thread 0x2aab460a7700 (LWP 100334)]
-[3] 
-[0] Stopped.
-[0] 0x00002aab3f5a29cd in read() at ../sysdeps/unix/syscall-template.S:82
-[0] Could not find ../sysdeps/unix/syscall-template.S
-[0] Done.
-[0] Done.
-[1] Stopped.
-[1] 0x00002aab3f5a29cd in read() at ../sysdeps/unix/syscall-template.S:82
-[1] Could not find ../sysdeps/unix/syscall-template.S
-[1] Done.
-[1] Done.
-[2] Stopped.
-[2] 0x00002aab3f5a29cd in read() at ../sysdeps/unix/syscall-template.S:82
-[2] Could not find ../sysdeps/unix/syscall-template.S
-[2] Done.
-[2] Done.
-[3] Stopped.
-[3] 0x00002aab3f5a29cd in read() at ../sysdeps/unix/syscall-template.S:82
-[3] Could not find ../sysdeps/unix/syscall-template.S
-[3] Done.
-[3] Done.
+[0-3] [Thread debugging using libthread_db enabled]
+[0-3] [New Thread 0x2aab45b9a700 (LWP 118885)]
+[0-3] Stopped.
+[0-3] 0x00002aab3f5a29cd in read() at ../sysdeps/unix/syscall-template.S:82
+[0-3] Could not find ../sysdeps/unix/syscall-template.S
+[0-3] Done.
+Some results from [0-3] omitted; use expand to view.
 \end{Verbatim}
 
 We now have the application stopped where it was when we launched PGDB.
@@ -428,74 +405,32 @@ Alternately, suppose instead that we wish to launch an application directly unde
 pgdb -a -N 2 -n 4 -ppdebug kull test.py
 srun: got SIGCONT
 GDB deployed to 2 hosts and 4 processors.
-[0] Stopped.
-[0] 0x00002aaaaaac3046 in memset() at ../sysdeps/x86_64/memset.S:555
-[0] Could not find ../sysdeps/x86_64/memset.S
-[0] Done.
-[0] Done.
-[1] Stopped.
-[1] 0x00002aaaaaac3046 in memset() at ../sysdeps/x86_64/memset.S:555
-[1] Could not find ../sysdeps/x86_64/memset.S
-[1] Done.
-[1] Done.
-[2] Stopped.
-[2] 0x00002aaaaaac30e3 in memset() at ../sysdeps/x86_64/memset.S:1228
-[2] Could not find ../sysdeps/x86_64/memset.S
-[2] Done.
-[2] Done.
-[3] Stopped.
-[3] 0x00002aaaaaac30e3 in memset() at ../sysdeps/x86_64/memset.S:1228
-[3] Could not find ../sysdeps/x86_64/memset.S
-[3] Done.
-[3] Done.
+[0-3] Stopped.
+[0-3] 0x00002aaaaaac3046 in memset() at ../sysdeps/x86_64/memset.S:555
+[0-3] Could not find ../sysdeps/x86_64/memset.S
+[0-3] Done.
+Some results from [0-3] omitted; use expand to view.
 \end{Verbatim}
 
 We are now stopped in the initialization. However, this may be in some code prior to the \texttt{main} function that is typically thought of as the entry point. We can step forward to this as follows. We first set a breakpoint at \texttt{main} on all processors.
 
 \begin{Verbatim}
 break main
-[3] Breakpoint 1 at <MULTIPLE>
-[2] Breakpoint 1 at <MULTIPLE>
-[0] Breakpoint 1 at <MULTIPLE>
-[1] Breakpoint 1 at <MULTIPLE>
+[0-3] Breakpoint 1 at <MULTIPLE>
 \end{Verbatim}
 
 In this case, there were multiple addresses for \texttt{main}, and hence why it was reported that the breakpoint is at multiple locations. Now, we continue until we hit the \texttt{main} function. This may take some time, because at this point, the debugger loads most of the debug symbols for shared libraries.
 
 \begin{Verbatim}
 continue
-[0] Thread ID all running.
-[0] Done.
-[1] Thread ID all running.
-[1] Done.
-[2] Thread ID all running.
-[2] Done.
-[3] Thread ID all running.
-[3] Done.
-[0] [Thread debugging using libthread_db enabled]
-[0] 
-[1] [Thread debugging using libthread_db enabled]
-[1] 
-[2] [Thread debugging using libthread_db enabled]
-[2] 
-[3] [Thread debugging using libthread_db enabled]
-[3] 
-[0] Breakpoint 1:
-[0] 0x000000000059dba1 in main(argc = 2, argv = 0x7fffffffe4a8) at
+[0-3] Thread ID all running.
+[0-3] Done.
+[0-3] [Thread debugging using libthread_db enabled]
+[0-3] Breakpoint 1:
+[0-3] 0x000000000059dba1 in main(argc = 2, argv = 0x7fffffffe4a8) at
     kull/source/main.cc:98
-[0] for (int ix= 1; ix<argc; ++ix) {
-[1] Breakpoint 1:
-[1] 0x000000000059dba1 in main(argc = 2, argv = 0x7fffffffe4b8) at
-    kull/source/main.cc:98
-[1] for (int ix= 1; ix<argc; ++ix) {
-[2] Breakpoint 1:
-[2] 0x000000000059dba1 in main(argc = 2, argv = 0x7fffffffe4a8) at
-    kull/source/main.cc:98
-[2] for (int ix= 1; ix<argc; ++ix) {
-[3] Breakpoint 1:
-[3] 0x000000000059dba1 in main(argc = 2, argv = 0x7fffffffe4b8) at
-    kull/source/main.cc:98
-[3] for (int ix= 1; ix<argc; ++ix) {
+[0-3] for (int ix= 1; ix<argc; ++ix) {
+Some results from [0-3] omitted; use expand to view.
 \end{Verbatim}
 
 The program is now stopped in its \texttt{main} function, and debugging may proceed as normal.
@@ -508,14 +443,9 @@ As illustrated above, breakpoints can be set with the \texttt{break} command. We
 proc 0 break RadDiffusionEvolver.cc:125  
 [0] Breakpoint 2 at <MULTIPLE>
 continue
-[0] Thread ID 1 running.
-[2] Thread ID 1 running.
-[0] Done.
-[2] Done.
-[1] Thread ID 1 running.
-[1] Done.
-[3] Thread ID 1 running.
-[3] Done.
+[0-3] Thread ID 1 running.
+[0-3] Done.
+Some results from [0-3] omitted; use expand to view.
 [0] Breakpoint 2:
 [0] 0x00002aaaf622c095 in RadDiffusion::RadDiffusionEvolver
     <Geometry::MeshBase<Geometry::XYZ>, Geometry::SideBase
@@ -661,34 +591,13 @@ When the program is stopped, there are several other useful commands. The \textt
 
 \begin{Verbatim}
 step
-[0] Thread ID 1 running.
-[0] Done.
-[1] Thread ID 1 running.
-[1] Done.
-[2] Thread ID 1 running.
-[2] Done.
-[3] Thread ID 1 running.
-[3] Done.
-[3] Thread ID all running.
-[0] Thread ID all running.
-[1] Thread ID all running.
-[2] Thread ID all running.
-[0] 0x00002aaacc66a6c4 in KullUtil::NullTimer::
+[0-3] Thread ID 1 running.
+[0-3] Done.
+[0-3] 0x00002aaacc66a6c4 in KullUtil::NullTimer::
     NullTimer(this = 0x7fffffffabff, counter = @0x6eea140)
     at kull/source/utilities/KullUtilTimer.hh:75
-[0] NullTimer (double &counter) {}
-[1] 0x00002aaacc66a6c4 in KullUtil::NullTimer::
-    NullTimer(this = 0x7fffffffabff, counter = @0x6eea140)
-    at kull/source/utilities/KullUtilTimer.hh:75
-[1] NullTimer (double &counter) {}
-[2] 0x00002aaacc66a6c4 in KullUtil::NullTimer::
-    NullTimer(this = 0x7fffffffabff, counter = @0x6eea140)
-    at kull/source/utilities/KullUtilTimer.hh:75
-[2] NullTimer (double &counter) {}
-[3] 0x00002aaacc66a6c4 in KullUtil::NullTimer::
-    NullTimer(this = 0x7fffffffabff, counter = @0x6eea140)
-    at kull/source/utilities/KullUtilTimer.hh:75
-[3] NullTimer (double &counter) {}
+[0-3] NullTimer (double &counter) {}
+Some results from [0-3] omitted; use expand to view.
 \end{Verbatim}
 
 Similar to the \texttt{step} command is the \texttt{next} command, which functions the same, except that it will treat function calls as one instruction and not descend into them.
@@ -699,51 +608,24 @@ Finally, the \texttt{finish} command can be used to execute until the current fu
 
 \begin{Verbatim}
 finish
-[0] Thread ID all running.
-[0] Done.
-[1] Thread ID all running.
-[1] Done.
-[2] Thread ID all running.
-[2] Done.
-[3] Thread ID all running.
-[3] Done.
-[0] Function finished, returned void.
-[0] 0x00002aaaf622b382 in RadDiffusion::RadDiffusionEvolver
+[0-3] Thread ID all running.
+[0-3] Done.
+[0-3] Function finished, returned void.
+[0-3] 0x00002aaaf622b382 in RadDiffusion::RadDiffusionEvolver
     <Geometry::MeshBase<Geometry::XYZ>, Geometry::SideBase
     <Geometry::MeshBase<Geometry::XYZ> >, Geometry::CornerBase
     <Geometry::MeshBase<Geometry::XYZ> > >::calcOpacitiesImp
     (this = 0x6ee9690, RosselandOnly = false)
     at kull/source/transport/RadDiffusion/RadDiffusionEvolver.cc:273
-[0] if (!RosselandOnly) addPartPlanckianOpacity(*partItr, rPlanckianTe);
-[1] Function finished, returned void.
-[1] 0x00002aaaf622b382 in RadDiffusion::RadDiffusionEvolver
-    <Geometry::MeshBase<Geometry::XYZ>, Geometry::SideBase
-    <Geometry::MeshBase<Geometry::XYZ> >, Geometry::CornerBase
-    <Geometry::MeshBase<Geometry::XYZ> > >::calcOpacitiesImp
-    (this = 0x6ee9690, RosselandOnly = false)
-    at kull/source/transport/RadDiffusion/RadDiffusionEvolver.cc:273
-[1] if (!RosselandOnly) addPartPlanckianOpacity(*partItr, rPlanckianTe);
-[2] Function finished, returned void.
-[2] 0x00002aaaf622b382 in RadDiffusion::RadDiffusionEvolver
-    <Geometry::MeshBase<Geometry::XYZ>, Geometry::SideBase
-    <Geometry::MeshBase<Geometry::XYZ> >, Geometry::CornerBase
-    <Geometry::MeshBase<Geometry::XYZ> > >::calcOpacitiesImp
-    (this = 0x6ee9690, RosselandOnly = false)
-    at kull/source/transport/RadDiffusion/RadDiffusionEvolver.cc:273
-[2] if (!RosselandOnly) addPartPlanckianOpacity(*partItr, rPlanckianTe);
-[3] Function finished, returned void.
-[3] 0x00002aaaf622b382 in RadDiffusion::RadDiffusionEvolver
-    <Geometry::MeshBase<Geometry::XYZ>, Geometry::SideBase
-    <Geometry::MeshBase<Geometry::XYZ> >, Geometry::CornerBase
-    <Geometry::MeshBase<Geometry::XYZ> > >::calcOpacitiesImp
-    (this = 0x6ee9690, RosselandOnly = false)
-    at kull/source/transport/RadDiffusion/RadDiffusionEvolver.cc:273
-[3] if (!RosselandOnly) addPartPlanckianOpacity(*partItr, rPlanckianTe);
+[0-3] if (!RosselandOnly) addPartPlanckianOpacity(*partItr, rPlanckianTe);
+Some results from [0-3] omitted; use expand to view.
 \end{Verbatim}
 
 \newpage
 
 \section{Command Reference}
+
+\textbf{Note:} This section is in the process of being updated. It is mostly accurate, but incomplete.
 
 This section provides an overview of all of the commands supported by PGDB. The vast majority of these are very similar to regular GDB commands and the commands in the GDB Machine Interface. For further details on GDB, refer to its documentation. This section does not attempt to detail every nuance of every command.
 
@@ -1286,6 +1168,8 @@ Unblock output from the processors specified in \ttemph{proc-spec}. \ttemph{proc
 
 \section{Configuration Reference}
 
+\textbf{Note:} This section is in the process of being updated. It is mostly accuracte, but incomplete.
+
 This section provides an overview of all of the configuration variables within PGDB. The configuration files are stored as regular Python scripts inside the \texttt{conf/} directory.
 
 \subsection{lmonconf}
@@ -1347,25 +1231,6 @@ This controls the size of each broadcast of topology data, from both the front-e
 \lmargintt{multi\_len}
 This controls the maximum size of each message sent over MRNet. If a message is larger than this, it is split into multiple messages smaller than this value.
 
-\newpage
-
-\section{LaunchMON and MRNet Troubleshooting}
-
-LaunchMON and (to a lesser extent) MRNet can be troublesome to install. This section attempts to document some of the problems and their solutions.
-
-\subsection{LaunchMON}
-
-\subsubsection{Building LaunchMON}
-
-Most problems with building LaunchMON seem to be caused by incompatibilities between the versions of build software that it expects, and newer versions. This often manifests itself as, for example \texttt{undefined reference to symbol 'gpg\_strerror'}. This can be solved by switching LaunchMON to use an older environment for building. The exact process will depend upon the details of your system, but it involves:
-\begin{itemize}
-\item Switch to GCC 4.4. gcc-4.4.5 appears to work.
-\item Switch to ld-2.20.1. This will require installing binutils-2.20.1.
-\end{itemize}
-It is recommended that these changes not be made system-wide, but instead used only for building LaunchMON.
-
-\subsection{MRNet}
-
 % These are to get the TOC to display the right page number and link to the right page.
 \cleardoublepage
 \phantomsection
@@ -1373,4 +1238,3 @@ It is recommended that these changes not be made system-wide, but instead used o
 \printindex
 
 \end{document}
-
