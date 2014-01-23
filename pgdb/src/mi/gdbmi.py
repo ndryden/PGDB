@@ -58,8 +58,7 @@ class GDBMachineInterface:
         return token
 
     def read(self, timeout = 0):
-        """Generator to read data from GDB, call appropriate handlers, and
-        return the data read."""
+        """Generator to read, parse, and return data from GDB."""
         for data in self._read(timeout):
             self.buffer += data
             while True:
