@@ -28,6 +28,10 @@ class Command(object):
         self.opts = str_opts
         self.args = map(lambda x: str(x), self.args)
 
+    def add_opt(self, k, v):
+        """Add an option to this GDB command."""
+        self.opts[k] = v
+
     def generate_mi_command(self):
         """Generate a machine interface command from this Command."""
         return "-" + self.command + " " + " ".join(map(lambda (k, v): k + " " + v, self.opts.items())) + " " + " ".join(self.args)
