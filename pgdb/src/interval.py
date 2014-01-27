@@ -128,6 +128,14 @@ class Interval(object):
             return True
         return False
 
+    def get_smallest(self):
+        """Return the smallest value in the interval."""
+        return self.intervals[0][0]
+
+    def get_largest(self):
+        """Return the largest value in the interval."""
+        return self.intervals[-1][1]
+
     def members(self):
         """A generator of every integer in the intervals."""
         if not self.intervals:
