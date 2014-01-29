@@ -150,6 +150,11 @@ class GDBMIPrettyPrinter:
         output is the stream to output to; defaults to stdout.
 
         """
+        # Hack to use new pretty-printing.
+        if not output:
+            output = sys.stdout
+        output.write("[{0}] {1}\n".format(tag, record))
+        return
         ident = self.identifier.identify(record)
         if tag is None:
             tag = ""

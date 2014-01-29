@@ -15,7 +15,7 @@ from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
-from mi.gdbmiarec import GDBMIAggregatedRecord, combine_aggregation_lists
+from mi.gdbmiarec import GDBMIAggregatedRecord, combine_aggregated_records
 from pprinter import GDBMIPrettyPrinter
 from interval import Interval
 
@@ -158,7 +158,7 @@ class GDBFE (GDBMICmd):
     def out_handler(self, msg):
         """Handle an out message by adding the arec to the temporary list."""
         if self.arec_list:
-            self.arec_list = combine_aggregation_lists(self.arec_list, msg.record)
+            self.arec_list = combine_aggregated_records(self.arec_list + msg.record)
         else:
             self.arec_list = msg.record
 
@@ -170,27 +170,17 @@ class GDBFE (GDBMICmd):
             if len(self.output_history) > gdbconf.history_length:
                 # Remove the last (oldest) element.
                 self.output_history.pop()
-            subst_classes = arec.get_substitution_classes()
-            subst_key = 0
-            if len(subst_classes) > 1:
-                # For multiple substitution classes, we only print the smallest.
-                # This gets the key of the smallest substitution class.
-                subst_key = min(enumerate(subst_classes), key = lambda x: len(x[1]))[0]
-            # Just get the first VID, since all substitutions for it are the same.
-            record = arec.get_record(subst_classes[subst_key][0])
-            ranks = Interval(lis = subst_classes[subst_key])
+            record_classes = arec.get_record_classes()
+            class_key = max(record_classes,
+                            key = lambda x: len(record_classes[x]))
+            # Only print the lowest-rank entry in the class.
+            ranks = record_classes[class_key]
+            record = arec.get_record(ranks.get_smallest())
             # Note that this may not work if things don't support lists of ranks.
-            if self.record_handler.handle(record, rank = ranks):
-                self.pprinter.pretty_print(record, ranks)
-                if len(subst_classes) > 1:
-                    print "Some results from {0} omitted; use expand to view.".format(arec.get_ids())
-#            for subst_class in subst_classes:
-#                # Just get first VID, since all subsitutions for it are the same.
-#                record = arec.get_record(subst_class[0])
-#                ranks = Interval(lis = subst_class)
-#                # Note that this may not work if things don't support lists of ranks.
-#                if self.record_handler.handle(record, rank = ranks):
-#                    self.pprinter.pretty_print(record, ranks)
+            #if self.record_handler.handle(record, rank = ranks):
+            self.pprinter.pretty_print(record, ranks)
+            if len(record_classes) > 1:
+                print "Some results from {0} omitted; use expand to view.".format(arec.get_ranks())
         self.arec_list = []
 
     def varprint_res_handler(self, msg):
@@ -379,7 +369,7 @@ class GDBFE (GDBMICmd):
             return
         arec = self.output_history[history_item]
         # We only care about the IDs that are present in both.
-        ids = targets.intersect(arec.get_ids())
+        ids = targets.intersect(arec.get_ranks())
         for vid in ids:
             self.pprinter.pretty_print(arec.get_record(vid), Interval(lis = [vid]))
 

@@ -1,6 +1,7 @@
 """Handles aggregated records."""
 
 import copy
+from collections import defaultdict
 from mi.gdbmi_parser import *
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from interval import Interval
@@ -28,10 +29,49 @@ def _is_int(v):
 def _is_primitive(v):
     """Check whether an object is a primitive.
 
-    An object is primitive if it is a string or list of strings.
+    An object is primitive if it is a string, integer, None, or a list of
+    primitives.
 
     """
-    return _is_str(v) or (_is_list(v) and all(map(_is_str, v)))
+    return (_is_str(v) or _is_int(v) or (v is None) or
+            (_is_list(v) and all(map(_is_primitive, v))))
+
+def combine_records(records, ranks):
+    """Combine a list of records into the smallest set of aggregated records.
+
+    records is a list of records.
+    ranks is a list of associated ranks, in the same order.
+    Returns a list of aggregated records.
+
+    """
+    type_dict = defaultdict(list)
+    arecs = []
+    for record, rank in zip(records, ranks):
+        # This is immutable and should identify records of the same type.
+        t = tuple([record.record_type] + list(record.record_subtypes))
+        type_dict[t].append((rank, record))
+    for t in type_dict:
+        first_rec = type_dict[t].pop(0)
+        arec = GDBMIAggregatedRecord(first_rec[0], first_rec[1])
+        for rank, record in type_dict[t]:
+            other_arec = GDBMIAggregatedRecord(rank, record)
+            arec.merge(other_arec)
+        arecs.append(arec)
+    return arecs
+
+def combine_aggregated_records(arecs):
+    """Combine a list of aggregated records into the smallest such set."""
+    type_dict = defaultdict(list)
+    new_arecs = []
+    for arec in arecs:
+        t = tuple([arec.record_type] + list(arec.record_subtypes))
+        type_dict[t].append(arec)
+    for t in type_dict:
+        first_arec = type_dict[t].pop(0)
+        for arec in type_dict[t]:
+            first_arec.merge(arec)
+        new_arecs.append(first_arec)
+    return new_arecs
 
 class _Substitution:
     """Substitution for aggregated records.
@@ -65,7 +105,10 @@ class _Substitution:
             # Same as current default: do nothing.
             return
         default_count = len(ranks) - len(self.other)
-        counter_dict = {data: 1}
+        _data = data
+        if _is_list(_data):
+            _data = tuple(_data)
+        counter_dict = {_data: 1}
         for v in self.other.itervalues():
             if _is_list(v):
                 v = tuple(v)
@@ -98,8 +141,14 @@ class _Substitution:
         """
         my_default_count = len(my_ranks) - len(self.other)
         other_default_count = len(other_ranks) - len(other.other)
-        counter_dict = {self.default: my_default_count,
-                        other.default: other_default_count}
+        my_default = self.default
+        other_default = other.default
+        if _is_list(my_default):
+            my_default = tuple(my_default)
+        if _is_list(other_default):
+            other_default = tuple(other_default)
+        counter_dict = {my_default: my_default_count,
+                        other_default: other_default_count}
         for v in self.other.itervalues():
             if _is_list(v):
                 # Convert for immutability.
@@ -134,6 +183,16 @@ class _Substitution:
         self.default = max_value
         self.other = new_other
 
+    def get_substitution(self, rank):
+        """Return the substitution for the rank."""
+        if rank in self.other:
+            return self.other[rank]
+        else:
+            return self.default
+
+    def __str__(self):
+        return "_Substitution: default = {0}\nothers = {1}".format(self.default,
+                                                                   self.others)
 
 class GDBMIAggregatedRecord:
     """Aggregated GDBMIRecord making use of substitutions.
@@ -142,8 +201,8 @@ class GDBMIAggregatedRecord:
 
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, rank, record):
+        self.init_record(rank, record)
 
     def create_structure(self, data):
         """Return a structure based upon data.
@@ -202,7 +261,7 @@ class GDBMIAggregatedRecord:
         self.ranks = Interval(lis = [rank], is_sorted = True)
         for field in self.fields:
             other_attr = getattr(record, field)
-            setattr(self, '_' + field, self.create_structure(other_attr))
+            setattr(self, field, self.create_structure(other_attr))
 
     def add_record(self, rank, record):
         self.ranks += Interval(lis = [rank], is_sorted = True)
@@ -212,10 +271,11 @@ class GDBMIAggregatedRecord:
         for field in self.fields:
             self.copy_structure(rank, getattr(self, field),
                                 getattr(record, field))
+        self.ranks += Interval(lis = [rank], is_sorted = True)
 
     def merge_recursive(self, field, other_field, other_ranks):
         if isinstance(field, _Substitution):
-            field.merge(other, self.ranks, other_ranks)
+            field.merge(other_field, self.ranks, other_ranks)
         elif _is_list(field):
             for d1, d2 in zip(field, other_field):
                 merge_recursive(d1, d2, other_ranks)
@@ -231,3 +291,60 @@ class GDBMIAggregatedRecord:
             self.merge_recursive(getattr(self, field),
                                  getattr(other, field),
                                  other.ranks)
+        self.ranks += other.ranks
+
+    def reconstruct_recursive(self, rank, data):
+        if isinstance(data, _Substitution):
+            return data.get_substitution(rank)
+        elif _is_list(data):
+            new_data = []
+            for d in data:
+                new_data.append(reconstruct_recursive(rank, d))
+            return new_data
+        elif _is_dict(data):
+            new_data = {}
+            for k in data:
+                new_data[k] = reconstruct_recursive(rank, data[k])
+
+    def get_record(self, rank):
+        """Return the reconstructed record for the given rank."""
+        if self.record_type in [ASYNC_EXEC, ASYNC_STATUS, ASYNC_NOTIFY]:
+            record = GDBMIAsyncRecord()
+        elif self.record_type in [STREAM_CONSOLE, STREAM_TARGET, STREAM_LOG]:
+            record = GDBMIStreamRecord()
+        elif self.record_type == RESULT:
+            record = GDBMIResultRecord()
+        else:
+            record = GDBMIUnknownRecord()
+        record.record_type = self.record_type
+        record.record_subtypes = self.record_subtypes
+        record.fields = self.fields
+        for field in self.fields:
+            setattr(record, field,
+                    self.reconstruct_recursive(rank, getattr(self, field)))
+        return record
+
+    def get_record_classes(self):
+        """Get the classes of records in this aggregated record.
+
+        A record class is a set of records that use the same substitutions for
+        every field.
+
+        This returns a dictionary indexed by records, containing ranks.
+
+        """
+        class_dict = {}
+        for rank in self.ranks:
+            record = self.get_record(rank)
+            if record in class_dict:
+                class_dict[rank] += Interval(lis = [rank], is_sorted = True)
+            else:
+                class_dict[rank] = Interval(lis = [rank], is_sorted = True)
+        return class_dict
+
+    def get_ranks(self):
+        return self.ranks
+
+    def __str__(self):
+        return "AggregatedRecord({0}, {1})".format(self.record_type,
+                                                   self.record_subtypes)

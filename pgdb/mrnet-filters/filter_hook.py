@@ -20,7 +20,7 @@ def filter_hook(packet_list):
     arec_list = map(lambda x: x.record, msg_list)
     new_list = arec_list.pop(0)
     for l in arec_list:
-        new_list = combine_aggregation_lists(new_list, l)
+        new_list = combine_aggregated_records(new_list + l)
     msg = GDBMessage(OUT_MSG, record = new_list)
     if new_time:
         msg._send_time = new_time

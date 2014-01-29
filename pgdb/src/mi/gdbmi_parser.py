@@ -144,7 +144,7 @@ class GDBMIParser:
             else:
                 parts = self.output_re.match(line)
                 if not parts:
-                    record = GDBMIRecord()
+                    record = GDBMIUnknownRecord()
                     record.record_type = UNKNOWN
                     record.output = line
                     records.append(record)
@@ -184,9 +184,9 @@ class GDBMIParser:
         """Parse an exec, status, or notify async record into a GDBMIAsyncRecord."""
         output_class, output = self.parse_async_output(src)
         return GDBMIAsyncRecord.create_record(self._oob_mapper[symbol],
-                                                token,
-                                                output_class,
-                                                output)
+                                              token,
+                                              output_class,
+                                              output)
 
     def parse_stream_record(self, symbol, src):
         """Parse a console, target, or log stream record into a GDBMIStreamRecord."""
@@ -331,12 +331,31 @@ def _make_list(item):
         return item
     return [item]
 
-class GDBMIRecord:
+class GDBMIRecord(object):
     """The top-level GDB record class."""
-    record_type = None
-    record_subtypes = set()
-    token = None
-    fields = []
+
+    def __init__(self):
+        self.record_type = None
+        self.record_subtypes = set()
+        self.token = None
+        self.fields = []
+
+    def __key(self):
+        l = [self.record_type] + list(self.record_subtypes) + [self.token]
+        for field in self.fields:
+            val = getattr(self, field)
+            if isinstance(val, list):
+                val = tuple(val)
+            elif isinstance(val, dict):
+                val = tuple(val.items())
+            l.append(val)
+        return tuple(l)
+
+    def __eq__(self, other):
+        return self.__key() == other.__key()
+
+    def __hash__(self):
+        return hash(self.__key())
 
 class GDBMIAsyncRecord(GDBMIRecord):
     """An async record."""
@@ -350,14 +369,12 @@ class GDBMIAsyncRecord(GDBMIRecord):
         record.record_subtypes.add(output_class)
         if "frame" in output:
             record.frame = GDBMIFrame(output["frame"])
-        else:
-            record.frame = None
-        record.fields += ["frame"]
+            record.fields += ["frame"]
         if record_type == ASYNC_EXEC:
             record.thread_id = output["thread-id"]
-            record.fields += ["thread-id"]
+            record.fields += ["thread_id"]
             if output_class == ASYNC_EXEC_STOPPED:
-                record.reason = output["reason"]
+                record.reason = output.get("reason")
                 record.stopped_threads = output["stopped-threads"]
                 record.core = output.get("core")
                 record.fields += ["reason", "stopped_threads", "core"]
@@ -449,6 +466,9 @@ class GDBMIAsyncRecord(GDBMIRecord):
                 record.fields += ["thread_group_id", "addr", "length", "mem_type"]
         return record
 
+    def __init__(self):
+        super(GDBMIAsyncRecord, self).__init__()
+
     def __str__(self):
         return "{0} ASYNC[{1}] {2}".format(self.token, self.record_type, self.record_subtypes)
 
@@ -465,6 +485,9 @@ class GDBMIStreamRecord(GDBMIRecord):
         record.string = src
         record.fields = ["string"]
         return record
+
+    def __init__(self):
+        super(GDBMIStreamRecord, self).__init__()
 
     def __str__(self):
         return "{0} STREAM: {1}".format(self.token, self.string)
@@ -643,13 +666,20 @@ class GDBMIResultRecord(GDBMIRecord):
             record.user = results[RESULT_TIME]["user"]
             record.system = results[RESULT_TIME]["system"]
             record.fields += ["wallclock", "user", "system"]
+        return record
+
+    def __init__(self):
+        super(GDBMIResultRecord, self).__init__()
 
     def __str__(self):
         return "{0} RESULT[{1}]: {2}".format(self.token, self.record_type, self.record_subtypes)
 
 class GDBMIUnknownRecord(GDBMIRecord):
     """Some other type of record."""
-    output = None
+
+    def __init__(self):
+        super(GDBMIUnknownRecord, self).__init__()
+        self.output = None
 
     def __str__(self):
         return "{0} UNKNOWN: {1}".format(self.token, self.output)
@@ -662,12 +692,19 @@ class GDBMIFrame:
             # Fill with dummy values.
             frame = {"level": None,
                      "addr": None}
-        self.level = frame["level"]
-        self.addr = frame["addr"]
+        self.level = frame.get("level")
+        self.addr = frame.get("addr")
         self.func = frame.get("func")
         self.source_file = frame.get("file")
+        self.fullname = frame.get("fullname")
         self.line = frame.get("line")
         self.binary_file = frame.get("from")
+        if "args" in frame:
+            self.args = {}
+            for arg in frame["args"]:
+                self.args[arg["name"]] = arg["value"]
+        else:
+            self.args = None
 
     def __key(self):
         return (self.level, self.addr, self.func, self.source_file,
