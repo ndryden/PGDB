@@ -10,7 +10,6 @@ from comm import *
 from gdb_shared import *
 from lmon.lmonbe import *
 from mi.gdbmi import *
-from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
 from mi.gdbmiarec import GDBMIAggregatedRecord, combine_records
@@ -156,33 +155,6 @@ class GDBBE:
             self.shutdown()
         except AttributeError: pass
 
-    def add_token_handler(self, token, handler):
-        """Add a handler for the given token.
-
-        token is the token to trigger on.
-        handler is a callback function that accepts the record.
-
-        There can be at most one handler for a given token.
-
-        """
-        self.token_handlers[token] = handler
-
-    def del_token_handler(self, token):
-        """Remove a handler for the given token.
-
-        token is the token handler to remove.
-
-        """
-        if token in self.token_handlers:
-            del self.token_handlers[token]
-            return True
-        return False
-
-    def _call_token_handler(self, record):
-        """Given a record, call the associated token handler if any."""
-        if record.token in self.token_handlers:
-            self.token_handlers[record.token](record)
-
     def die_handler(self, msg):
         """Handle a die message by exiting."""
         sys.exit("Told to die.")
@@ -267,7 +239,6 @@ class GDBBE:
             ranks = []
             for record in self.gdb.read():
                 if not self.is_filterable(record):
-                    self._call_token_handler(record)
                     records.append(record)
                     if record.token and record.token in self.token_rank_map:
                         ranks.append(self.token_rank_map[record.token])
