@@ -59,7 +59,7 @@ class GDBFE (GDBMICmd):
         for rank in self.comm.get_mpiranks():
             self.varobjs[rank] = VariableObjectManager()
         self.init_handlers()
-        self.pprinter = GDBMIPrettyPrinter(self.identifier)
+        self.pprinter = GDBMIPrettyPrinter()
         self.sleep_time = 0.1
         self.blocks = []
         try:

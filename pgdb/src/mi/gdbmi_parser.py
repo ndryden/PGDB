@@ -335,12 +335,18 @@ class GDBMIRecord(object):
     """The top-level GDB record class."""
 
     def __init__(self):
+        """Initialize defaults for records."""
         self.record_type = None
         self.record_subtypes = set()
         self.token = None
         self.fields = []
 
+    def pretty_print(self):
+        """Default pretty printer for records."""
+        return [str(self)]
+
     def __key(self):
+        """Return a key defining the record."""
         l = [self.record_type] + list(self.record_subtypes) + [self.token]
         for field in self.fields:
             val = getattr(self, field)
@@ -352,10 +358,19 @@ class GDBMIRecord(object):
         return tuple(l)
 
     def __eq__(self, other):
+        """Equality check."""
         return self.__key() == other.__key()
 
     def __hash__(self):
+        """Hash."""
         return hash(self.__key())
+
+    def _str_fields(self):
+        s = ""
+        for field in self.fields:
+            val = getattr(self, field)
+            s += "{0} = {1}\n".format(field, val)
+        return s
 
 class GDBMIAsyncRecord(GDBMIRecord):
     """An async record."""
@@ -375,6 +390,43 @@ class GDBMIAsyncRecord(GDBMIRecord):
             record.fields += ["thread_id"]
             if output_class == ASYNC_EXEC_STOPPED:
                 record.reason = output.get("reason")
+                if record.reason:
+                    if ASYNC_STOPPED_BREAKPOINT_HIT == record.reason:
+                        record.breakpoint_id = output["bkptno"]
+                    elif ASYNC_STOPPED_WATCHPOINT_TRIGGER == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_READ_WATCHPOINT_TRIGGER == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_ACCESS_WATCHPOINT_TRIGGER == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_FUNCTION_FINISHED == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_LOCATION_REACHED == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_WATCHPOINT_SCOPE == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_END_STEPPING_RANGE == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_EXIT_SIGNALLED == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_EXITED == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_EXITED_NORMALLY == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_SIGNAL_RECEIVED == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_SOLIB_EVENT == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_FORK == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_VFORK == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_SYSCALL_ENTRY == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_SYSCALL_RETURN == record.reason:
+                        pass
+                    elif ASYNC_STOPPED_EXEC == record.reason:
+                        pass
                 record.stopped_threads = output["stopped-threads"]
                 record.core = output.get("core")
                 record.fields += ["reason", "stopped_threads", "core"]
@@ -466,11 +518,119 @@ class GDBMIAsyncRecord(GDBMIRecord):
                 record.fields += ["thread_group_id", "addr", "length", "mem_type"]
         return record
 
+    def pretty_print(self):
+        """Return a list of strings (one per line) for pretty-printing."""
+        s = ""
+        if self.record_type == ASYNC_EXEC:
+            if ASYNC_EXEC_STOPPED in self.record_subtypes:
+                if self.reason:
+                    if ASYNC_STOPPED_BREAKPOINT_HIT == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_WATCHPOINT_TRIGGER == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_READ_WATCHPOINT_TRIGGER == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_ACCESS_WATCHPOINT_TRIGGER == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_FUNCTION_FINISHED == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_LOCATION_REACHED == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_WATCHPOINT_SCOPE == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_END_STEPPING_RANGE == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_EXIT_SIGNALLED == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_EXITED == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_EXITED_NORMALLY == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_SIGNAL_RECEIVED == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_SOLIB_EVENT == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_FORK == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_VFORK == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_SYSCALL_ENTRY == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_SYSCALL_RETURN == self.reason:
+                        return None
+                    elif ASYNC_STOPPED_EXEC == self.reason:
+                        return None
+                    else:
+                        s = "Thread ID {0} stopped, unknown reason {1}".format(self.thread_id, self.reason)
+                    s = [s] + ["Stopped threads: {0}".format(self.stopped_threads)]
+                else:
+                    s = "Stopped, thread ID {0}".format(self.thread_id)
+            elif ASYNC_RECORD_RUNNING in self.record_subtypes:
+                s = "Running, thread ID {0}".format(self.thread_id)
+        elif self.record_type == ASYNC_NOTIFY:
+            if ASYNC_NOTIFY_THREAD_GROUP_ADDED in self.record_subtypes:
+                s = "Thread group {0} added".format(self.thread_group_id)
+            elif ASYNC_NOTIFY_THREAD_GROUP_REMOVED in self.record_subtypes:
+                s = "Thread group {0} removed".format(self.thread_group_id)
+            elif ASYNC_NOTIFY_THREAD_GROUP_STARTED in self.record_subtypes:
+                s = "Thread group {0} started, PID = {1}".format(self.thread_group_id,
+                                                                 self.pid)
+            elif ASYNC_NOTIFY_THREAD_GROUP_EXITED in self.record_subtypes:
+                s = "Thread group {0} exited, code = {1}".format(self.thread_group_id,
+                                                                 self.exit_code)
+            elif ASYNC_NOTIFY_THREAD_CREATED in self.record_subtypes:
+                s = "Thread {0} created (group {1})".format(self.thread_id,
+                                                            self.thread_group_id)
+            elif ASYNC_NOTIFY_THREAD_EXITED in self.record_subtypes:
+                s = "Thread {0} exited (group {1})".format(self.thread_id,
+                                                           self.thread_group_id)
+            elif ASYNC_NOTIFY_THREAD_SELECTED in self.record_subtypes:
+                s = "Switched to thread {0}".format(self.thread_id)
+            elif ASYNC_NOTIFY_LIBRARY_LOADED in self.record_subtypes:
+                s = "Loaded library {0}".format(self.library_id)
+                if self.thread_group_id:
+                    s += " (group {0})".format(self.thread_group_id)
+            elif ASYNC_NOTIFY_LIBRARY_UNLOADED in self.record_subtypes:
+                s = "Unloaded library {0}".format(self.library_id)
+                if self.thread_group_id:
+                    s += " (group {0})".format(self.thread_group_id)
+            elif ASYNC_NOTIFY_TRACEFRAME_CHANGED in self.record_subtypes:
+                return None
+            elif ASYNC_NOTIFY_TSV_CREATED in self.record_subtypes:
+                return None
+            elif ASYNC_NOTIFY_TSV_DELETED in self.record_subtypes:
+                return None
+            elif ASYNC_NOTIFY_TSV_MODIFIED in self.record_subtypes:
+                return None
+            elif ASYNC_NOTIFY_BREAKPOINT_CREATED in self.record_subtypes:
+                s = self.breakpoint.pretty_print()
+            elif ASYNC_NOTIFY_BREAKPOINT_MODIFIED in self.record_subtypes:
+                s = self.breakpoint.pretty_print()
+            elif ASYNC_NOTIFY_BREAKPOINT_DELETED in self.record_subtypes:
+                s = "Deleted breakpoint {0}".format(self.breakpoint_id)
+            elif ASYNC_NOTIFY_RECORD_STARTED in self.record_subtypes:
+                s = "Execution log recording started (group {0})".format(self.thread_group_id)
+            elif ASYNC_NOTIFY_RECORD_STOPPED in self.record_subtypes:
+                s = "Execution log recording stopped (group {0})".format(self.thread_group_id)
+            elif ASYNC_NOTIFY_CMD_PARAM_CHANGED in self.record_subtypes:
+                s = "{0} is now {1}".format(self.param, self.value)
+            elif ASYNC_NOTIFY_MEMORY_CHANGED in self.record_subtypes:
+                s = "Memory at {0} (length {1}) written to in group {2}".format(self.addr, self.length, self.thread_group_id)
+                if self.mem_type == "code":
+                    s += " (this is executable memory)"
+        if not isinstance(s, list):
+            s = [s]
+        if hasattr(self, "frame"):
+            s = self.frame.pretty_print() + s
+        return s
+
     def __init__(self):
+        """Initialization."""
         super(GDBMIAsyncRecord, self).__init__()
 
     def __str__(self):
-        return "{0} ASYNC[{1}] {2}".format(self.token, self.record_type, self.record_subtypes)
+        """Return a basic string representation."""
+        return "{0} ASYNC[{1}] {2}\n".format(self.token, self.record_type, self.record_subtypes) + self._str_fields()
 
 class GDBMIStreamRecord(GDBMIRecord):
     """A stream record."""
@@ -478,6 +638,7 @@ class GDBMIStreamRecord(GDBMIRecord):
 
     @staticmethod
     def create_record(record_type, src):
+        """Create a new stream record."""
         record = GDBMIStreamRecord()
         record.record_type = record_type
         record.record_subtypes = set()
@@ -486,17 +647,25 @@ class GDBMIStreamRecord(GDBMIRecord):
         record.fields = ["string"]
         return record
 
+    def pretty_print(self):
+        """Return a list of strings for pretty-printing by GDBMIPrettyPrinter."""
+        # String quotes.
+        return [self.string[1:-1]]
+
     def __init__(self):
+        """Initialization."""
         super(GDBMIStreamRecord, self).__init__()
 
     def __str__(self):
-        return "{0} STREAM: {1}".format(self.token, self.string)
+        """Return a basic string representation."""
+        return "{0} STREAM: {1}\n".format(self.token, self.string) + self._str_fields()
 
 class GDBMIResultRecord(GDBMIRecord):
     """A result record."""
 
     @staticmethod
     def create_record(token, result_class, results):
+        """Create a new result record."""
         record = GDBMIResultRecord()
         record.record_type = RESULT
         record.record_subtypes.add(result_class)
@@ -668,30 +837,35 @@ class GDBMIResultRecord(GDBMIRecord):
             record.fields += ["wallclock", "user", "system"]
         return record
 
+    def pretty_print(self):
+        """Return a list of strings for pretty-printing by GDBMIPrettyPrinter."""
+        pass
+
     def __init__(self):
+        """Initialization."""
         super(GDBMIResultRecord, self).__init__()
 
     def __str__(self):
-        return "{0} RESULT[{1}]: {2}".format(self.token, self.record_type, self.record_subtypes)
+        """Return a basic string representation."""
+        return "{0} RESULT[{1}]: {2}\n".format(self.token, self.record_type, self.record_subtypes) + self._str_fields()
 
 class GDBMIUnknownRecord(GDBMIRecord):
     """Some other type of record."""
 
     def __init__(self):
+        """Initialization."""
         super(GDBMIUnknownRecord, self).__init__()
         self.output = None
 
     def __str__(self):
+        """Return a basic string representation."""
         return "{0} UNKNOWN: {1}".format(self.token, self.output)
 
 class GDBMIFrame:
     """A stack frame."""
 
     def __init__(self, frame):
-        if not frame:
-            # Fill with dummy values.
-            frame = {"level": None,
-                     "addr": None}
+        """Initialize the frame from output data."""
         self.level = frame.get("level")
         self.addr = frame.get("addr")
         self.func = frame.get("func")
@@ -705,6 +879,25 @@ class GDBMIFrame:
                 self.args[arg["name"]] = arg["value"]
         else:
             self.args = None
+
+    def pretty_print(self):
+        """Pretty-printing interface for GDBMIPrettyPrinter."""
+        s = ""
+        if self.level is not None:
+            s += "#{0:<5}".format(self.level)
+        s += str(self.addr)
+        if self.func:
+            s += " in {0}(".format(self.func)
+            if self.args:
+                for k in self.args:
+                    s += "{0}={1}, ".format(k, self.args[k])
+                s = s[:-2] # Remove trailing ", ".
+            s += ")"
+        if self.fullname:
+            s += " from {0}".format(self.fullname)
+            if self.line is not None:
+                s += ":{0}".format(self.line)
+        return [s]
 
     def __key(self):
         return (self.level, self.addr, self.func, self.source_file,
@@ -754,6 +947,10 @@ class GDBMIBreakpoint:
         self.what = bkpt.get("what")
         self.thread_groups = bkpt.get("thread-groups")
 
+    def pretty_print(self):
+        """Pretty-printing interface for GDBMIPrettyPrinter."""
+        pass
+
     def __key(self):
         return (self.number,
                 self.breakpoint_type,
@@ -793,11 +990,6 @@ class GDBMIThread:
     """A thread."""
 
     def __init__(self, thread):
-        if not thread:
-            # Fill with dummy values.
-            thread = {"id": None,
-                      "target-id": None,
-                      "state": None}
         self.thread_id = thread["id"]
         self.target_id = thread["target-id"]
         self.details = thread.get("details")
@@ -805,6 +997,24 @@ class GDBMIThread:
         self.state = thread["state"]
         self.current = thread.get("current")
         self.core = thread.get("core")
+
+    def pretty_print(self):
+        """Pretty-printing interface for GDBMIPrettyPrinter."""
+        fmt = "  {0:<5}{1:<16}{2:<11}{3:<7}{4:<7}"
+        header = fmt.format("ID", "Target ID", "State", "Core", "Details")
+        core = "?"
+        details = "None"
+        if self.core is not None:
+            core = self.core
+        if self.details:
+            details = self.details
+        line = fmt.format(self.thread_id, self.target_id, self.state,
+                          core, details)
+        if self.current:
+            line = "* " + line
+        else:
+            line = "  " + line
+        return [header, line]
 
     def __key(self):
         return (self.thread_id, self.target_id, self.details, self.name,
