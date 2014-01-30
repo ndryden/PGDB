@@ -55,7 +55,10 @@ class GDBMIPrettyPrinter:
             try:
                 l = record.pretty_print()
                 if l is None:
-                    pretty = self.default_pretty_print(record)
+                    pretty = "[{0}] {1}".format(tag,
+                                                self.default_pretty_print(record))
+                    if pretty[-1] != "\n":
+                        pretty += "\n"
                 else:
                     pretty = "\n".join(map(lambda x: "[{0}] {1}".format(tag, x), l)) + "\n"
             except AttributeError:
