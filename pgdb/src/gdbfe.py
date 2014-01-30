@@ -16,7 +16,7 @@ from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
 from mi.gdbmiarec import GDBMIAggregatedRecord, combine_aggregated_records
-from pprinter import GDBMIPrettyPrinter
+from mi.gdbmipprinter import GDBMIPrettyPrinter
 from interval import Interval
 
 class GDBFE (GDBMICmd):

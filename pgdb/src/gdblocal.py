@@ -11,7 +11,7 @@ from conf import gdbconf
 from mi.gdbmi import GDBMachineInterface
 from mi.gdbmicmd import GDBMICmd
 from mi.gdbmi_identifier import GDBMIRecordIdentifier
-from pprinter import GDBMIPrettyPrinter
+from mi.gdbmipprinter import GDBMIPrettyPrinter
 
 class GDBMILocal (GDBMICmd):
     """Simple class for running one instance of GDB locally via the MI interface."""
