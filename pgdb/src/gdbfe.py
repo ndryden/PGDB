@@ -11,7 +11,6 @@ from conf import gdbconf
 from gdb_shared import *
 from comm import *
 from mi.gdbmicmd import GDBMICmd
-from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
@@ -32,7 +31,7 @@ class GDBFE (GDBMICmd):
             VARPRINT_RES_MSG: self.varprint_res_handler,
             }
         # Now record handlers.
-        self.record_handler = GDBMIRecordHandler(self.identifier)
+        self.record_handler = GDBMIRecordHandler()
 
     def remote_init(self):
         """Initialize things related to the remote communication and back-end daemons."""
@@ -54,7 +53,6 @@ class GDBFE (GDBMICmd):
             self.remote_up.set()
             self.interrupt_main()
             return False
-        self.identifier = GDBMIRecordIdentifier()
         self.varobjs = {}
         for rank in self.comm.get_mpiranks():
             self.varobjs[rank] = VariableObjectManager()
