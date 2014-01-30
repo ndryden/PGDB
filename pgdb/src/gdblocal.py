@@ -10,7 +10,6 @@ import threading
 from conf import gdbconf
 from mi.gdbmi import GDBMachineInterface
 from mi.gdbmicmd import GDBMICmd
-from mi.gdbmi_identifier import GDBMIRecordIdentifier
 from mi.gdbmipprinter import GDBMIPrettyPrinter
 
 class GDBMILocal (GDBMICmd):
@@ -22,8 +21,7 @@ class GDBMILocal (GDBMICmd):
     def __init__(self):
         """Initialize GDBMICmd and load the machine interface, spawning GDB."""
         GDBMICmd.__init__(self)
-        ider = GDBMIRecordIdentifier()
-        self.pprinter = GDBMIPrettyPrinter(ider)
+        self.pprinter = GDBMIPrettyPrinter()
         self.gdb = GDBMachineInterface(gdb_args = ["-x", gdbconf.gdb_init_path])
         self.dispatch_gdbmi_command_string("enable-pretty-printing")
 
