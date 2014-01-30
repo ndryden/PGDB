@@ -194,33 +194,32 @@ class GDBFE (GDBMICmd):
             print "[{0}] Received a bad varobj!".format(msg.rank)
 
     def parse_filter_spec(self, spec):
-        """Parse a filter specification into a record type and class."""
+        """Parse a filter specification into a list of record type."""
         split = spec.lower().split()
         if len(split) == 0:
             print "Bad filter specification."
-            return None, None
-        record_type = split[0]
-        record_class = None
-        if len(split) > 1:
-            record_class = split[1]
-        return record_type, record_class
+            return None
+        return split
 
     def do_filter(self, cmd, targets = None):
-        """Tell the back-end daemons to filter something."""
-        record_type, record_class = self.parse_filter_spec(cmd)
-        if not record_type:
+        """Tell the back-end daemons to filter something.
+
+        The input is a list of record types and subtypes. A record containing
+        any of these will be filtered.
+
+        """
+        record_types = set(self.parse_filter_spec(cmd))
+        if not record_types:
             return
-        self.comm.send(GDBMessage(FILTER_MSG, filter_type = record_type,
-                                  filter_class = record_class),
+        self.comm.send(GDBMessage(FILTER_MSG, filter_types = record_types),
                        self.comm.broadcast)
 
     def do_unfilter(self, cmd, targets = None):
         """Tell the back-end daemons to unfilter something."""
-        record_type, record_class = self.parse_filter_spec(cmd)
-        if not record_type:
+        record_types = set(self.parse_filter_spec(cmd))
+        if not record_types:
             return
-        self.comm.send(GDBMessage(UNFILTER_MSG, filter_type = record_type,
-                                  filter_class = record_class),
+        self.comm.send(GDBMessage(UNFILTER_MSG, filter_types = record_types),
                        self.comm.broadcast)
 
     def parse_proc_spec(self, proc_spec):

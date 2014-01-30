@@ -115,17 +115,18 @@ class GDBBE:
 
     def init_filters(self):
         """Initialize default filters."""
-        an_lower = ASYNC_NOTIFY.lower()
-        self.filters = [
-            (an_lower, "shlibs-updated"),
-            (an_lower, "shlibs-added"),
-            (an_lower, "shlibs-removed"),
-            (an_lower, "library-loaded"),
-            (an_lower, "thread-created"),
-            (an_lower, "thread-group-added"),
-            (an_lower, "thread-group-started"),
-            (RESULT.lower(), "exit")
-            ]
+        self.filters = set()
+        #an_lower = ASYNC_NOTIFY.lower()
+        #self.filters = [
+        #    (an_lower, "shlibs-updated"),
+        #    (an_lower, "shlibs-added"),
+        #    (an_lower, "shlibs-removed"),
+        #    (an_lower, "library-loaded"),
+        #    (an_lower, "thread-created"),
+        #    (an_lower, "thread-group-added"),
+        #    (an_lower, "thread-group-started"),
+        #    (RESULT.lower(), "exit")
+        #    ]
 
     def __init__(self):
         """Initialize LaunchMON, MRNet, GDB, and other things."""
@@ -187,15 +188,11 @@ class GDBBE:
 
     def filter_handler(self, msg):
         """Handle a filter message by adding the filter."""
-        self.filters.append((msg.filter_type, msg.filter_class))
+        self.filters.update(msg.filter_types)
 
     def unfilter_handler(self, msg):
         """Handle an unfilter message by removing the filter."""
-        try:
-            self.filters.remove((msg.filter_type, msg.filter_class))
-        except ValueError:
-            # Ignore non-existent filter removals.
-            pass
+        self.filters.difference_update(msg.filter_types)
 
     def varprint_handler(self, msg):
         """Handle the varprint message and begin sequence. See VariablePrinter."""
@@ -203,16 +200,8 @@ class GDBBE:
 
     def is_filterable(self, record):
         """Check whether a given record can be filtered."""
-        # TODO: Update this.
-        return False
-        record_type = record.record_type.lower()
-        if record_type == RESULT.lower():
-            record_class = record.result_class.lower()
-        elif record_type in map(lambda x: x.lower(), [ASYNC_EXEC, ASYNC_STATUS, ASYNC_NOTIFY]):
-            record_class = record.output_class.lower()
-        else:
-            record_class = None
-        if (record_type, record_class) in self.filters:
+        record_set = record.record_subtypes.union([record.record_type])
+        if record_set.intersection(self.filters):
             return True
         return False
 
