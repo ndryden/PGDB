@@ -177,10 +177,10 @@ class GDBFE (GDBMICmd):
             ranks = record_classes[class_key]
             record = arec.get_record(ranks.get_smallest())
             # Note that this may not work if things don't support lists of ranks.
-            #if self.record_handler.handle(record, rank = ranks):
-            self.pprinter.pretty_print(record, ranks)
-            if len(record_classes) > 1:
-                print "Some results from {0} omitted; use expand to view.".format(arec.get_ranks())
+            if all(self.record_handler.handle(record, rank = ranks)):
+                self.pprinter.pretty_print(record, ranks)
+                if len(record_classes) > 1:
+                    print "Some results from {0} omitted; use expand to view.".format(arec.get_ranks())
         self.arec_list = []
 
     def varprint_res_handler(self, msg):
