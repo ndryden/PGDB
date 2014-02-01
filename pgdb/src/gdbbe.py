@@ -64,10 +64,12 @@ class GDBBE:
                 raise RuntimeError("Could not attach to rank {0}!".format(proc.mpirank))
             self.varobjs[proc.mpirank] = VariableObjectManager()
 
-    def quit_all(self):
+    def kill_inferiors(self):
         """Terminate all targets being debugged.
 
-        This sends SIGTERM."""
+        This sends SIGTERM.
+
+        """
         for proc in self.proctab:
             os.kill(proc.pd.pid, signal.SIGTERM)
 
@@ -184,7 +186,7 @@ class GDBBE:
 
     def kill_handler(self, msg):
         """Handle a kill message, killing all processes."""
-        self.quit_all()
+        self.kill_inferiors()
 
     def filter_handler(self, msg):
         """Handle a filter message by adding the filter."""
