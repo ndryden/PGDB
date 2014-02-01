@@ -127,7 +127,7 @@ class Communicator (object):
         if len(msg) > gdbconf.multi_len:
             split_len = gdbconf.multi_len
             payloads = [msg[i:i + split_len] for i in range(0, len(msg), split_len)]
-            payload_msgs = [GDBMessage(MULTI_MESSAGE, num = len(payloads))]
+            payload_msgs = [GDBMessage(MULTI_MSG, num = len(payloads))]
             for payload in payloads:
                 payload_msgs.append(GDBMessage(MULTI_PAYLOAD_MSG, payload = payload))
             serialized_msgs = []
