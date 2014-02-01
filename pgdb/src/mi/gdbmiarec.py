@@ -277,10 +277,10 @@ class GDBMIAggregatedRecord:
             field.merge(other_field, self.ranks, other_ranks)
         elif _is_list(field):
             for d1, d2 in zip(field, other_field):
-                merge_recursive(d1, d2, other_ranks)
+                self.merge_recursive(d1, d2, other_ranks)
         elif _is_dict(field):
             for k in field:
-                merge_recursive(field[k], other_field[k], other_ranks)
+                self.merge_recursive(field[k], other_field[k], other_ranks)
 
     def merge(self, other):
         if ((self.record_type != other.record_type) or
