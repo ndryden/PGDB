@@ -298,12 +298,12 @@ class GDBMIAggregatedRecord:
         elif _is_list(data):
             new_data = []
             for d in data:
-                new_data.append(reconstruct_recursive(rank, d))
+                new_data.append(self.reconstruct_recursive(rank, d))
             return new_data
         elif _is_dict(data):
             new_data = {}
             for k in data:
-                new_data[k] = reconstruct_recursive(rank, data[k])
+                new_data[k] = self.reconstruct_recursive(rank, data[k])
 
     def get_record(self, rank):
         """Return the reconstructed record for the given rank."""
