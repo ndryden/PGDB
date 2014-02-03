@@ -9,10 +9,12 @@ from conf import gdbconf
 from comm import *
 from gdb_shared import *
 from lmon.lmonbe import *
+import mi.gdbmi_parser as gdbparser
 from mi.gdbmi import *
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
 from mi.gdbmiarec import GDBMIAggregatedRecord, combine_records
+from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from interval import Interval
 from varprint import VariablePrinter
 import signal, os
@@ -26,6 +28,9 @@ class GDBBE:
         self.varobjs = {}
         # Maps tokens to MPI rank.
         self.token_rank_map = {}
+        self.record_handler = GDBMIRecordHandler()
+        self.record_handler.add_type_handler(self._watch_thread_created,
+                                             set([gdbparser.ASYNC_NOTIFY_THREAD_CREATED]))
 
         enable_pprint_cmd = Command("enable-pretty-printing")
         enable_target_async_cmd = Command("gdb-set", args = ["target-async", "on"])
@@ -48,21 +53,41 @@ class GDBBE:
         # Create inferiors and set up MPI rank/inferior map.
         # First inferior is created by default.
         self.rank_inferior_map = {procs[0].mpirank: 'i1'}
+        self.inferior_rank_map = {'i1': procs[0].mpirank}
         i = 2
         for proc in procs[1:]:
             # Hackish: Assume that the inferiors follow the iN naming scheme.
             self.rank_inferior_map[proc.mpirank] = 'i' + str(i)
+            self.inferior_rank_map['i' + str(i)] = proc.mpirank
             i += 1
-            if not self.run_gdb_command(add_inferior_cmd):
+            if not self.run_gdb_command(add_inferior_cmd, no_thread = True):
                 raise RuntimeError('Cound not add inferior i{0}!'.format(i - 1))
+
+        # Maps MPI ranks to associated threads and vice-versa.
+        self.rank_thread_map = {procs[0].mpirank: [1]}
+        self.thread_rank_map = {1: procs[0].mpirank}
 
         # Attach processes.
         for proc in procs:
             if not self.run_gdb_command(Command("target-attach",
+                                                opts = {'--thread-group': self.rank_inferior_map[proc.mpirank]},
                                                 args = [proc.pd.pid]),
-                                        proc.mpirank):
+                                        proc.mpirank, no_thread = True):
                 raise RuntimeError("Could not attach to rank {0}!".format(proc.mpirank))
             self.varobjs[proc.mpirank] = VariableObjectManager()
+
+    def _watch_thread_created(self, record, **kwargs):
+        """Handle watching thread creation."""
+        inferior = record.thread_group_id
+        thread_id = int(record.thread_id)
+        rank = self.inferior_rank_map[inferior]
+        if rank in self.rank_thread_map:
+            self.rank_thread_map[rank].append(thread_id)
+        else:
+            self.rank_thread_map[rank] = [thread_id]
+            # Always ensure smallest thread is first.
+            self.rank_thread_map[rank].sort()
+        self.thread_rank_map[thread_id] = rank
 
     def kill_inferiors(self):
         """Terminate all targets being debugged.
@@ -73,7 +98,7 @@ class GDBBE:
         for proc in self.proctab:
             os.kill(proc.pd.pid, signal.SIGTERM)
 
-    def run_gdb_command(self, command, ranks = None, token = None):
+    def run_gdb_command(self, command, ranks = None, token = None, no_thread = False):
         """Run a GDB command.
 
         command is a Command object representing the command.
@@ -97,7 +122,10 @@ class GDBBE:
             for rank in ranks:
                 if rank in self.rank_inferior_map:
                     # Most recent option with same name takes precedence.
-                    command.add_opt('--thread-group', self.rank_inferior_map[rank])
+                    if (not no_thread and
+                        rank in self.rank_thread_map and
+                        command.get_opt('--thread') is None):
+                        command.add_opt('--thread', self.rank_thread_map[rank][0])
                     ret_token = self.gdb.send(command.generate_mi_command(),
                                               token)
                     tokens[rank] = ret_token
@@ -229,6 +257,7 @@ class GDBBE:
             records = []
             ranks = []
             for record in self.gdb.read():
+                self.record_handler.handle(record)
                 if not self.is_filterable(record):
                     records.append(record)
                     if record.token and record.token in self.token_rank_map:

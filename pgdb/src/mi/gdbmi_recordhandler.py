@@ -81,8 +81,8 @@ class GDBMIRecordHandler:
             ret.append(tup[1](record, **kwargs))
         types = record.record_subtypes.union([record.record_type])
         for k in self.type_handlers:
-            if types.issubset(k):
-                tup = self.type_handlers[k]
-                kwargs["data"] = tup[2]
-                ret.append(tup[1](record, **kwargs))
+            if k.issubset(types):
+                for handler in self.type_handlers[k]:
+                    kwargs["data"] = handler[2]
+                    ret.append(handler[1](record, **kwargs))
         return ret

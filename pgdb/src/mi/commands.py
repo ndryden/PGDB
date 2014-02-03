@@ -30,7 +30,11 @@ class Command(object):
 
     def add_opt(self, k, v):
         """Add an option to this GDB command."""
-        self.opts[k] = v
+        self.opts[k] = str(v)
+
+    def get_opt(self, k):
+        """Get an option to this GDB command."""
+        return self.opts.get(k)
 
     def generate_mi_command(self):
         """Generate a machine interface command from this Command."""
