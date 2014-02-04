@@ -98,6 +98,8 @@ RESULT_OS_DATA_TABLE = "OSDataTable"
 RESULT_THREAD_GROUP = "thread-group"
 RESULT_INFERIOR_TTY = "inferior_tty_terminal"
 RESULT_TIME = "time"
+RESULT_MSG = "msg"
+RESULT_CODE = "code"
 
 class GDBMIParser:
     """Parse output from GDB into an AST."""
@@ -524,48 +526,49 @@ class GDBMIAsyncRecord(GDBMIRecord):
         if self.record_type == ASYNC_EXEC:
             if ASYNC_EXEC_STOPPED in self.record_subtypes:
                 if self.reason:
+                    s = "Thread ID {0} stopped: ".format(self.thread_id)
                     if ASYNC_STOPPED_BREAKPOINT_HIT == self.reason:
-                        return None
+                        s += "breakpoint hit"
                     elif ASYNC_STOPPED_WATCHPOINT_TRIGGER == self.reason:
-                        return None
+                        s += "watchpoint triggered"
                     elif ASYNC_STOPPED_READ_WATCHPOINT_TRIGGER == self.reason:
-                        return None
+                        s += "read watchpoint triggered"
                     elif ASYNC_STOPPED_ACCESS_WATCHPOINT_TRIGGER == self.reason:
-                        return None
+                        s += "access watchpoint triggered"
                     elif ASYNC_STOPPED_FUNCTION_FINISHED == self.reason:
-                        return None
+                        s += "function finished"
                     elif ASYNC_STOPPED_LOCATION_REACHED == self.reason:
-                        return None
+                        s += "location reached"
                     elif ASYNC_STOPPED_WATCHPOINT_SCOPE == self.reason:
-                        return None
+                        s += "watchpoint left scope"
                     elif ASYNC_STOPPED_END_STEPPING_RANGE == self.reason:
-                        return None
+                        s += "done stepping"
                     elif ASYNC_STOPPED_EXIT_SIGNALLED == self.reason:
-                        return None
+                        s += "inferior exited due to signal"
                     elif ASYNC_STOPPED_EXITED == self.reason:
-                        return None
+                        s += "inferior exited"
                     elif ASYNC_STOPPED_EXITED_NORMALLY == self.reason:
-                        return None
+                        s += "inferior exited normally"
                     elif ASYNC_STOPPED_SIGNAL_RECEIVED == self.reason:
-                        return None
+                        s += "signal received"
                     elif ASYNC_STOPPED_SOLIB_EVENT == self.reason:
-                        return None
+                        s += "shared library load/unload"
                     elif ASYNC_STOPPED_FORK == self.reason:
-                        return None
+                        s += "inferior forked"
                     elif ASYNC_STOPPED_VFORK == self.reason:
-                        return None
+                        s += "inferior vforked"
                     elif ASYNC_STOPPED_SYSCALL_ENTRY == self.reason:
-                        return None
+                        s += "inferior entered syscall"
                     elif ASYNC_STOPPED_SYSCALL_RETURN == self.reason:
-                        return None
+                        s += "inferior returned from syscall"
                     elif ASYNC_STOPPED_EXEC == self.reason:
-                        return None
+                        s += "inferior called exec"
                     else:
-                        s = "Thread ID {0} stopped, unknown reason {1}".format(self.thread_id, self.reason)
-                    s = [s] + ["Stopped threads: {0}".format(self.stopped_threads)]
+                        s += "unknown reason {0}".format(self.reason)
+                    s = [s] + ["Stopped threads: {0}".format(",".join(self.stopped_threads))]
                 else:
-                    s = "Stopped, thread ID {0}".format(self.thread_id)
-            elif ASYNC_RECORD_RUNNING in self.record_subtypes:
+                    s = "Thread ID {0} stopped".format(self.thread_id)
+            elif ASYNC_EXEC_RUNNING in self.record_subtypes:
                 s = "Running, thread ID {0}".format(self.thread_id)
         elif self.record_type == ASYNC_NOTIFY:
             if ASYNC_NOTIFY_THREAD_GROUP_ADDED in self.record_subtypes:
@@ -670,6 +673,13 @@ class GDBMIResultRecord(GDBMIRecord):
         record.record_type = RESULT
         record.record_subtypes.add(result_class)
         record.token = token
+        if result_class == RESULT_CLASS_ERROR:
+            record.msg = results[RESULT_MSG]
+            if RESULT_CODE in results:
+                record.code = results[RESULT_CODE]
+            else:
+                record.code = None
+            record.fields += ["msg", "code"]
         if RESULT_BREAKPOINT in results:
             record.record_subtypes.add(RESULT_BREAKPOINT)
             record.breakpoint = GDBMIBreakpoint(results["bkpt"])
@@ -699,7 +709,9 @@ class GDBMIResultRecord(GDBMIRecord):
             record.fields += ["cwd"]
         if RESULT_THREADS in results:
             record.record_subtypes.add(RESULT_THREADS)
-            record.threads = _make_list(results[RESULT_THREADS])
+            record.threads = []
+            for thread in results[RESULT_THREADS]:
+                record.threads.append(GDBMIThread(thread))
             record.fields += ["threads"]
         if RESULT_CURRENT_THREAD in results:
             record.record_subtypes.add(RESULT_CURRENT_THREAD)
@@ -732,25 +744,34 @@ class GDBMIResultRecord(GDBMIRecord):
                 level = int(frame["level"])
                 for arg_name in frame["args"]["name"]:
                     record.arguments[level].append(arg_name)
-            record.fields += ["arguemtns"]
+            record.fields += ["arguments"]
         if RESULT_STACK in results:
             record.record_subtypes.add(RESULT_STACK)
-            record.stack = [[]] * len(results[RESULT_STACK])
-            for frame in results[RESULT_STACK]:
-                level = int(frame["level"])
-                record.stack[level] = GDBMIFrame(frame)
+            if isinstance(results[RESULT_STACK]["frame"], list):
+                record.stack = [[]] * len(results[RESULT_STACK]["frame"])
+                for frame in results[RESULT_STACK]["frame"]:
+                    level = int(frame["level"])
+                    record.stack[level] = GDBMIFrame(frame)
+            else:
+                record.stack = [GDBMIFrame(results[RESULT_STACK]["frame"])]
             record.fields += ["stack"]
         if RESULT_LOCALS in results:
             record.record_subtypes.add(RESULT_LOCALS)
             record.local_variables = {}
             for local in results[RESULT_LOCALS]:
-                record.local_variables[local["name"]] = local["value"]
+                if "value" in local:
+                    record.local_variables[local["name"]] = local["value"]
+                else:
+                    record.local_variables[local["name"]] = None
             record.fields += ["local_variables"]
         if RESULT_VARIABLES in results:
             record.record_subtypes.add(RESULT_VARIABLES)
             record.variables = {}
             for var in results[RESULT_VARIABLES]:
-                record.variables[var["name"]] = var["value"]
+                if "value" in var:
+                    record.variables[var["name"]] = var["value"]
+                else:
+                    record.variables[var["name"]] = None
             record.fields += ["variables"]
         if RESULT_ASM in results:
             record.record_subtypes.add(RESULT_ASM)
@@ -839,7 +860,129 @@ class GDBMIResultRecord(GDBMIRecord):
 
     def pretty_print(self):
         """Return a list of strings for pretty-printing by GDBMIPrettyPrinter."""
-        pass
+        s = []
+        if set([RESULT_CLASS_DONE]) == self.record_subtypes:
+            s += ["Done"]
+        if set([RESULT_CLASS_EXIT]) == self.record_subtypes:
+            s += ["Exit"]
+        if set([RESULT_CLASS_RUNNING]) == self.record_subtypes:
+            s += ["Running"]
+        if set([RESULT_CLASS_ERROR]) == self.record_subtypes:
+            if self.code:
+                s += ["Error {0}: {1}".format(self.code, self.msg)]
+            else:
+                s += ["Error: {0}".format(self.msg)]
+        if RESULT_BREAKPOINT in self.record_subtypes:
+            s += self.breakpoint.pretty_print()
+        if RESULT_BREAKPOINT_TABLE in self.record_subtypes:
+            for breakpoint in self.breakpoints:
+                s += breakpoint.pretty_print()
+        if RESULT_WATCHPOINT in self.record_subtypes:
+            s += ["Watchpoing {0} for {1}".format(self.number, self.exp)]
+        if RESULT_SOURCE_PATH in self.record_subtypes:
+            s += ["Source search path: " + self.source_path]
+        if RESULT_PATH in self.record_subtypes:
+            s += ["Executable and object file path: " + self.path]
+        if RESULT_CWD in self.record_subtypes:
+            s += ["Working directory: " + self.cwd]
+        if RESULT_THREADS in self.record_subtypes:
+            s += self.threads[0].pretty_print()
+            for thread in self.threads[1:]:
+                s += thread.pretty_print(return_header = False)
+        if RESULT_CURRENT_THREAD in self.record_subtypes:
+            s += ["Current thread ID: {0}".format(self.current_thread_id)]
+        if RESULT_THREAD_IDS in self.record_subtypes:
+            s += [", ".join(self.thread_ids)]
+        if RESULT_NUMBER_OF_THREADS in self.record_subtypes:
+            s += ["{0} threads total".format(self.num)]
+        if RESULT_NEW_THREAD_ID in self.record_subtypes:
+            s += ["New thread ID: {0}".format(self.new_thread_id)]
+        if RESULT_STACK_DEPTH in self.record_subtypes:
+            s += ["Stack depth: {0}".format(self.stack_depth)]
+        if RESULT_STACK_ARGS in self.record_subtypes:
+            for level, names in enumerate(self.arguments):
+                s += ["[{0}] {1}".format(level, ", ".join(names))]
+        if RESULT_STACK in self.record_subtypes:
+            for frame in self.stack:
+                s += frame.pretty_print()
+        if RESULT_LOCALS in self.record_subtypes:
+            if not self.local_variables:
+                s += ["No locals"]
+            for var in self.local_variables:
+                if self.local_variables[var] is not None:
+                    s += ["{0} = {1}".format(var, self.local_variables[var])]
+                else:
+                    s += ["{0}".format(var)]
+        if RESULT_VARIABLES in self.record_subtypes:
+            if not self.variables:
+                s += ["No variables"]
+            for var in self.variables:
+                if self.variables[var] is not None:
+                    s += ["{0} = {1}".format(var, self.variables[var])]
+                else:
+                    s += ["{0}".format(var)]
+        if RESULT_ASM in self.record_subtypes:
+            pass
+        if RESULT_VALUE in self.record_subtypes:
+            s += ["{0}".format(self.value)]
+        if RESULT_CHANGED_REGISTERS in self.record_subtypes:
+            s += ["Changed registers: {0}".format(", ".join(self.changed_registers))]
+        if RESULT_REGISTER_NAMES in self.record_subtypes:
+            s += ["Register names: {0}".format(", ".join(self.register_names))]
+        if RESULT_REGISTER_VALUES in self.record_subtypes:
+            for reg in self.register_values:
+                s += ["{0:<6}{1}".format(reg, self.register_values[reg])]
+        if RESULT_MEMORY in self.record_subtypes:
+            pass
+        if RESULT_TRACE_VARIABLES in self.record_subtypes:
+            pass
+        if RESULT_LINES in self.record_subtypes:
+            for pc in self.lines:
+                s += ["{0:<16}{1}".format(pc, self.lines[pc])]
+        if RESULT_FILES in self.record_subtypes:
+            s += ["Source files:"]
+            for f in self.files:
+                s += ["    {0}".format(f)]
+        if RESULT_LINE in self.record_subtypes:
+            if isinstance(self.line, list):
+                for line in self.line:
+                    s += ["Line number: {0}".format(line)]
+            else:
+                s += ["Line number: {0}".format(self.line)]
+        if RESULT_FILE in self.record_subtypes:
+            if isinstance(self.file, list):
+                for f in self.file:
+                    s += ["Current source file: {0}".format(f)]
+            else:
+                s += ["Current source file: {0}".format(self.file)]
+        if RESULT_FULLNAME in self.record_subtypes:
+            s += ["Current source file location: {0}".format(self.fullname)]
+        if RESULT_MACRO_INFO in self.record_subtypes:
+            if self.macro_info == "0":
+                s += ["Does not include preprocessor macro info"]
+            elif self.macro_info == "1":
+                s += ["Includes preprocessor macro info"]
+            else:
+                s += ["Macro info: {0}".format(self.macro_info)]
+        if RESULT_RESULT in self.record_subtypes:
+            s += ["Supported features: {0}".format(", ".join(self.result))]
+        if RESULT_GROUPS in self.record_subtypes:
+            pass
+        if RESULT_OS_DATA_TABLE in self.record_subtypes:
+            pass
+        if RESULT_THREAD_GROUP in self.record_subtypes:
+            s += ["Thread group ID: {0}".format(self.thread_group_id)]
+        if RESULT_INFERIOR_TTY in self.record_subtypes:
+            s += ["Inferior TTY: {0}".format(self.inferior_tty)]
+        if RESULT_FRAME in self.record_subtypes:
+            s += self.frame.pretty_print()
+        if RESULT_TIME in self.record_subtypes:
+            s += ["Wallclock: {0}, user: {1}, system: {2}".format(self.wallclock,
+                                                                  self.user,
+                                                                  self.system)]
+        if not s:
+            return None
+        return s
 
     def __init__(self):
         """Initialization."""
@@ -899,6 +1042,10 @@ class GDBMIFrame:
                 s += ":{0}".format(self.line)
         return [s]
 
+    def __str__(self):
+        """Return a basic string representation."""
+        return "GDBMIFrame: level = {0}, addr = {1}, func = {2}, fullname = {3}, line = {4}, args = {5}".format(self.level, self.addr, self.func, self.fullname, self.line, self.args)
+
     def __key(self):
         return (self.level, self.addr, self.func, self.source_file,
                 self.line, self.binary_file)
@@ -913,12 +1060,6 @@ class GDBMIBreakpoint:
     """A breakpoint."""
 
     def __init__(self, bkpt):
-        if not bkpt:
-            # Fill with dummy values.
-            bkpt = {"number": None,
-                    "type": None,
-                    "disp": None,
-                    "enabled": None}
         self.number = bkpt["number"]
         self.breakpoint_type = bkpt["type"]
         self.catch_type = bkpt.get("catch-type")
@@ -949,7 +1090,11 @@ class GDBMIBreakpoint:
 
     def pretty_print(self):
         """Pretty-printing interface for GDBMIPrettyPrinter."""
-        pass
+        return []
+
+    def __str__(self):
+        """Return a basic string representation."""
+        return "GDBMIBreakpoint: no = {0}, type = {1}, enabled = {2}, addr = {3}, func = {4}, fullname = {5}, line = {6}, at = {7}".format(self.number, self.breakpoint_type, self.enabled, self.addr, self.func, self.fullname, self.line, self.at)
 
     def __key(self):
         return (self.number,
@@ -997,24 +1142,35 @@ class GDBMIThread:
         self.state = thread["state"]
         self.current = thread.get("current")
         self.core = thread.get("core")
+        self.frame = thread.get("frame")
+        if self.frame:
+            self.frame = GDBMIFrame(self.frame)
 
-    def pretty_print(self):
+    def pretty_print(self, return_header = True):
         """Pretty-printing interface for GDBMIPrettyPrinter."""
-        fmt = "  {0:<5}{1:<16}{2:<11}{3:<7}{4:<7}"
-        header = fmt.format("ID", "Target ID", "State", "Core", "Details")
+        fmt = "{0:<5}{1:<48}{2:<11}{3:<7}{4:<5}"
+        header = "  " + fmt.format("ID", "Target ID", "State", "Core", "Frame")
         core = "?"
-        details = "None"
+        frame = "?"
         if self.core is not None:
             core = self.core
-        if self.details:
-            details = self.details
+        if self.frame:
+            # Should only be one line.
+            frame = self.frame.pretty_print()[0]
         line = fmt.format(self.thread_id, self.target_id, self.state,
-                          core, details)
+                          core, frame)
         if self.current:
             line = "* " + line
         else:
             line = "  " + line
-        return [header, line]
+        if return_header:
+            return [header, line]
+        else:
+            return [line]
+
+    def __str__(self):
+        """Return a basic string representation."""
+        return "GDBMIThread: id = {0}, target = {1}, state = {2}, frame = {3}".format(self.thread_id, self.target_id, self.state, self.frame)
 
     def __key(self):
         return (self.thread_id, self.target_id, self.details, self.name,
