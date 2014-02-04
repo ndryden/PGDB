@@ -9,7 +9,14 @@ from mi.gdbmiarec import *
 from gdb_shared import *
 
 def filter_hook(packet_list):
-    """Called through MRNet filters. Given a list of messages of lists of arecs."""
+    """PGDB deduplication filter for MRNet.
+
+    This is invoked via a C filter called from MRNet.
+    Messages with type OUT_MSG are merged into combined aggregated records.
+    packet_list is a list of serialized packets provided by MRNet.
+    Returns a serialized list of packets to MRNet.
+
+    """
     msg_list = map(cPickle.loads, packet_list)
     # Compute earliest sent time, if messages have them.
     # Performance must be enabled globally, so only check first message.
@@ -17,11 +24,21 @@ def filter_hook(packet_list):
     if hasattr(msg_list[0], '_send_time'):
         new_time = min(msg_list, key = lambda x: x._send_time)
         new_time = new_time._send_time
-    arec_list = map(lambda x: x.record, msg_list)
-    new_list = arec_list.pop(0)
-    for l in arec_list:
-        new_list = combine_aggregated_records(new_list + l)
-    msg = GDBMessage(OUT_MSG, record = new_list)
-    if new_time:
-        msg._send_time = new_time
-    return cPickle.dumps(msg, 0)
+    packets = []
+    record_msgs = []
+    for msg in msg_list:
+        if msg.msg_type == OUT_MSG:
+            record_msgs.append(msg)
+        else:
+            packets.append(msg)
+    if record_msgs:
+        arec_list = map(lambda x: x.record, record_msgs)
+        new_list = arec_list.pop(0)
+        for l in arec_list:
+            new_list = combine_aggregated_records(new_list + l)
+        packets.append(GDBMessage(OUT_MSG, record = new_list))
+    for i, msg in enumerate(packets):
+        if new_time:
+            msg._send_time = new_time
+        packets[i] = cPickle.dumps(msg, 0)
+    return packets

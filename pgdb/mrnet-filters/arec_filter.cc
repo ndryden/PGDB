@@ -140,8 +140,8 @@ sys.path.append('/home/ndryden/PGDB/pgdb/mrnet-filters')\n");
 			return;
 		}
 		// Call the Python function.
-		PyObject* ret_data = PyObject_CallObject(filter_func, arguments);
-		if (ret_data == NULL) {
+		PyObject* ret_list = PyObject_CallObject(filter_func, arguments);
+		if (ret_list == NULL) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
 							  packets_in[0]->get_Tag(),
@@ -152,11 +152,7 @@ sys.path.append('/home/ndryden/PGDB/pgdb/mrnet-filters')\n");
 			Py_DECREF(arguments);
 			return;
 		}
-		// Convert the result to a usable string.
-		// Note this string may not be modified.
-		char* python_packet_data = PyString_AsString(ret_data);
-		if (python_packet_data == NULL) {
-			PyErr_Print();
+		if (!PyList_Check(ret_list)) {
 			send_error_packet(packets_in[0]->get_StreamId(),
 							  packets_in[0]->get_Tag(),
 							  packets_out);
@@ -164,23 +160,44 @@ sys.path.append('/home/ndryden/PGDB/pgdb/mrnet-filters')\n");
 			Py_DECREF(filter_func);
 			Py_DECREF(packet_list);
 			Py_DECREF(arguments);
+			Py_DECREF(ret_list);
 			return;
 		}
-		char* new_packet_data = (char*) malloc(sizeof(char) * (strlen(python_packet_data) + 1));
-		strcpy(new_packet_data, python_packet_data);
-		// Construct the new packet.
-		PacketPtr new_packet(new Packet(packets_in[0]->get_StreamId(),
-										packets_in[0]->get_Tag(),
-										"%s",
-										new_packet_data));
-		// Send it off.
-		packets_out.push_back(new_packet);
+		// Iterate over each element of the returned list.
+		Py_ssize_t ret_length = PyList_Size(ret_list);
+		for (ssize_t i = 0; i < ret_length; ++i) {
+			// Convert the result to a usable string.
+			// Note this string may not be modified.
+			PyObject* ret_data = PyList_GetItem(ret_list, i);
+			char* python_packet_data = PyString_AsString(ret_data);
+			if (python_packet_data == NULL) {
+				PyErr_Print();
+				send_error_packet(packets_in[0]->get_StreamId(),
+								  packets_in[0]->get_Tag(),
+								  packets_out);
+				Py_DECREF(module);
+				Py_DECREF(filter_func);
+				Py_DECREF(packet_list);
+				Py_DECREF(arguments);
+				Py_DECREF(ret_list);
+				return;
+			}
+			char* new_packet_data = (char*) malloc(sizeof(char) * (strlen(python_packet_data) + 1));
+			strcpy(new_packet_data, python_packet_data);
+			// Construct the new packet.
+			PacketPtr new_packet(new Packet(packets_in[0]->get_StreamId(),
+											packets_in[0]->get_Tag(),
+											"%s",
+											new_packet_data));
+			// Send it off.
+			packets_out.push_back(new_packet);
+		}
 		// Release all the Python references.
 		Py_DECREF(module);
 		Py_DECREF(filter_func);
 		Py_DECREF(packet_list);
 		Py_DECREF(arguments);
-		Py_DECREF(ret_data);
+		Py_DECREF(ret_list);
 		// Release the Python interpreter.
 		if (py_state != NULL) {
 			py_state = PyEval_SaveThread();

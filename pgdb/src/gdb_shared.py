@@ -30,6 +30,8 @@ VARPRINT_RES_MSG = 8
 MULTI_MSG = 9
 MULTI_PAYLOAD_MSG = 10
 KILL_MSG = 11
+LOAD_FILE = 12
+FILE_DATA = 13
 
 class GDBMessage:
     """A simple class for transmitting messages and related information."""

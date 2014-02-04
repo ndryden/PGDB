@@ -17,7 +17,7 @@ from mi.gdbmiarec import GDBMIAggregatedRecord, combine_records
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from interval import Interval
 from varprint import VariablePrinter
-import signal, os
+import signal, os, os.path
 
 class GDBBE:
     """The back-end GDB daemon process."""
@@ -31,6 +31,10 @@ class GDBBE:
         self.record_handler = GDBMIRecordHandler()
         self.record_handler.add_type_handler(self._watch_thread_created,
                                              set([gdbparser.ASYNC_NOTIFY_THREAD_CREATED]))
+        # Stores data for LOAD_FILE/FILE_DATA. Indexed by filename.
+        # Entries are None when there is no data, False when error was received,
+        # and data otherwise.
+        self.load_files = {}
 
         enable_pprint_cmd = Command("enable-pretty-printing")
         enable_target_async_cmd = Command("gdb-set", args = ["target-async", "on"])
@@ -140,7 +144,8 @@ class GDBBE:
             FILTER_MSG: self.filter_handler,
             UNFILTER_MSG: self.unfilter_handler,
             VARPRINT_MSG: self.varprint_handler,
-            KILL_MSG: self.kill_handler
+            KILL_MSG: self.kill_handler,
+            FILE_DATA: self.file_data_handler,
             }
 
     def init_filters(self):
@@ -234,6 +239,21 @@ class GDBBE:
         if record_set.intersection(self.filters):
             return True
         return False
+
+    def load_file(self, filename):
+        """Send a request for a file to be loaded."""
+        filename = os.path.abspath(filename)
+        self.load_files[filename] = None
+        self.comm.send(GDBMessage(LOAD_FILE, filename = filename),
+                       self.comm.frontend)
+
+    def file_data_handler(self, msg):
+        """Handle a response with file data."""
+        filename = msg.filename
+        if msg.error:
+            self.load_files[filename] = False
+            return
+        self.load_files[filename] = msg.data
 
     def main(self):
         """Main send/receive loop.

@@ -5,7 +5,7 @@ this.
 
 """
 
-import os, threading, signal
+import os, os.path, threading, signal
 from collections import deque
 from conf import gdbconf
 from gdb_shared import *
@@ -29,6 +29,7 @@ class GDBFE (GDBMICmd):
             QUIT_MSG: self.quit_handler,
             OUT_MSG: self.out_handler,
             VARPRINT_RES_MSG: self.varprint_res_handler,
+            LOAD_FILE: self.load_file_handler
             }
         # Now record handlers.
         self.record_handler = GDBMIRecordHandler()
@@ -190,6 +191,36 @@ class GDBFE (GDBMICmd):
             print self.pprinter.varobj_pretty_print(msg.varobj, tag = msg.rank)[:-1]
         else:
             print "[{0}] Received a bad varobj!".format(msg.rank)
+
+    def load_file_handler(self, msg):
+        """Handle a load file message by loading the file and broadcasting it."""
+        filename = msg.filename
+        if not os.path.isfile(filename):
+            print "Invalid LOAD_FILE request for '{0}'".format(filename)
+            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
+                                      data = None, error = True),
+                           msg.rank)
+            return
+        try:
+            f = open(filename, "rb")
+        except IOError as e:
+            print "Cannot open {0} for LOAD_FILE: {1}.".format(filename, e.strerror)
+            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
+                                      data = None, error = True),
+                           msg.rank)
+            return
+        try:
+            data = f.read()
+        except IOError as e:
+            print "Cannot read {0} for LOAD_FILE: {1}.".format(filename, e.strerror)
+            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
+                                      data = None, error = True),
+                           msg.rank)
+            return
+        f.close()
+        self.comm.send(GDBMessage(FILE_DATA, filename = filename,
+                                  data = data, error = False),
+                       self.comm.broadcast)
 
     def parse_filter_spec(self, spec):
         """Parse a filter specification into a list of record type."""
