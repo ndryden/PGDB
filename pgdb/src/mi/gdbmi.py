@@ -9,14 +9,15 @@ from gdbmi_parser import *
 class GDBMachineInterface:
     """Manages the GDB Machine Interface."""
 
-    def __init__(self, gdb = "gdb", gdb_args = []):
+    def __init__(self, gdb = "gdb", gdb_args = [], env = dict()):
         """Initialize a new machine interface session with GDB."""
+        env.update(os.environ)
         self.process = subprocess.Popen(
             args = [gdb, '--quiet', '--nx', '--nw', '--interpreter=mi2'] + gdb_args,
             stdin = subprocess.PIPE,
             stdout = subprocess.PIPE,
             close_fds = True,
-            env = os.environ
+            env = env
             )
         f = fcntl.fcntl(self.process.stdout, fcntl.F_GETFL)
         fcntl.fcntl(self.process.stdout, fcntl.F_SETFL, f | os.O_NONBLOCK)
@@ -73,3 +74,7 @@ class GDBMachineInterface:
     def is_running(self):
         """Check if the GDB process is running."""
         return self.process.poll() is None
+
+    def get_pid(self):
+        """Return the PID of the GDB process."""
+        return self.process.pid
