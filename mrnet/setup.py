@@ -1,6 +1,8 @@
 from distutils.core import setup, Extension
 
 mrNetPath = raw_input("Please type the base path to MRNet: ")
+if(mrNetPath[-1:]=='/'):
+    mrNetPath = mrNetPath[:-1]
 mrnet = Extension("MRNet",
                   sources = ["mrnet_module.cpp"],
                   include_dirs = [mrNetPath+"/include"],
