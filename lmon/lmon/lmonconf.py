@@ -3,10 +3,6 @@ lmonPath = ""
 #Path to RSH
 lmonRSHPath = ""
 
-
-
-
-
 # The library for the LaunchMON front-end.
 lmon_fe_lib = lmonPath+"/lib/libmonfeapi.so"
 # The library for the LaunchMON back-end.

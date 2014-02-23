@@ -53,63 +53,36 @@ lmon_daemon_env_t._fields_ = [("envName", c_char_p),
 
 # The LaunchMON version number from the configuration.
 LMON_VERSION = lmonconf.lmon_version
-# LaunchMON constants, based on which version we're using.
-if lmonconf.use_lmon_10:
-    (LMON_OK, LMON_EINVAL, LMON_EBDARG, LMON_ELNCHR,
-     LMON_EINIT, LMON_ESYS, LMON_ESUBCOM, LMON_ESUBSYNC,
-     LMON_ETOUT, LMON_ENOMEM, LMON_ENCLLB, LMON_ECLLB,
-     LMON_ENEGCB, LMON_ENOPLD, LMON_EBDMSG, LMON_EDUNAV,
-     LMON_ETRUNC, LMON_EBUG, LMON_NOTIMPL, LMON_YES,
-     LMON_NO) = map(int, xrange(21))
-    lmon_const_map = [
-        "LMON_OK",
-        "LMON_EINVAL",
-        "LMON_EDBARG",
-        "LMON_ELNCHR",
-        "LMON_EINIT",
-        "LMON_ESYS",
-        "LMON_ESUBCOM",
-        "LMON_ESUBSYNC",
-        "LMON_ETOUT",
-        "LMON_ENOMEM",
-        "LMON_ENCLLB",
-        "LMON_ECLLB",
-        "LMON_ENEGCB",
-        "LMON_ENOPLD",
-        "LMON_EBDMSG",
-        "LMON_EDUNAV",
-        "LMON_ETRUNC",
-        "LMON_EBUG",
-        "LMON_NOTIMPL",
-        "LMON_YES",
-        "LMON_NO"
-    ]
-else:
-    (LMON_OK, LMON_EINVAL, LMON_EBDARG, LMON_ELNCHR,
-     LMON_EINIT, LMON_ESYS, LMON_ESUBCOM, LMON_ETOUT,
-     LMON_ENOMEM, LMON_ENCLLB, LMON_ECLLB, LMON_ENEGCB,
-     LMON_ENOPLD, LMON_EBDMSG, LMON_EDUNAV, LMON_EBUG,
-     LMON_YES, LMON_NO) = map(int, xrange(18))
-    lmon_const_map = [
-        "LMON_OK",
-        "LMON_EINVAL",
-        "LMON_EDBARG",
-        "LMON_ELNCHR",
-        "LMON_EINIT",
-        "LMON_ESYS",
-        "LMON_ESUBCOM",
-        "LMON_ETOUT",
-        "LMON_ENOMEM",
-        "LMON_ENCLLB",
-        "LMON_ECLLB",
-        "LMON_ENEGCB",
-        "LMON_ENOPLD",
-        "LMON_EBDMSG",
-        "LMON_EDUNAV",
-        "LMON_EBUG",
-        "LMON_YES",
-        "LMON_NO"
-    ]
+# LaunchMON constants.
+(LMON_OK, LMON_EINVAL, LMON_EBDARG, LMON_ELNCHR,
+ LMON_EINIT, LMON_ESYS, LMON_ESUBCOM, LMON_ESUBSYNC,
+ LMON_ETOUT, LMON_ENOMEM, LMON_ENCLLB, LMON_ECLLB,
+ LMON_ENEGCB, LMON_ENOPLD, LMON_EBDMSG, LMON_EDUNAV,
+ LMON_ETRUNC, LMON_EBUG, LMON_NOTIMPL, LMON_YES,
+ LMON_NO) = map(int, xrange(21))
+lmon_const_map = [
+    "LMON_OK",
+    "LMON_EINVAL",
+    "LMON_EDBARG",
+    "LMON_ELNCHR",
+    "LMON_EINIT",
+    "LMON_ESYS",
+    "LMON_ESUBCOM",
+    "LMON_ESUBSYNC",
+    "LMON_ETOUT",
+    "LMON_ENOMEM",
+    "LMON_ENCLLB",
+    "LMON_ECLLB",
+    "LMON_ENEGCB",
+    "LMON_ENOPLD",
+    "LMON_EBDMSG",
+    "LMON_EDUNAV",
+    "LMON_ETRUNC",
+    "LMON_EBUG",
+    "LMON_NOTIMPL",
+    "LMON_YES",
+    "LMON_NO"
+]
 
 def call(func, *args):
     """Call a LaunchMON function and handle raising exceptions.
