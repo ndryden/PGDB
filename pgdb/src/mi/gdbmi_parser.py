@@ -147,7 +147,6 @@ class GDBMIParser:
                 parts = self.output_re.match(line)
                 if not parts:
                     record = GDBMIUnknownRecord()
-                    record.record_type = UNKNOWN
                     record.output = line
                     records.append(record)
                     continue
@@ -998,6 +997,8 @@ class GDBMIUnknownRecord(GDBMIRecord):
     def __init__(self):
         """Initialization."""
         super(GDBMIUnknownRecord, self).__init__()
+        self.record_type = UNKNOWN
+        self.fields = ["output"]
         self.output = None
 
     def __str__(self):
