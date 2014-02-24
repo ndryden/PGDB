@@ -653,7 +653,7 @@ class GDBMIStreamRecord(GDBMIRecord):
     def pretty_print(self):
         """Return a list of strings for pretty-printing by GDBMIPrettyPrinter."""
         # String quotes.
-        return [self.string[1:-1]]
+        return self.string[1:-1].split("\\n")
 
     def __init__(self):
         """Initialization."""
