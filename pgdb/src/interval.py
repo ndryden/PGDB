@@ -305,6 +305,13 @@ class Interval(object):
         """Return whether this interval is empty or not."""
         return len(self.intervals) == 0
 
+    def count(self):
+        """Return the number of elements that this interval represents."""
+        num = 0
+        for tup in self.intervals:
+            num += tup[1] - tup[0] + 1
+        return num
+
     def __contains__(self, i):
         """Invoke in_interval."""
         return self.in_interval(i)
