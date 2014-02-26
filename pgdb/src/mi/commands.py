@@ -40,6 +40,10 @@ class Command(object):
         """Generate a machine interface command from this Command."""
         return "-" + self.command + " " + " ".join(map(lambda (k, v): k + " " + v, self.opts.items())) + " " + " ".join(self.args)
 
+    def __str__(self):
+        """Get a string representation of the command."""
+        return self.generate_mi_command()
+
 class Commands(object):
     """Represents the set of commands a GDB MI supports."""
 

@@ -17,7 +17,8 @@ from mi.gdbmiarec import GDBMIAggregatedRecord, combine_records
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from interval import Interval
 from varprint import VariablePrinter
-import signal, os, os.path
+import signal, os, os.path, mmap, struct, socket, re
+import posix_ipc
 
 class GDBBE:
     """The back-end GDB daemon process."""
@@ -31,10 +32,36 @@ class GDBBE:
         self.record_handler = GDBMIRecordHandler()
         self.record_handler.add_type_handler(self._watch_thread_created,
                                              set([gdbparser.ASYNC_NOTIFY_THREAD_CREATED]))
+        # Regex for checking whether to load a file.
+        self.load_file_re = re.compile(r".*\.so.*")
         # Stores data for LOAD_FILE/FILE_DATA. Indexed by filename.
         # Entries are None when there is no data, False when error was received,
         # and data otherwise.
         self.load_files = {}
+        self.current_load_file = None
+        # Shared memory and semaphore for communicating with GDB for loading files.
+        hostname = socket.gethostname()
+        self.gdb_semaphore = posix_ipc.Semaphore("/PGDBSemaphore" + hostname,
+                                                 posix_ipc.O_CREX)
+        # Use 32 MiB. TODO: Move this to config.
+        try:
+            self.gdb_shmem = posix_ipc.SharedMemory("/PGDBMem" + hostname,
+                                                    posix_ipc.O_CREX,
+                                                    size = 33554432)
+        except posix_ipc.ExistentialError as e:
+            self.gdb_semaphore.unlink()
+            self.gdb_semaphore.close()
+            raise e
+        try:
+            self.gdb_mem = mmap.mmap(self.gdb_shmem.fd, self.gdb_shmem.size)
+        except mmap.error as e:
+            self.gdb_semaphore.unlink()
+            self.gdb_semaphore.close()
+            self.gdb_shmem.close_fd()
+            self.gdb_shmem.unlink()
+            raise e
+        # Created acquired, so release.
+        self.gdb_semaphore.release()
 
         enable_pprint_cmd = Command("enable-pretty-printing")
         enable_target_async_cmd = Command("gdb-set", args = ["target-async", "on"])
@@ -42,7 +69,8 @@ class GDBBE:
         enable_non_stop_cmd = Command("gdb-set", args = ["non-stop", "on"])
         add_inferior_cmd = Command("add-inferior")
         self.gdb = GDBMachineInterface(gdb = gdbconf.gdb_path,
-                                       gdb_args = ["-x", gdbconf.gdb_init_path])
+                                       gdb_args = ["-x", gdbconf.gdb_init_path],
+                                       env = {"LD_PRELOAD": "/home/dryden2/PGDB/pgdb/load_file.so"})
         procs = self.comm.get_proctab()
         # Set up GDB.
         if not self.run_gdb_command(enable_pprint_cmd):
@@ -70,6 +98,11 @@ class GDBBE:
         # Maps MPI ranks to associated threads and vice-versa.
         self.rank_thread_map = {procs[0].mpirank: [1]}
         self.thread_rank_map = {1: procs[0].mpirank}
+
+        # Set up the list of executables for load file checking.
+        self.load_file_bins = set()
+        for proc in procs:
+            self.load_file_bins.add(os.path.basename(proc.pd.executable_name))
 
         # Attach processes.
         for proc in procs:
@@ -122,6 +155,10 @@ class GDBBE:
         if not ranks:
             # Send to the current inferior.
             tokens[-1] = self.gdb.send(command.generate_mi_command(), token)
+            if tokens[-1] is None:
+                print "GDB error, exiting."
+                self.quit = True
+                return
         else:
             for rank in ranks:
                 if rank in self.rank_inferior_map:
@@ -132,6 +169,10 @@ class GDBBE:
                         command.add_opt('--thread', self.rank_thread_map[rank][0])
                     ret_token = self.gdb.send(command.generate_mi_command(),
                                               token)
+                    if ret_token is None:
+                        print "GDB error, exiting."
+                        self.quit = True
+                        return
                     tokens[rank] = ret_token
                     self.token_rank_map[ret_token] = rank
         return tokens
@@ -183,6 +224,11 @@ class GDBBE:
         """Cleanly shut things down if we have not already done so."""
         if not self.comm.is_shutdown():
             self.comm.shutdown()
+        self.gdb_semaphore.unlink()
+        self.gdb_semaphore.close()
+        self.gdb_mem.close()
+        self.gdb_shmem.unlink()
+        self.gdb_shmem.close_fd()
 
     def __del__(self):
         """Invoke shutdown()."""
@@ -215,7 +261,7 @@ class GDBBE:
             ranks = msg.ranks
         if not self.run_gdb_command(msg.command, ranks, token = token):
             # TODO: Send die message.
-            print "Managed to get a bad command '{0}'.".format(msg.cmd)
+            print "Managed to get a bad command '{0}'.".format(msg.command)
 
     def kill_handler(self, msg):
         """Handle a kill message, killing all processes."""
@@ -243,17 +289,73 @@ class GDBBE:
     def load_file(self, filename):
         """Send a request for a file to be loaded."""
         filename = os.path.abspath(filename)
+        if filename in self.load_files:
+            self.file_data_respond(filename)
+            self.gdb_semaphore.release()
+            return
         self.load_files[filename] = None
-        self.comm.send(GDBMessage(LOAD_FILE, filename = filename),
+        self.current_load_file = filename
+        self.comm.send(GDBMessage(LOAD_FILE, filename = filename,
+                                  rank = self.comm.get_mpiranks()),
                        self.comm.frontend)
+
+    def load_file_check(self, filename):
+        """Check whether we should load the filename."""
+        filename = os.path.abspath(filename)
+        base = os.path.basename(filename)
+        if base in self.load_file_bins:
+            return True
+        if base[-4:] == ".gdb" or base[-3:] == ".py":
+            return False
+        if self.load_file_re.match(base) is not None:
+            return True
+        return False
+
+    def check_gdb_memory_flag(self):
+        flag = struct.unpack_from("=B", self.gdb_mem, 1)[0]
+        return flag == 1
+
+    def read_memory(self):
+        # Clear GDB-DW flag.
+        struct.pack_into("=B", self.gdb_mem, 1, 0)
+        size = struct.unpack_from("=I", self.gdb_mem, 2)[0]
+        if size <= 0:
+            print "Invalid read-memory size {0}!".format(size)
+            return False
+        return struct.unpack_from("={0}s".format(size), self.gdb_mem, 6)[0]
+
+    def write_memory(self, data):
+        # Set PGDB-DW flag.
+        struct.pack_into("=B", self.gdb_mem, 0, 1)
+        size = len(data)
+        # size + 1 to account for packing adding a null byte.
+        return struct.pack_into("=I{0}s".format(size + 1), self.gdb_mem, 2,
+                                size, data)
+
+    def file_data_respond(self, filename):
+        """Write the loaded file to shared memory.
+
+        Assumes the file data is in self.load_files[filename] and the semaphore
+        has been acquired. This does not release it.
+
+        """
+        if filename not in self.load_files or self.load_files[filename] is None:
+            return False
+        self.write_memory(self.load_files[filename])
 
     def file_data_handler(self, msg):
         """Handle a response with file data."""
         filename = msg.filename
         if msg.error:
-            self.load_files[filename] = False
+            self.load_files[filename] = "error"
+        else:
+            self.load_files[filename] = msg.data
+        if self.current_load_file != filename:
+            # Got response, but not for the currently-requested file.
             return
-        self.load_files[filename] = msg.data
+        self.file_data_respond(filename)
+        self.current_load_file = None
+        self.gdb_semaphore.release()
 
     def main(self):
         """Main send/receive loop.
@@ -265,6 +367,24 @@ class GDBBE:
         while True:
             if self.quit:
                 break
+
+            # Check for data from the GDB process for LOAD_FILE.
+            try:
+                self.gdb_semaphore.acquire(0)
+                if self.check_gdb_memory_flag():
+                    # Read filename.
+                    filename = self.read_memory()
+                    if filename and self.load_file_check(filename):
+                        self.load_file(filename)
+                        # The file_data_handler releases the semaphore after the
+                        # file data is received.
+                    else:
+                        self.write_memory("error")
+                        self.gdb_semaphore.release()
+                else:
+                    self.gdb_semaphore.release()
+            except posix_ipc.BusyError:
+                pass
             # TODO: Check for memory leaks relating to these.
             msg = self.comm.recv(blocking = False)
             if msg is not None:

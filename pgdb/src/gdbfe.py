@@ -81,6 +81,8 @@ class GDBFE (GDBMICmd):
         self.output_history = []
         # Get our PID for signals.
         self.my_pid = os.getpid()
+        # Files requested via LOAD_FILE.
+        self.loaded_files = set()
 
     def interrupt_main(self):
         """Interrupt the main thread.
@@ -195,11 +197,14 @@ class GDBFE (GDBMICmd):
     def load_file_handler(self, msg):
         """Handle a load file message by loading the file and broadcasting it."""
         filename = msg.filename
+        if filename in self.loaded_files:
+            # File has been broadcast to everyone.
+            return
         if not os.path.isfile(filename):
             print "Invalid LOAD_FILE request for '{0}'".format(filename)
             self.comm.send(GDBMessage(FILE_DATA, filename = filename,
                                       data = None, error = True),
-                           msg.rank)
+                           self.comm.broadcast)
             return
         try:
             f = open(filename, "rb")
@@ -207,7 +212,7 @@ class GDBFE (GDBMICmd):
             print "Cannot open {0} for LOAD_FILE: {1}.".format(filename, e.strerror)
             self.comm.send(GDBMessage(FILE_DATA, filename = filename,
                                       data = None, error = True),
-                           msg.rank)
+                           self.comm.broadcast)
             return
         try:
             data = f.read()
@@ -215,9 +220,10 @@ class GDBFE (GDBMICmd):
             print "Cannot read {0} for LOAD_FILE: {1}.".format(filename, e.strerror)
             self.comm.send(GDBMessage(FILE_DATA, filename = filename,
                                       data = None, error = True),
-                           msg.rank)
+                           self.comm.broadcast)
             return
         f.close()
+        self.loaded_files.add(filename)
         self.comm.send(GDBMessage(FILE_DATA, filename = filename,
                                   data = data, error = False),
                        self.comm.broadcast)

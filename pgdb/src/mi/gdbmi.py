@@ -44,8 +44,12 @@ class GDBMachineInterface:
 
     def _write(self, data):
         """Write data to GDB."""
-        self.process.stdin.write(data + "\n")
-        self.process.stdin.flush()
+        try:
+            self.process.stdin.write(data + "\n")
+            self.process.stdin.flush()
+        except IOError:
+            return False
+        return True
 
     def send(self, command, token = None):
         """Send data to GDB and return the associated token."""
@@ -55,7 +59,8 @@ class GDBMachineInterface:
             self.token += 1
         else:
             token_str = str(token)
-        self._write(token_str + command)
+        if not self._write(token_str + command):
+            return
         return token
 
     def read(self, timeout = 0):
