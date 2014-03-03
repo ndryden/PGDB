@@ -202,7 +202,7 @@ class Communicator (object):
             sys.exit(1)
         msg = cPickle.loads(serialized)
         # Compute time from sending to receiving.
-        if gdbconf.mrnet_collect_perf_data:
+        if gdbconf.mrnet_collect_perf_data and hasattr(msg, "_send_time"):
             cur = time.time()
             self.packet_count += 1
             self.send_time_sum += max(cur - msg._send_time, 0)
