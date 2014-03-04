@@ -49,3 +49,8 @@ mrnet_collect_perf_data = True
 mrnet_topology_dot = "/home/ndryden/topo.dot"
 # The length of history to keep.
 history_length = 100
+# Whether to load files using the SBD system.
+use_sbd = True
+# Path to the SBD shared library.
+sbd_bin = "/home/ndryden/PGDB/pgdb/load_file.so"
+
