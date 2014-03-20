@@ -5,7 +5,7 @@ this.
 
 """
 
-import os, os.path, threading, signal
+import os, os.path, threading, signal, zlib
 from collections import deque
 from conf import gdbconf
 from gdb_shared import *
@@ -224,6 +224,7 @@ class GDBFE (GDBMICmd):
             return
         f.close()
         self.loaded_files.add(filename)
+        data = zlib.compress(data, 1)
         self.comm.send(GDBMessage(FILE_DATA, filename = filename,
                                   data = data, error = False),
                        self.comm.broadcast)
