@@ -13,7 +13,7 @@ import mi.gdbmi_parser as gdbparser
 from mi.gdbmi import *
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
-from mi.gdbmiarec import GDBMIAggregatedRecord, combine_records
+from mi.gdbmiarec import GDBMIAggregatedRecord, combine_records, combine_aggregated_records
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from interval import Interval
 from varprint import VariablePrinter
@@ -212,6 +212,9 @@ class GDBBE:
         """Initialize LaunchMON, MRNet, GDB, and other things."""
         self.is_shutdown = False
         self.quit = False
+        self.doing_startup = True
+        self.startup_done_count = 0
+        self.startup_arecs = []
         self.token_handlers = {}
         self.comm = CommunicatorBE()
         if not self.comm.init_lmon(sys.argv):
@@ -312,6 +315,10 @@ class GDBBE:
             return True
         if base[-4:] == ".gdb" or base[-3:] == ".py":
             return False
+        if filename[0:6] == "/lib64":
+            # This often causes front-end/back-end mismatches.
+            # TODO: Generalize this to a config option.
+            return False
         if self.load_file_re.match(base) is not None:
             return True
         return False
@@ -403,6 +410,10 @@ class GDBBE:
             records = []
             ranks = []
             for record in self.gdb.read():
+                if record.record_subtypes == set(["DONE"]) and self.doing_startup:
+                    self.startup_done_count += 1
+                    if self.startup_done_count == self.comm.get_proctab_size():
+                        self.doing_startup = False
                 self.record_handler.handle(record)
                 if not self.is_filterable(record):
                     records.append(record)
@@ -412,7 +423,15 @@ class GDBBE:
                         ranks.append(-1)
             if records:
                 arecs = combine_records(records, ranks)
-                self.comm.send(GDBMessage(OUT_MSG, record = arecs), self.comm.frontend)
+                if self.doing_startup:
+                    self.startup_arec = combine_aggregated_records(self.startup_arecs + arecs)
+                else:
+                    if self.startup_done_count == self.comm.get_proctab_size() and self.startup_arecs is not None:
+                        arecs = combine_aggregated_records(self.startup_arecs + arecs)
+                        self.comm.send(GDBMessage(OUT_MSG, record = arecs), self.comm.frontend)
+                        self.startup_arecs = None
+                    else:
+                        self.comm.send(GDBMessage(OUT_MSG, record = arecs), self.comm.frontend)
 
             # Sleep a bit to reduce banging on the CPU.
             time.sleep(0.01)
