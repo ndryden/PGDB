@@ -410,7 +410,7 @@ class GDBBE:
             records = []
             ranks = []
             for record in self.gdb.read():
-                if record.record_subtypes == set(["DONE"]) and self.doing_startup:
+                if record.record_subtypes == set(["stopped"]) and self.doing_startup:
                     self.startup_done_count += 1
                     if self.startup_done_count == self.comm.get_proctab_size():
                         self.doing_startup = False
