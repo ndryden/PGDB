@@ -5,6 +5,8 @@
 #include <python2.7/Python.h>
 
 #include "mrnet/MRNet.h"
+#define pgdbPath "/home/ndryden/PGDB/pgdb/mrnet-filters";
+#define PATH_MAX 4096;
 
 extern "C" {
 
@@ -42,9 +44,12 @@ extern "C" {
 		}
 		// Add the relevant search path to the Python module search path.
 		// TODO: Don't hard-code this.
-		PyRun_SimpleString(
-"import sys\n\
-sys.path.append('/home/ndryden/PGDB/pgdb/mrnet-filters')\n");
+		char * totalPath = char[PATH_MAX];
+		strcpy(totalPath, "import sys\n\
+sys.path.append('");
+		strcat(totalPath, pgdbPath);
+		strcat(totalPath, "')\n)");
+		PyRun_SimpleString(totalPath);
 		// Load the relevant file.
 		PyObject* module = PyImport_ImportModule("filter_hook");
 		if (module == NULL) {
