@@ -5,13 +5,14 @@
 #include <python2.7/Python.h>
 
 #include "mrnet/MRNet.h"
+#define pgdbPath "/home/ndryden/PGDB/pgdb/mrnet-filters";
+#define PATH_MAX 4096;
 
 extern "C" {
 
 	using namespace MRN;
 
 	const char* arec_filter_format_string = "%s";
-	const char* pgdbPath = "/home/ndryden/PGDB/pgdb/mrnet-filters";
 	PyThreadState* py_state;
 
 	void send_error_packet(unsigned int stream_id, int tag, std::vector<PacketPtr> &packets_out) {
@@ -43,9 +44,12 @@ extern "C" {
 		}
 		// Add the relevant search path to the Python module search path.
 		// TODO: Don't hard-code this.
-		PyRun_SimpleString(
-"import sys\n\
-sys.path.append('"+pgdbPath+"')\n)";
+		char * totalPath = char[PATH_MAX];
+		strcpy(totalPath, "import sys\n\
+sys.path.append('");
+		strcat(totalPath, pgdbPath);
+		strcat(totalPath, "')\n)");
+		PyRun_SimpleString(totalPath);
 		// Load the relevant file.
 		PyObject* module = PyImport_ImportModule("filter_hook");
 		if (module == NULL) {
