@@ -11,6 +11,7 @@ extern "C" {
 	using namespace MRN;
 
 	const char* arec_filter_format_string = "%s";
+	const char* pgdbPath = "/home/ndryden/PGDB/pgdb/mrnet-filters";
 	PyThreadState* py_state;
 
 	void send_error_packet(unsigned int stream_id, int tag, std::vector<PacketPtr> &packets_out) {
@@ -44,7 +45,7 @@ extern "C" {
 		// TODO: Don't hard-code this.
 		PyRun_SimpleString(
 "import sys\n\
-sys.path.append('/home/ndryden/PGDB/pgdb/mrnet-filters')\n");
+sys.path.append('"+pgdbPath+"')\n)";
 		// Load the relevant file.
 		PyObject* module = PyImport_ImportModule("filter_hook");
 		if (module == NULL) {
