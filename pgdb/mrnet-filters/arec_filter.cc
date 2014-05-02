@@ -7,6 +7,7 @@
 #include "mrnet/MRNet.h"
 #define pgdbPath "/home/ndryden/PGDB/pgdb/mrnet-filters";
 #define PATH_MAX 4096;
+#define COMP_TAG 3142;
 
 extern "C" {
 
@@ -83,6 +84,7 @@ sys.path.append('");
 		for (size_t i = 0; i < packets_in.size(); ++i) {
 			char* packet_buf;
 			PacketPtr cur_packet = packets_in[i];
+			
 			// Unpack the packet into a buffer.
 			if (cur_packet->unpack("%s", &packet_buf) == -1) {
 				send_error_packet(packets_in[0]->get_StreamId(),
@@ -157,36 +159,7 @@ sys.path.append('");
 			Py_DECREF(arguments);
 			return;
 		}
-		if (!PyList_Check(ret_list)) {
-			send_error_packet(packets_in[0]->get_StreamId(),
-							  packets_in[0]->get_Tag(),
-							  packets_out);
-			Py_DECREF(module);
-			Py_DECREF(filter_func);
-			Py_DECREF(packet_list);
-			Py_DECREF(arguments);
-			Py_DECREF(ret_list);
-			return;
-		}
-		// Iterate over each element of the returned list.
-		Py_ssize_t ret_length = PyList_Size(ret_list);
-		for (ssize_t i = 0; i < ret_length; ++i) {
-			// Convert the result to a usable string.
-			// Note this string may not be modified.
-			PyObject* ret_data = PyList_GetItem(ret_list, i);
-			char* python_packet_data = PyString_AsString(ret_data);
-			if (python_packet_data == NULL) {
-				PyErr_Print();
-				send_error_packet(packets_in[0]->get_StreamId(),
-								  packets_in[0]->get_Tag(),
-								  packets_out);
-				Py_DECREF(module);
-				Py_DECREF(filter_func);
-				Py_DECREF(packet_list);
-				Py_DECREF(arguments);
-				Py_DECREF(ret_list);
-				return;
-			}
+		if(packets_in[0]->get_Tag() == COMP_TAG){
 			char* new_packet_data = (char*) malloc(sizeof(char) * (strlen(python_packet_data) + 1));
 			strcpy(new_packet_data, python_packet_data);
 			// Construct the new packet.
@@ -194,9 +167,9 @@ sys.path.append('");
 											packets_in[0]->get_Tag(),
 											"%s",
 											new_packet_data));
-			// Send it off.
-			packets_out.push_back(new_packet);
 		}
+		// Send it off.
+		packets_out.push_back(new_packet);
 		// Release all the Python references.
 		Py_DECREF(module);
 		Py_DECREF(filter_func);

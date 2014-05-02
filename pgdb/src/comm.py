@@ -159,6 +159,13 @@ class Communicator (object):
                                          MRN.SFILTER_WAITFORALL,
                                          MRN.TFILTER_NULL)
 
+    def compressLargeMsgs(msg):
+        messageTag = MSG_TAG
+        if len(msg) >= 10000:
+            msg = zlib.compress(msg, 1)
+            messageTag = COMP_TAG
+        return msg, messageTag
+
     def send(self, message, targets):
         """Send data over MRNet.
 
@@ -170,11 +177,12 @@ class Communicator (object):
         if gdbconf.mrnet_collect_perf_data:
             message._send_time = time.time()
         msg = cPickle.dumps(message, 0)
+        msg, messageTag = compressLargeMsgs(msg)
         self._lock()
         send_list = self._multi_payload_split(msg)
         stream = self._get_stream_for_interval(targets)
         for payload in send_list:
-            if stream.send(MSG_TAG, "%s", payload) == -1:
+            if stream.send(messageTag, "%s", payload) == -1:
                 print "Fatal error on stream send."
                 sys.exit(1)
             if stream.flush() == -1:
@@ -200,6 +208,8 @@ class Communicator (object):
         if serialized == "ERROR":
             print "Filter error!"
             sys.exit(1)
+        if tag==COMP_TAG:
+            msg = zlib.decompress(msg)
         msg = cPickle.loads(serialized)
         # Compute time from sending to receiving.
         if gdbconf.mrnet_collect_perf_data and hasattr(msg, "_send_time"):

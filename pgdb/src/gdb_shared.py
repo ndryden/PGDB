@@ -18,6 +18,7 @@ class NodeInfo:
         return "<" + self.__str__() + ">"
 
 MSG_TAG = 3141
+COMP_TAG = 3142
 DIE_MSG = 0
 QUIT_MSG = 1
 CMD_MSG = 2
