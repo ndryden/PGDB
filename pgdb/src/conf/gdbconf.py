@@ -4,26 +4,26 @@ sys.path.append("/g/g21/dryden1/lib/python2.6/site-packages/")
 
 from lmon import lmonconf
 
-MRNetBasePath = "/collab/usr/global/tools/mrnet/chaos_5_x86_64_ib/mrnet-4.0.0"
-pgdbPath = "/g/g21/dryden1/pgdb/pgdb"
+mrnet_base = "/collab/usr/global/tools/mrnet/chaos_5_x86_64_ib/mrnet-4.0.0"
+pgdb_path = "/g/g21/dryden1/pgdb/pgdb"
 
 # The binary for the backend daemons.
 backend_bin = "python"
 # The list of arguments to give to the backend daemons.
-backend_args = [pgdbPath+"/src/gdbbe.py"]
+backend_args = [pgdb_path + "/src/gdbbe.py"]
 # Environment variables to set in the front-end and back-end.
 environ = dict(lmonconf.lmon_environ)
 environ["XPLAT_RSH"] = "rsh"
 #environ["MRNET_COMM_PATH"] = "/usr/local/tools/mrnet-3.1.0/bin/mrnet_commnode"
 #environ["LD_LIBRARY_PATH"] = "/usr/local/tools/mrnet-3.1.0/lib"
-environ["MRNET_COMM_PATH"] = MRNetBasePath+"/bin/mrnet_commnode"
-environ["LD_LIBRARY_PATH"] = MRNetBasePath+"/lib"
+environ["MRNET_COMM_PATH"] = Mrnet_Base + "/bin/mrnet_commnode"
+environ["LD_LIBRARY_PATH"] = Mrnet_Base + "/lib"
 # The path to the GDB binary.
 gdb_path = "gdb"
 # The path to the topology file for MRNet.
 topology_path = "."
 # The path to the GDB init file to use.
-gdb_init_path = pgdbPath+"/gdbinit"
+gdb_init_path = pgdb_path + "/gdbinit"
 # Whether to use pretty printing, raw printing, or both.
 # Possible values are "yes", "no", or "both".
 pretty_print = "yes"
@@ -45,7 +45,7 @@ topology_transmit_size = 32768
 multi_len = 10240
 # A list of tuples of the form (path, function), where path is a path to an MRNet filter
 # and function is the name of the filter function.
-mrnet_filters = [(pgdbPath+"/mrnet-filters/arec_filter.so", "arec_filter")]
+mrnet_filters = [(pgdb_path + "/mrnet-filters/arec_filter.so", "arec_filter")]
 # Whether to enable collection of MRNet performance data or not.
 mrnet_collect_perf_data = True
 # Whether to write a DOT file of the topology. The path of the file if yes, None otherwise.
