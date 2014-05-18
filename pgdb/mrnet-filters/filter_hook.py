@@ -14,6 +14,7 @@ def filter_hook(packet_list):
     This is invoked via a C filter called from MRNet.
     Messages with type OUT_MSG are merged into combined aggregated records.
     packet_list is a list of serialized packets provided by MRNet.
+    These packets cannot be compressed.
     Returns a serialized list of packets to MRNet.
 
     """
@@ -27,6 +28,7 @@ def filter_hook(packet_list):
     packets = []
     record_msgs = []
     for msg in msg_list:
+        # Only process messages of type OUT_MSG.
         if msg.msg_type == OUT_MSG:
             record_msgs.append(msg)
         else:

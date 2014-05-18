@@ -41,6 +41,8 @@ mrnet_branch_factor = 32
 # The size of each topology broadcast, from the front-end to the back-end master, and the master to
 # all the other backends.
 topology_transmit_size = 32768
+# Maximum length of a message before it is compressed.
+compress_threshold = 10240
 # The maximum length of a message before it is split into smaller messages for transmission over MRNet.
 multi_len = 10240
 # A list of tuples of the form (path, function), where path is a path to an MRNet filter

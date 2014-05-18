@@ -1,6 +1,6 @@
 """Primary communication class for managing LaunchMON and MRNet communication."""
 
-import cPickle, os, sys, socket, threading, time, traceback
+import cPickle, os, sys, socket, threading, time, traceback, zlib
 from gdb_shared import *
 from conf import gdbconf
 from lmon import lmon
@@ -159,12 +159,19 @@ class Communicator (object):
                                          MRN.SFILTER_WAITFORALL,
                                          MRN.TFILTER_NULL)
 
-    def compressLargeMsgs(msg):
-        messageTag = MSG_TAG
-        if len(msg) >= 10000:
+    def _compress_msg(msg):
+        """Compress a message if it is greater than a certain size.
+
+        Currently, compressed messages are not processed by the MRNet filters.
+        This limitation can be partially removed: compressed messages that are
+        not split into multi-messages can be processed.
+
+        """
+        tag = MSG_TAG
+        if len(msg) >= gdbconf.compress_threshold:
             msg = zlib.compress(msg, 1)
-            messageTag = COMP_TAG
-        return msg, messageTag
+            tag = COMP_TAG
+        return msg, tag
 
     def send(self, message, targets):
         """Send data over MRNet.
@@ -177,12 +184,12 @@ class Communicator (object):
         if gdbconf.mrnet_collect_perf_data:
             message._send_time = time.time()
         msg = cPickle.dumps(message, 0)
-        msg, messageTag = compressLargeMsgs(msg)
+        msg, tag = self._compress_msg(msg)
         self._lock()
         send_list = self._multi_payload_split(msg)
         stream = self._get_stream_for_interval(targets)
         for payload in send_list:
-            if stream.send(messageTag, "%s", payload) == -1:
+            if stream.send(tag, "%s", payload) == -1:
                 print "Fatal error on stream send."
                 sys.exit(1)
             if stream.flush() == -1:

@@ -5,9 +5,9 @@
 #include <python2.7/Python.h>
 
 #include "mrnet/MRNet.h"
-#define pgdbPath "/home/ndryden/PGDB/pgdb/mrnet-filters";
-#define PATH_MAX 4096;
-#define COMP_TAG 3142;
+#define PGDB_PATH "/home/ndryden/PGDB/pgdb/mrnet-filters"
+#define MSG_TAG 3141
+#define COMP_TAG 3142
 
 extern "C" {
 
@@ -44,19 +44,14 @@ extern "C" {
 			}
 		}
 		// Add the relevant search path to the Python module search path.
-		// TODO: Don't hard-code this.
-		char * totalPath = char[PATH_MAX];
-		strcpy(totalPath, "import sys\n\
-sys.path.append('");
-		strcat(totalPath, pgdbPath);
-		strcat(totalPath, "')\n)");
-		PyRun_SimpleString(totalPath);
+		PyRun_SimpleString("import sys\n\
+sys.path.append('" PGDB_PATH "')\n");
 		// Load the relevant file.
 		PyObject* module = PyImport_ImportModule("filter_hook");
 		if (module == NULL) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
-							  packets_in[0]->get_Tag(),
+							  MSG_TAG,
 							  packets_out);
 			return;
 		}
@@ -65,7 +60,7 @@ sys.path.append('");
 		if ((filter_func == NULL) || !PyCallable_Check(filter_func)) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
-							  packets_in[0]->get_Tag(),
+							  MSG_TAG,
 							  packets_out);
 			Py_DECREF(module);
 			return;
@@ -75,7 +70,7 @@ sys.path.append('");
 		if (packet_list == NULL) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
-							  packets_in[0]->get_Tag(),
+							  MSG_TAG,
 							  packets_out);
 			Py_DECREF(module);
 			Py_DECREF(filter_func);
@@ -84,11 +79,15 @@ sys.path.append('");
 		for (size_t i = 0; i < packets_in.size(); ++i) {
 			char* packet_buf;
 			PacketPtr cur_packet = packets_in[i];
-			
+			// Check the tag; we only deal with uncompressed data for now.
+			if (cur_packet->get_Tag() == COMP_TAG) {
+				packets_out.push_back(cur_packet);
+				continue;
+			}
 			// Unpack the packet into a buffer.
 			if (cur_packet->unpack("%s", &packet_buf) == -1) {
 				send_error_packet(packets_in[0]->get_StreamId(),
-								  packets_in[0]->get_Tag(),
+								  MSG_TAG,
 								  packets_out);
 				Py_DECREF(module);
 				Py_DECREF(filter_func);
@@ -100,7 +99,7 @@ sys.path.append('");
 			if (unpacked == NULL) {
 				PyErr_Print();
 				send_error_packet(packets_in[0]->get_StreamId(),
-								  packets_in[0]->get_Tag(),
+								  MSG_TAG,
 								  packets_out);
 				Py_DECREF(module);
 				Py_DECREF(filter_func);
@@ -114,7 +113,7 @@ sys.path.append('");
 			if (PyList_SetItem(packet_list, i, unpacked) != 0) {
 				PyErr_Print();
 				send_error_packet(packets_in[0]->get_StreamId(),
-								  packets_in[0]->get_Tag(),
+								  MSG_TAG,
 								  packets_out);
 				Py_DECREF(module);
 				Py_DECREF(filter_func);
@@ -128,7 +127,7 @@ sys.path.append('");
 		if (arguments == NULL) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
-							  packets_in[0]->get_Tag(),
+							  MSG_TAG,
 							  packets_out);
 			Py_DECREF(module);
 			Py_DECREF(filter_func);
@@ -138,7 +137,7 @@ sys.path.append('");
 		if (PyTuple_SetItem(arguments, 0, packet_list) != 0) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
-							  packets_in[0]->get_Tag(),
+							  MSG_TAG,
 							  packets_out);
 			Py_DECREF(module);
 			Py_DECREF(filter_func);
@@ -151,7 +150,7 @@ sys.path.append('");
 		if (ret_list == NULL) {
 			PyErr_Print();
 			send_error_packet(packets_in[0]->get_StreamId(),
-							  packets_in[0]->get_Tag(),
+							  MSG_TAG,
 							  packets_out);
 			Py_DECREF(module);
 			Py_DECREF(filter_func);
@@ -159,17 +158,46 @@ sys.path.append('");
 			Py_DECREF(arguments);
 			return;
 		}
-		if(packets_in[0]->get_Tag() == COMP_TAG){
+		if (!PyList_Check(ret_list)) {
+			send_error_packet(packets_in[0]->get_StreamId(),
+							  MSG_TAG,
+							  packets_out);
+			Py_DECREF(module);
+			Py_DECREF(filter_func);
+			Py_DECREF(packet_list);
+			Py_DECREF(arguments);
+			Py_DECREF(ret_list);
+			return;
+		}
+		// Iterate over each element of the returned list.
+		Py_ssize_t ret_length = PyList_Size(ret_list);
+		for (ssize_t i = 0; i < ret_length; ++i) {
+			// Convert the result to a usable string.
+			// Note this string may not be modified.
+			PyObject* ret_data = PyList_GetItem(ret_list, i);
+			char* python_packet_data = PyString_AsString(ret_data);
+			if (python_packet_data == NULL) {
+				PyErr_Print();
+				send_error_packet(packets_in[0]->get_StreamId(),
+								  MSG_TAG,
+								  packets_out);
+				Py_DECREF(module);
+				Py_DECREF(filter_func);
+				Py_DECREF(packet_list);
+				Py_DECREF(arguments);
+				Py_DECREF(ret_list);
+				return;
+			}
 			char* new_packet_data = (char*) malloc(sizeof(char) * (strlen(python_packet_data) + 1));
 			strcpy(new_packet_data, python_packet_data);
-			// Construct the new packet.
+			// Construct the new packet and send it off.
+			// Use MSG_TAG because we removed all COMP_TAG messages above.
 			PacketPtr new_packet(new Packet(packets_in[0]->get_StreamId(),
-											packets_in[0]->get_Tag(),
+											MSG_TAG,
 											"%s",
 											new_packet_data));
+			packets_out.push_back(new_packet);
 		}
-		// Send it off.
-		packets_out.push_back(new_packet);
 		// Release all the Python references.
 		Py_DECREF(module);
 		Py_DECREF(filter_func);

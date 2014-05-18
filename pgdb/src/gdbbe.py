@@ -17,7 +17,7 @@ from mi.gdbmiarec import GDBMIAggregatedRecord, combine_records, combine_aggrega
 from mi.gdbmi_recordhandler import GDBMIRecordHandler
 from interval import Interval
 from varprint import VariablePrinter
-import signal, os, os.path, mmap, struct, socket, re, zlib
+import signal, os, os.path, mmap, struct, socket, re
 import posix_ipc
 
 class GDBBE:
@@ -361,7 +361,7 @@ class GDBBE:
         if msg.error:
             self.load_files[filename] = "error"
         else:
-            self.load_files[filename] = zlib.decompress(msg.data)
+            self.load_files[filename] = msg.data
         if self.current_load_file != filename:
             # Got response, but not for the currently-requested file.
             return
