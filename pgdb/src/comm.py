@@ -155,7 +155,7 @@ class Communicator (object):
             mrnet_ranks = list(set(mrnet_ranks))
             comm = self.mrnet.new_Communicator(mrnet_ranks)
             return self.mrnet.new_Stream(comm,
-                                         self.filter_id,
+                                         self.filter_ids[0],
                                          MRN.SFILTER_WAITFORALL,
                                          MRN.TFILTER_NULL)
 
@@ -508,7 +508,7 @@ class CommunicatorFE (Communicator):
         """Initialize basic MRNet streams."""
         self.broadcast_communicator = self.mrnet.get_BroadcastCommunicator()
         self.mrnet_broadcast_stream = self.mrnet.new_Stream(self.broadcast_communicator,
-                                                            self.filter_id,
+                                                            self.filter_ids[0],
                                                             MRN.SFILTER_WAITFORALL,
                                                             MRN.TFILTER_NULL)
         self.mrnet_frontend_stream = None # Not used here.
@@ -529,16 +529,17 @@ class CommunicatorFE (Communicator):
 
     def _load_mrnet_filters(self):
         """Load MRNet filters."""
-        self.filter_id = 0
+        self.filter_ids = []
         for filter_path, filter_func in gdbconf.mrnet_filters:
             if os.path.isfile(filter_path):
                 # Ensure the file actually still exists.
                 try:
                     with open(filter_path):
-                        self.filter_id = self.mrnet.load_FilterFunc(filter_path, filter_func)
-                        if self.filter_id == -1:
+                        ret_filter_id = self.mrnet.load_FilterFunc(filter_path, filter_func)
+                        if ret_filter_id == -1:
                             print "Failed to load filter {0}:{1}!".format(filter_path, filter_func)
                             sys.exit(1)
+                        self.filter_ids.append(ret_filter_id)
                 except IOError:
                     print "Filter {0} disappeared!".format(filter_path)
                     sys.exit(1)
