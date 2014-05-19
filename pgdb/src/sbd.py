@@ -6,7 +6,7 @@ This handles deploying files via MRNet instead of the parallel filesystem.
 
 import os.path, mmap, struct, re, socket
 import posix_ipc
-from gdb_shared import GDBMessage, FILE_DATA
+from gdb_shared import GDBMessage, FILE_DATA, LOAD_FILE
 from conf import gdbconf
 
 class SBDFE:
