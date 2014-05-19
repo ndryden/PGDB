@@ -59,5 +59,5 @@ history_length = 100
 # Whether to load files using the SBD system.
 use_sbd = True
 # Path to the SBD shared library.
-sbd_bin = "/home/ndryden/PGDB/pgdb/load_file.so"
+sbd_bin = pgdb_path + "/load_file.so"
 
