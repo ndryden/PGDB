@@ -18,8 +18,8 @@ backend_args = [pgdb_path + "/src/gdbbe.py"]
 # Environment variables to set in the front-end and back-end.
 environ = dict(lmonconf.lmon_environ)
 environ["XPLAT_RSH"] = "rsh"
-environ["MRNET_COMM_PATH"] = Mrnet_Base + "/bin/mrnet_commnode"
-environ["LD_LIBRARY_PATH"] = Mrnet_Base + "/lib"
+environ["MRNET_COMM_PATH"] = mrnet_base + "/bin/mrnet_commnode"
+environ["LD_LIBRARY_PATH"] = mrnet_base + "/lib"
 # The path to the GDB binary.
 gdb_path = "gdb"
 # The path to the topology file for MRNet.
@@ -46,7 +46,7 @@ topology_transmit_size = 32768
 # Maximum length of a message before it is compressed.
 compress_threshold = 10240
 # The maximum length of a message before it is split into smaller messages for transmission over MRNet.
-multi_len = 10240
+multi_len = 5242880
 # A list of tuples of the form (path, function), where path is a path to an MRNet filter
 # and function is the name of the filter function.
 mrnet_filters = [(pgdb_path + "/mrnet-filters/arec_filter.so", "arec_filter")]
