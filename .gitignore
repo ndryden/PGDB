@@ -4,3 +4,8 @@
 raw_dump_*
 topo_*
 *.so
+*.idx
+*.ilg
+*.ind
+*.out
+*.toc
