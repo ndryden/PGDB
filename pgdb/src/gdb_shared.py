@@ -1,5 +1,4 @@
 import sys, os, socket, time, cPickle, inspect
-from mrnet.mrnet import *
 
 class NodeInfo:
     def __init__(self, mrnrank, host, port, parent, be_rank):
