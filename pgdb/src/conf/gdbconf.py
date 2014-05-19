@@ -1,6 +1,10 @@
-# Correctly set the path to load MRNet.
+"""Base configuration file for PGDB."""
+
 import sys
-sys.path.append("/g/g21/dryden1/lib/python2.6/site-packages/")
+def set_path():
+    """Set appropriate Python paths."""
+    sys.path.append("/g/g21/dryden1/lib/python2.6/site-packages/")
+set_path()
 
 from lmon import lmonconf
 
@@ -14,8 +18,6 @@ backend_args = [pgdb_path + "/src/gdbbe.py"]
 # Environment variables to set in the front-end and back-end.
 environ = dict(lmonconf.lmon_environ)
 environ["XPLAT_RSH"] = "rsh"
-#environ["MRNET_COMM_PATH"] = "/usr/local/tools/mrnet-3.1.0/bin/mrnet_commnode"
-#environ["LD_LIBRARY_PATH"] = "/usr/local/tools/mrnet-3.1.0/lib"
 environ["MRNET_COMM_PATH"] = Mrnet_Base + "/bin/mrnet_commnode"
 environ["LD_LIBRARY_PATH"] = Mrnet_Base + "/lib"
 # The path to the GDB binary.

@@ -1,9 +1,10 @@
 """Python filter hook for record aggregation."""
 
-# Ensure paths are set correctly.
+# Need to specify the directory for PGDB.
 import sys
 sys.path.append("/home/ndryden/PGDB/pgdb/src")
-sys.path.append("/home/ndryden/lib/python2.7/site-packages")
+from conf import gdbconf
+gdbconf.set_path()
 import cPickle
 from mi.gdbmiarec import *
 from gdb_shared import *
