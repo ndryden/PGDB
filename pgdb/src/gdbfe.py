@@ -64,6 +64,11 @@ class GDBFE (GDBMICmd):
         try:
             self.blocks += gdbconf.default_blocks
         except AttributeError: pass
+        # Initialize the SBD system if needed.
+        if gdbconf.use_sbd:
+            self.sbd = SBDFE(self.comm)
+        else:
+            self.sbd = None
         return True
 
     def __init__(self):
@@ -81,8 +86,6 @@ class GDBFE (GDBMICmd):
         self.output_history = []
         # Get our PID for signals.
         self.my_pid = os.getpid()
-        # Files requested via LOAD_FILE.
-        self.loaded_files = set()
 
     def interrupt_main(self):
         """Interrupt the main thread.
@@ -196,37 +199,10 @@ class GDBFE (GDBMICmd):
 
     def load_file_handler(self, msg):
         """Handle a load file message by loading the file and broadcasting it."""
-        filename = msg.filename
-        if filename in self.loaded_files:
-            # File has been broadcast to everyone.
-            return
-        if not os.path.isfile(filename):
-            print "Invalid LOAD_FILE request for '{0}'".format(filename)
-            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
-                                      data = None, error = True),
-                           self.comm.broadcast)
-            return
-        try:
-            f = open(filename, "rb")
-        except IOError as e:
-            print "Cannot open {0} for LOAD_FILE: {1}.".format(filename, e.strerror)
-            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
-                                      data = None, error = True),
-                           self.comm.broadcast)
-            return
-        try:
-            data = f.read()
-        except IOError as e:
-            print "Cannot read {0} for LOAD_FILE: {1}.".format(filename, e.strerror)
-            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
-                                      data = None, error = True),
-                           self.comm.broadcast)
-            return
-        f.close()
-        self.loaded_files.add(filename)
-        self.comm.send(GDBMessage(FILE_DATA, filename = filename,
-                                  data = data, error = False),
-                       self.comm.broadcast)
+        if self.sbd:
+            self.sbd.load_file(msg.filename)
+        else:
+            print "Received SBD LOAD_FILE request when SBD is not enabled."
 
     def parse_filter_spec(self, spec):
         """Parse a filter specification into a list of record type."""
