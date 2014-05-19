@@ -17,6 +17,7 @@ from mi.commands import Command
 from mi.gdbmiarec import GDBMIAggregatedRecord, combine_aggregated_records
 from mi.gdbmipprinter import GDBMIPrettyPrinter
 from interval import Interval
+from sbd import SBDFE
 
 class GDBFE (GDBMICmd):
     """The front-end to PGDB."""
