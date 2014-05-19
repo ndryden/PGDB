@@ -60,4 +60,5 @@ history_length = 100
 use_sbd = True
 # Path to the SBD shared library.
 sbd_bin = pgdb_path + "/load_file.so"
-
+# Size of shared memory the SBD uses, in bytes. Currently 32 MiB.
+sbd_shmem_size = 33554432
