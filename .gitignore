@@ -3,3 +3,4 @@
 *.py[cod]
 raw_dump_*
 topo_*
+*.so
