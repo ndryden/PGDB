@@ -159,7 +159,7 @@ class Communicator (object):
                                          MRN.SFILTER_WAITFORALL,
                                          MRN.TFILTER_NULL)
 
-    def _compress_msg(msg):
+    def _compress_msg(self, msg):
         """Compress a message if it is greater than a certain size.
 
         Currently, compressed messages are not processed by the MRNet filters.
