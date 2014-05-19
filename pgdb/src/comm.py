@@ -169,7 +169,7 @@ class Communicator (object):
         """
         tag = MSG_TAG
         if len(msg) >= gdbconf.compress_threshold:
-            msg = zlib.compress(msg, 1)
+            msg = zlib.compress(msg, 1).encode("string_escape")
             tag = COMP_TAG
         return msg, tag
 
@@ -215,8 +215,8 @@ class Communicator (object):
         if serialized == "ERROR":
             print "Filter error!"
             sys.exit(1)
-        if tag==COMP_TAG:
-            msg = zlib.decompress(msg)
+        if tag == COMP_TAG:
+            serialized = zlib.decompress(serialized.decode("string_escape"))
         msg = cPickle.loads(serialized)
         # Compute time from sending to receiving.
         if gdbconf.mrnet_collect_perf_data and hasattr(msg, "_send_time"):
