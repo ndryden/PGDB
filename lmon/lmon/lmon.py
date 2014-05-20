@@ -9,7 +9,7 @@ from ctypes import *
 import cPickle
 
 # The version of the LaunchMON API. This must match the header file.
-LMON_VERSION = 90010
+LMON_VERSION = 900100
 
 # Base path to the LaunchMON install directory.
 lmon_path = "/usr/local"
