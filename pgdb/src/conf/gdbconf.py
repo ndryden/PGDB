@@ -1,6 +1,6 @@
 """Base configuration file for PGDB."""
 
-import sys
+import sys, os
 def set_path():
     """Set appropriate Python paths."""
     sys.path.append("/g/g21/dryden1/lib/python2.6/site-packages/")
@@ -19,7 +19,7 @@ backend_args = [pgdb_path + "/src/gdbbe.py"]
 environ = dict(lmonconf.lmon_environ)
 environ["XPLAT_RSH"] = "rsh"
 environ["MRNET_COMM_PATH"] = mrnet_base + "/bin/mrnet_commnode"
-environ["LD_LIBRARY_PATH"] = mrnet_base + "/lib"
+environ["LD_LIBRARY_PATH"] = mrnet_base + "/lib:" + os.environ.get("LD_LIBRARY_PATH", "")
 # The path to the GDB binary.
 gdb_path = "gdb"
 # The path to the topology file for MRNet.
