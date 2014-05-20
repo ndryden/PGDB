@@ -104,6 +104,23 @@ class SBDBE:
         # Created acquired, so release.
         self.gdb_semaphore.release()
 
+    def clean_leftovers(self):
+        """Clean up leftover semaphores and shared memory.
+
+        This is used because sometimes it isn't successfully cleaned.
+
+        """
+        hostname = socket.gethostname()
+        try:
+            sem = posix_ipc.Semaphore("/PGDBSemaphore" + hostname)
+            sem.unlink()
+            sem.close()
+        except posix_ipc.ExistentialError: pass
+        try:
+            shmem = posix_ipc.SharedMemory("/PGDBMem" + hostname)
+            shmem.unlink()
+        except posix_ipc.ExistentialError: pass
+
     def set_executable_names(self, names):
         """Set the names of all the binaries of the processes under control.
 
