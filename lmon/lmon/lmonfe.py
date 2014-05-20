@@ -13,7 +13,7 @@ class LMON_fe(object):
 
     def __init__(self):
         """Initialize the LaunchMON front-end library."""
-        self.lib = cdll.LoadLibrary(lmon.lmonconf.lmon_fe_lib)
+        self.lib = cdll.LoadLibrary(lmon.lmon_fe_lib)
         # Used for keeping callbacks alive.
         self.pack_cbs = {}
         self.unpack_cbs = {}

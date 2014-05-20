@@ -7,11 +7,71 @@ as things useful to things using this interface, such as exceptions and CTypes s
 
 from ctypes import *
 import cPickle
-# If we can't import from conf, see if it's in the current directory.
-try:
-    from conf import lmonconf
-except ImportError:
-    import lmonconf
+
+# The version of the LaunchMON API. This must match the header file.
+LMON_VERSION = 90010
+
+# Base path to the LaunchMON install directory.
+lmon_path = "/usr/local"
+# The library for the LaunchMON front-end.
+lmon_fe_lib = lmon_path + "/lib/lmonfeapi.so"
+# The library for the LaunchMON back-end.
+lmon_be_lib = lmon_path + "/lib/lmonbeapi.so"
+# Launchmon environment variables.
+lmon_environ = {"LMON_REMOTE_LOGIN": "/usr/bin/ssh",
+                "LMON_PREFIX": lmon_path,
+                "LMON_LAUNCHMON_ENGINE_PATH": lmon_path + "/bin/launchmon"}
+
+def set_lmon_paths(path, fe_lib = None, be_lib = None):
+    """Set the LaunchMON paths."""
+    global lmon_path, lmon_fe_lib, lmon_be_lib, lmon_environ
+    lmon_path = path
+    if fe_lib:
+        lmon_fe_lib = fe_lib
+    else:
+        lmon_fe_lib = path + "/lib/lmonfeapi.so"
+    if be_lib:
+        lmon_be_lib = be_lib
+    else:
+        lmon_be_lib = path + "/lib/lmonbeapi.so"
+    lmon_environ["LMON_PREFIX"] = path
+    lmon_environ["LMON_LAUNCHMON_ENGINE_PATH"] = path + "/bin/launchmon"
+
+def set_lmon_env(var, val):
+    """Set environment variable var to val."""
+    global lmon_environ
+    lmon_environ[var] = val
+
+# LaunchMON constants.
+(LMON_OK, LMON_EINVAL, LMON_EBDARG, LMON_ELNCHR,
+ LMON_EINIT, LMON_ESYS, LMON_ESUBCOM, LMON_ESUBSYNC,
+ LMON_ETOUT, LMON_ENOMEM, LMON_ENCLLB, LMON_ECLLB,
+ LMON_ENEGCB, LMON_ENOPLD, LMON_EBDMSG, LMON_EDUNAV,
+ LMON_ETRUNC, LMON_EBUG, LMON_NOTIMPL, LMON_YES,
+ LMON_NO) = map(int, xrange(21))
+lmon_const_map = [
+    "LMON_OK",
+    "LMON_EINVAL",
+    "LMON_EDBARG",
+    "LMON_ELNCHR",
+    "LMON_EINIT",
+    "LMON_ESYS",
+    "LMON_ESUBCOM",
+    "LMON_ESUBSYNC",
+    "LMON_ETOUT",
+    "LMON_ENOMEM",
+    "LMON_ENCLLB",
+    "LMON_ECLLB",
+    "LMON_ENEGCB",
+    "LMON_ENOPLD",
+    "LMON_EBDMSG",
+    "LMON_EDUNAV",
+    "LMON_ETRUNC",
+    "LMON_EBUG",
+    "LMON_NOTIMPL",
+    "LMON_YES",
+    "LMON_NO"
+]
 
 class LMONException(Exception):
     """An error from LaunchMON.
@@ -50,39 +110,6 @@ class lmon_daemon_env_t(Structure):
 lmon_daemon_env_t._fields_ = [("envName", c_char_p),
                               ("envValue", c_char_p),
                               ("next", POINTER(lmon_daemon_env_t))]
-
-# The LaunchMON version number from the configuration.
-LMON_VERSION = lmonconf.lmon_version
-# LaunchMON constants.
-(LMON_OK, LMON_EINVAL, LMON_EBDARG, LMON_ELNCHR,
- LMON_EINIT, LMON_ESYS, LMON_ESUBCOM, LMON_ESUBSYNC,
- LMON_ETOUT, LMON_ENOMEM, LMON_ENCLLB, LMON_ECLLB,
- LMON_ENEGCB, LMON_ENOPLD, LMON_EBDMSG, LMON_EDUNAV,
- LMON_ETRUNC, LMON_EBUG, LMON_NOTIMPL, LMON_YES,
- LMON_NO) = map(int, xrange(21))
-lmon_const_map = [
-    "LMON_OK",
-    "LMON_EINVAL",
-    "LMON_EDBARG",
-    "LMON_ELNCHR",
-    "LMON_EINIT",
-    "LMON_ESYS",
-    "LMON_ESUBCOM",
-    "LMON_ESUBSYNC",
-    "LMON_ETOUT",
-    "LMON_ENOMEM",
-    "LMON_ENCLLB",
-    "LMON_ECLLB",
-    "LMON_ENEGCB",
-    "LMON_ENOPLD",
-    "LMON_EBDMSG",
-    "LMON_EDUNAV",
-    "LMON_ETRUNC",
-    "LMON_EBUG",
-    "LMON_NOTIMPL",
-    "LMON_YES",
-    "LMON_NO"
-]
 
 def call(func, *args):
     """Call a LaunchMON function and handle raising exceptions.

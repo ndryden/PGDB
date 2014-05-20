@@ -13,7 +13,7 @@ class LMON_be(object):
 
     def __init__(self):
         """Initialize the LaunchMON back-end library."""
-        self.lib = cdll.LoadLibrary(lmon.lmonconf.lmon_be_lib)
+        self.lib = cdll.LoadLibrary(lmon.lmon_be_lib)
         self.pack_type = CFUNCTYPE(c_int, c_void_p, c_void_p, c_int, POINTER(c_int))
         self.unpack_type = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)
         # We use c_void_p because ctypes isn't good at the whole multiple-pointers thing.

@@ -6,17 +6,20 @@ def set_path():
     sys.path.append("/g/g21/dryden1/lib/python2.6/site-packages/")
 set_path()
 
-from lmon import lmonconf
+import lmon
 
 mrnet_base = "/collab/usr/global/tools/mrnet/chaos_5_x86_64_ib/mrnet-4.0.0"
 pgdb_path = "/g/g21/dryden1/pgdb/pgdb"
+
+# Set up LaunchMON.
+lmon.set_lmon_paths("/g/g21/dryden1/launchmon")
 
 # The binary for the backend daemons.
 backend_bin = "python"
 # The list of arguments to give to the backend daemons.
 backend_args = [pgdb_path + "/src/gdbbe.py"]
 # Environment variables to set in the front-end and back-end.
-environ = dict(lmonconf.lmon_environ)
+environ = dict(lmon.lmon_environ)
 environ["XPLAT_RSH"] = "rsh"
 environ["MRNET_COMM_PATH"] = mrnet_base + "/bin/mrnet_commnode"
 environ["LD_LIBRARY_PATH"] = mrnet_base + "/lib:" + os.environ.get("LD_LIBRARY_PATH", "")
