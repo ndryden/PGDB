@@ -6,7 +6,7 @@ def set_path():
     sys.path.append("/g/g21/dryden1/lib/python2.6/site-packages/")
 set_path()
 
-import lmon
+from lmon import lmon
 
 mrnet_base = "/collab/usr/global/tools/mrnet/chaos_5_x86_64_ib/mrnet-4.0.0"
 pgdb_path = "/g/g21/dryden1/pgdb/pgdb"

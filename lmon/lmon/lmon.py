@@ -14,9 +14,9 @@ LMON_VERSION = 90010
 # Base path to the LaunchMON install directory.
 lmon_path = "/usr/local"
 # The library for the LaunchMON front-end.
-lmon_fe_lib = lmon_path + "/lib/lmonfeapi.so"
+lmon_fe_lib = lmon_path + "/lib/libmonfeapi.so"
 # The library for the LaunchMON back-end.
-lmon_be_lib = lmon_path + "/lib/lmonbeapi.so"
+lmon_be_lib = lmon_path + "/lib/libmonbeapi.so"
 # Launchmon environment variables.
 lmon_environ = {"LMON_REMOTE_LOGIN": "/usr/bin/ssh",
                 "LMON_PREFIX": lmon_path,
@@ -29,11 +29,11 @@ def set_lmon_paths(path, fe_lib = None, be_lib = None):
     if fe_lib:
         lmon_fe_lib = fe_lib
     else:
-        lmon_fe_lib = path + "/lib/lmonfeapi.so"
+        lmon_fe_lib = path + "/lib/libmonfeapi.so"
     if be_lib:
         lmon_be_lib = be_lib
     else:
-        lmon_be_lib = path + "/lib/lmonbeapi.so"
+        lmon_be_lib = path + "/lib/libmonbeapi.so"
     lmon_environ["LMON_PREFIX"] = path
     lmon_environ["LMON_LAUNCHMON_ENGINE_PATH"] = path + "/bin/launchmon"
 
