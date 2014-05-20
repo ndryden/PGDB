@@ -81,6 +81,8 @@ class SBDBE:
         # Set of executable names for all processes.
         self.load_file_bins = set()
         self.current_load_file = None
+        # We may have to clean stuff up from the last run.
+        self.clean_leftovers()
         # Shared memory and semaphore for communicating with GDB for loading files.
         hostname = socket.gethostname()
         self.gdb_semaphore = posix_ipc.Semaphore("/PGDBSemaphore" + hostname,
