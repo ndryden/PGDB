@@ -18,7 +18,7 @@ Index: test/src/fe_launch_smoketest.cxx
 +               "[LMON_FE] launching the job/daemons via %s\n",
 +               mylauncher);
 +    }
-+  else if (rmenv_str == str::string("RC_mpirun_rsh"))
++  else if (rmenv_str == std::string("RC_mpirun_rsh"))
 +  {
 +      launcher_argv    = (char **) malloc(5*sizeof(char*));
 +      launcher_argv[0] = strdup(mylauncher);
