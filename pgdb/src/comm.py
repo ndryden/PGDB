@@ -122,12 +122,15 @@ class Communicator (object):
         """Return an interval of MPI ranks. If on the back-end, this is local only."""
         return Interval(lis = self.mpiranks)
 
-    def _multi_payload_split(self, msg):
+    def _multi_payload_split(self, msg, tag):
         """Given a message, split it into multi-messages if needed."""
         if len(msg) > gdbconf.multi_len:
             split_len = gdbconf.multi_len
             payloads = [msg[i:i + split_len] for i in range(0, len(msg), split_len)]
-            payload_msgs = [GDBMessage(MULTI_MSG, num = len(payloads))]
+            header_msg = GDBMessage(MULTI_MSG, num = len(payloads), comp = False)
+            if tag == COMP_TAG:
+                header_msg.comp = True
+            payload_msgs = [header_msg]
             for payload in payloads:
                 payload_msgs.append(GDBMessage(MULTI_PAYLOAD_MSG, payload = payload))
             serialized_msgs = []
@@ -173,6 +176,10 @@ class Communicator (object):
             tag = COMP_TAG
         return msg, tag
 
+    def _decompress_msg(self, msg):
+        """Decompress msg."""
+        return zlib.decompress(msg.decode("string_escape"))
+
     def send(self, message, targets):
         """Send data over MRNet.
 
@@ -186,7 +193,7 @@ class Communicator (object):
         msg = cPickle.dumps(message, 0)
         msg, tag = self._compress_msg(msg)
         self._lock()
-        send_list = self._multi_payload_split(msg)
+        send_list = self._multi_payload_split(msg, tag)
         stream = self._get_stream_for_interval(targets)
         for payload in send_list:
             if stream.send(tag, "%s", payload) == -1:
@@ -216,7 +223,7 @@ class Communicator (object):
             print "Filter error!"
             sys.exit(1)
         if tag == COMP_TAG:
-            serialized = zlib.decompress(serialized.decode("string_escape"))
+            serialized = self._decompress_msg(serialized)
         msg = cPickle.loads(serialized)
         # Compute time from sending to receiving.
         if gdbconf.mrnet_collect_perf_data and hasattr(msg, "_send_time"):
@@ -247,6 +254,8 @@ class Communicator (object):
                     self._unlock()
             payload += multi_msg.payload
             counter += 1
+        if msg.comp:
+            payload = self._decompress_msg(payload)
         return cPickle.loads(payload)
 
     def recv(self, blocking = True, ret_stream = False):
