@@ -483,7 +483,7 @@ ssize_t read(int d, void* buf, size_t nbytes) {
 	orig_read_t orig_read = (orig_read_t) dlsym(RTLD_NEXT, "read");
 	file_data_t* file_data = get_file_data(d);
 	if (file_data) {
-		//printf("Read(%d, %p, %d)\n", d, buf, nbytes);
+		//printf("Read(%d, %p, %lu)\n", d, buf, nbytes);
 		errno = 0;
 		return read_file_data(d, buf, nbytes);
 	}
@@ -494,7 +494,7 @@ ssize_t write(int d, const void* buf, size_t nbytes) {
 	orig_write_t orig_write = (orig_write_t) dlsym(RTLD_NEXT, "write");
 	file_data_t* file_data = get_file_data(d);
 	if (file_data) {
-		//printf("Write(%d, %p, %d)\n", d, buf, nbytes);
+		//printf("Write(%d, %p, %lu)\n", d, buf, nbytes);
 		// Do not support writing.
 		errno = EIO;
 		return -1;
@@ -536,7 +536,7 @@ off_t lseek(int fildes, off_t offset, int whence) {
 	orig_lseek_t orig_lseek = (orig_lseek_t) dlsym(RTLD_NEXT, "lseek");
 	file_data_t* file_data = get_file_data(fildes);
 	if (file_data) {
-		//printf("Lseek(%d, %d, %d)\n", fildes, offset, whence);
+		//printf("Lseek(%d, %ld, %d)\n", fildes, offset, whence);
 		errno = 0;
 		switch (whence) {
 		case SEEK_SET:
@@ -563,7 +563,7 @@ ssize_t pread(int d, void* buf, size_t nbytes, off_t offset) {
 	off_t orig_offset;
 	ssize_t bytes_read;
 	if (file_data) {
-		//printf("Pread(%d, %p, %d, %d)\n", d, buf, nbytes, offset);
+		//printf("Pread(%d, %p, %lu, %ld)\n", d, buf, nbytes, offset);
 		errno = 0;
 		orig_offset = file_data->offset;
 		file_data->offset = offset;
@@ -616,7 +616,7 @@ size_t fread(void* restrict ptr, size_t size, size_t nitems, FILE* restrict stre
 	file_data_t* file_data = get_file_data(fd);
 	ssize_t nread;
 	if (file_data) {
-		//printf("Fread(%p, %d, %d, %p)\n", ptr, size, nitems, stream);
+		//printf("Fread(%p, %lu, %lu, %p)\n", ptr, size, nitems, stream);
 		errno = 0;
 		nread = read_file_data(fd, ptr, size * nitems);
 		if (nread >= 0) {
@@ -632,7 +632,7 @@ size_t fwrite(const void* restrict ptr, size_t size, size_t nitems, FILE* restri
 	int fd = (int) stream;
 	file_data_t* file_data = get_file_data(fd);
 	if (file_data) {
-		//printf("Fwrite(%p, %d, %d, %p)\n", ptr, size, nitems, stream);
+		//printf("Fwrite(%p, %lu, %lu, %p)\n", ptr, size, nitems, stream);
 		// Do not support writing.
 		return 0;
 	}
@@ -777,7 +777,7 @@ void* mmap(void* addr, size_t len, int prot, int flags, int fd, off_t offset) {
 	orig_mmap_t orig_mmap = (orig_mmap_t) dlsym(RTLD_NEXT, "mmap");
 	file_data_t* file_data = get_file_data(fd);
 	if (file_data) {
-		//printf("Mmap(%p, %d, %d, %d, %d, %d)\n", addr, len, prot, flags, fd, offset);
+		//printf("Mmap(%p, %lu, %d, %d, %d, %ld)\n", addr, len, prot, flags, fd, offset);
 		errno = 0;
 		if (flags & MAP_FIXED) {
 			errno = ENOMEM;
@@ -795,7 +795,7 @@ int munmap(void* addr, size_t len) {
 	while (file_data != NULL) {
 		errno = 0;
 		if (file_data->data == addr) {
-			//printf("Munmap(%p, %d)\n", addr, len);
+			//printf("Munmap(%p, %lu)\n", addr, len);
 			del_file_data(file_data->fd);
 			return 0;
 		}
