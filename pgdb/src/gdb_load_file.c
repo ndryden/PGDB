@@ -394,6 +394,14 @@ void wait_for_data(void) {
 	}
 }
 
+int should_load_file(const char* path) {
+	// Avoid intercepting /proc.
+	if (strncmp(path, "/proc", 5) == 0) {
+		return 0;
+	}
+	return 1;
+}
+
 file_data_t* create_file_from_shmem(const char* path) {
 	uint32_t size;
 	void* data;
@@ -404,6 +412,9 @@ file_data_t* create_file_from_shmem(const char* path) {
 	realpath(path, full_path);
 	path_len = strnlen(full_path, PATH_MAX);
 	fn_entry = get_filename_entry(full_path);
+	if (should_load_file(full_path) == 0) {
+		return NULL;
+	}
 	if (fn_entry) {
 		if (fn_entry->error) {
 			return NULL;
