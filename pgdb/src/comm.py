@@ -130,16 +130,17 @@ class Communicator (object):
             header_msg = GDBMessage(MULTI_MSG, num = len(payloads), comp = False)
             if tag == COMP_TAG:
                 header_msg.comp = True
+                tag = MSG_TAG
             payload_msgs = [header_msg]
             for payload in payloads:
                 payload_msgs.append(GDBMessage(MULTI_PAYLOAD_MSG, payload = payload))
             serialized_msgs = []
             for payload in payload_msgs:
                 serialized_msgs.append(cPickle.dumps(payload, 0))
-            return serialized_msgs
+            return serialized_msgs, tag
         else:
             # Nothing to be done.
-            return [msg]
+            return [msg], tag
 
     def _get_stream_for_interval(self, interval):
         """Given an interval, get the appropriate stream for it."""
@@ -193,7 +194,7 @@ class Communicator (object):
         msg = cPickle.dumps(message, 0)
         msg, tag = self._compress_msg(msg)
         self._lock()
-        send_list = self._multi_payload_split(msg, tag)
+        send_list, tag = self._multi_payload_split(msg, tag)
         stream = self._get_stream_for_interval(targets)
         for payload in send_list:
             if stream.send(tag, "%s", payload) == -1:
