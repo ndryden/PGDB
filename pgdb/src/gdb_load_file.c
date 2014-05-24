@@ -740,7 +740,7 @@ int fseeko64(FILE* stream, off64_t offset, int whence) {
 	int fd = (int) stream;
 	file_data_t* file_data = get_file_data(fd);
 	if (file_data) {
-		//printf("Fseeko64(%p, %d, %d)\n", stream, offset, whence);
+		//printf("Fseeko64(%p, %ld, %d)\n", stream, offset, whence);
 		errno = 0;
 		switch (whence) {
 		case SEEK_SET:
