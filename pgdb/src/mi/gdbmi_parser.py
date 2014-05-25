@@ -1020,7 +1020,7 @@ class GDBMIFrame:
         if "args" in frame:
             self.args = {}
             for arg in frame["args"]:
-                self.args[arg["name"]] = arg["value"]
+                self.args[arg["name"]] = arg.get("value", "")
         else:
             self.args = None
 
