@@ -403,6 +403,10 @@ int should_load_file(const char* path) {
 	if (strncmp(path, "/dev", 4) == 0) {
 		return 0;
 	}
+	// Avoid strangeness on Red Hat-like systems.
+	if (strncmp(path, "/var/lib/rpm/Packages", 21) == 0) {
+		return 0;
+	}
 	return 1;
 }
 
