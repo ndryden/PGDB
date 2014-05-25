@@ -351,7 +351,7 @@ class CommunicatorBE (Communicator):
         return True
 
     def shutdown(self):
-        """Shut down the communication infrastructure."""        
+        """Shut down the communication infrastructure."""
         while not self.mrnet_frontend_stream.is_Closed():
             time.sleep(0.1)
         #del self.mrnet_frontend_stream
