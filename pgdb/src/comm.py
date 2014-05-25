@@ -384,8 +384,11 @@ class CommunicatorFE (Communicator):
             self.lmon.regPackForFeToBe(self.lmon_session, lmon.pack)
             self.lmon.regUnpackForBeToFe(self.lmon_session, lmon.unpack)
             if attach:
+                host = kwargs["host"]
+                if not host:
+                    host = socket.getfqdn()
                 self.lmon.attachAndSpawnDaemons(self.lmon_session,
-                                                socket.getfqdn(),
+                                                host,
                                                 kwargs["pid"],
                                                 gdbconf.backend_bin,
                                                 gdbconf.backend_args,

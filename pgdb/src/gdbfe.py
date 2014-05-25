@@ -42,7 +42,8 @@ class GDBFE (GDBMICmd):
         # upon the command line input parsing.
         ret = self.comm.init_lmon(self.lmon_attach, pid = self.lmon_pid,
                                   launcher = self.lmon_launcher,
-                                  launcher_args = self.lmon_launcher_argv)
+                                  launcher_args = self.lmon_launcher_argv,
+                                  host = self.lmon_host)
         if not ret:
             # Terminate. Note at this point main is still waiting on the remote_up event,
             # so we have to set it.
@@ -104,6 +105,7 @@ class GDBFE (GDBMICmd):
         self.lmon_pid = None
         self.lmon_launcher = None
         self.lmon_launcher_argv = None
+        self.lmon_host = None
         self.local_launch = False
         for i in range(1, len(sys.argv)):
             if sys.argv[i] == "-p" or sys.argv[i] == "--pid":
@@ -125,6 +127,9 @@ class GDBFE (GDBMICmd):
                 i += 1
             elif sys.argv[i] == "--local":
                 self.local_launch = True
+            elif sys.argv[i] == "-h" or sys.argv[i] == "--host":
+                self.lmon_host = sys.argv[i + 1]
+                i += 1
             elif sys.argv[i] == "-a":
                 if not hasattr(self, "lmon_launcher"):
                     self.lmon_launcher = "srun"
@@ -133,10 +138,11 @@ class GDBFE (GDBMICmd):
                 break
         if self.lmon_attach is None:
             print "Arguments: (one of -p/--pid and -a is required)"
-            print "-p, --pid <pid>: attach to srun process <pid>"
+            print "-p, --pid <pid>: attach to mpirun process <pid>"
             print "-a <options>: pass <options> verbatim to the resource manager for launching."
             print "--launcher <launcher>: use binary <launcher> to launch."
             print "--local: deploy for debugging just on the local node"
+            print "-h/--host: the host the mpirun process is running on"
             sys.exit(0)
 
     def shutdown(self):
