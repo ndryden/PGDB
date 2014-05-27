@@ -110,7 +110,7 @@ class GDBFE (GDBMICmd):
         for i in range(1, len(sys.argv)):
             if sys.argv[i] == "-p" or sys.argv[i] == "--pid":
                 self.lmon_attach = True
-                if len(sys.argv) == i:
+                if len(sys.argv) == i + 1:
                     print "Must provide a PID with {0}.".format(sys.argv[i])
                     sys.exit(0)
                 try:
@@ -120,7 +120,7 @@ class GDBFE (GDBMICmd):
                     sys.exit(0)
                 i += 1
             elif sys.argv[i] == "--launcher":
-                if len(sys.argv) == i:
+                if len(sys.argv) == i + 1:
                     print "Must provide a launcher with --launcher."
                     sys.exit(0)
                 self.lmon_launcher = sys.argv[i + 1]
@@ -128,6 +128,9 @@ class GDBFE (GDBMICmd):
             elif sys.argv[i] == "--local":
                 self.local_launch = True
             elif sys.argv[i] == "-h" or sys.argv[i] == "--host":
+                if len(sys.argv) == i + 1:
+                    print "Must provide a host with --host."
+                    sys.exit(0)
                 self.lmon_host = sys.argv[i + 1]
                 i += 1
             elif sys.argv[i] == "-a":
