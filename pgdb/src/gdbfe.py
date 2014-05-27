@@ -139,6 +139,9 @@ class GDBFE (GDBMICmd):
                 self.lmon_attach = False
                 self.lmon_launcher_argv = sys.argv[i + 1:]
                 break
+            elif sys.argv[i] == "--sbd":
+                # Override the configuration option.
+                gdbconf.use_sbd = True
         if self.lmon_attach is None:
             print "Arguments: (one of -p/--pid and -a is required)"
             print "-p, --pid <pid>: attach to mpirun process <pid>"
@@ -146,6 +149,7 @@ class GDBFE (GDBMICmd):
             print "--launcher <launcher>: use binary <launcher> to launch."
             print "--local: deploy for debugging just on the local node"
             print "-h/--host: the host the mpirun process is running on"
+            print "--sbd: use the Scalable Binary Deployment system"
             sys.exit(0)
 
     def shutdown(self):
