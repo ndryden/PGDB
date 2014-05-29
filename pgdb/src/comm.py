@@ -181,12 +181,13 @@ class Communicator (object):
         """Decompress msg."""
         return zlib.decompress(msg.decode("string_escape"))
 
-    def send(self, message, targets):
+    def send(self, message, targets, stream = None):
         """Send data over MRNet.
 
         message is the GDBMessage to send.
         targets is an Interval of the targets to send the data to, or one of
         self.frontend or self.broadcast.
+        stream is presently unused.
 
         """
         if gdbconf.mrnet_collect_perf_data:
