@@ -283,7 +283,6 @@ class GDBBE:
             if self.sbd:
                 # Check for data from the GDB process for LOAD_FILE.
                 self.sbd.sbd_check()
-            # TODO: Check for memory leaks relating to these.
             msg = self.comm.recv(blocking = False)
             if msg is not None:
                 # Received data.

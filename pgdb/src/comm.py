@@ -511,7 +511,6 @@ class CommunicatorFE (Communicator):
 
     def _mrnet_node_removed_cb(self):
         """An MRnet callback invoked whenever a back-end node leaves."""
-        # TODO: Handle all nodes exiting.
         self.node_exits += 1
 
     def _wait_for_nodes(self):
