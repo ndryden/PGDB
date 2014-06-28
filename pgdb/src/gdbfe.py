@@ -464,11 +464,3 @@ class GDBFE (GDBMICmd):
         self.remote_thread.daemon = True
         self.remote_thread.start()
         self.local_body()
-
-def run():
-    """Simple function to run the front-end."""
-    gdbfe = GDBFE()
-    gdbfe.run()
-
-if __name__ == "__main__":
-    run()

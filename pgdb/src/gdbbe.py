@@ -326,10 +326,7 @@ class GDBBE:
         # Shut everything else down.
         self.shutdown()
 
-def run():
-    """Simple function to run the backend."""
+if __name__ == "__main__":
+    # This is run by LaunchMON.
     gdbbe = GDBBE()
     gdbbe.main()
-
-if __name__ == "__main__":
-    run()
