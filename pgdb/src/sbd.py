@@ -4,6 +4,7 @@ This handles deploying files via MRNet instead of the parallel filesystem.
 
 """
 
+from __future__ import print_function
 import os.path, mmap, struct, re, socket
 import posix_ipc
 from gdb_shared import GDBMessage, FILE_DATA, LOAD_FILE
@@ -33,33 +34,33 @@ class SBDFE:
             # TODO: Time this out somehow so that further requests can be made.
             return
         if not os.path.isfile(filename):
-            print "Invalid SBD load file request for '{0}'".format(filename)
-            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
-                                      data = None, error = True),
+            print("Invalid SBD load file request for '{0}'".format(filename))
+            self.comm.send(GDBMessage(FILE_DATA, filename=filename,
+                                      data=None, error=True),
                            self.comm.broadcast)
             return
         try:
-            f = open(filename, "rb")
+            sbd_file = open(filename, "rb")
         except IOError as e:
-            print "Cannot open {0} for SBD load file: {1}.".format(filename,
-                                                                   e.strerror)
-            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
-                                      data = None, error = True),
+            print("Cannot open {0} for SBD load file: {1}.".format(filename,
+                                                                   e.strerror))
+            self.comm.send(GDBMessage(FILE_DATA, filename=filename,
+                                      data=None, error=True),
                            self.comm.broadcast)
             return
         try:
-            data = f.read()
+            data = sbd_file.read()
         except IOError as e:
-            print "Cannot read {0} for SBD load file: {1}.".format(filename,
-                                                                   e.strerror)
-            self.comm.send(GDBMessage(FILE_DATA, filename = filename,
-                                      data = None, error = True),
+            print("Cannot read {0} for SBD load file: {1}.".format(filename,
+                                                                   e.strerror))
+            self.comm.send(GDBMessage(FILE_DATA, filename=filename,
+                                      data=None, error=True),
                            self.comm.broadcast)
             return
-        f.close()
+        sbd_file.close()
         self.loaded_files.add(filename)
-        self.comm.send(GDBMessage(FILE_DATA, filename = filename,
-                                  data = data, error = False),
+        self.comm.send(GDBMessage(FILE_DATA, filename=filename,
+                                  data=data, error=False),
                        self.comm.broadcast)
 
 class SBDBE:
@@ -83,14 +84,14 @@ class SBDBE:
         self.current_load_file = None
         # We may have to clean stuff up from the last run.
         self.clean_leftovers()
-        # Shared memory and semaphore for communicating with GDB for loading files.
+        # Shared memory and semaphore for communicating with GDB to load files.
         hostname = socket.gethostname()
         self.gdb_semaphore = posix_ipc.Semaphore("/PGDBSemaphore" + hostname,
                                                  posix_ipc.O_CREX)
         try:
             self.gdb_shmem = posix_ipc.SharedMemory("/PGDBMem" + hostname,
                                                     posix_ipc.O_CREX,
-                                                    size = gdbconf.sbd_shmem_size)
+                                                    size=gdbconf.sbd_shmem_size)
         except posix_ipc.ExistentialError as e:
             self.gdb_semaphore.unlink()
             self.gdb_semaphore.close()
@@ -106,7 +107,8 @@ class SBDBE:
         # Created acquired, so release.
         self.gdb_semaphore.release()
 
-    def clean_leftovers(self):
+    @staticmethod
+    def clean_leftovers():
         """Clean up leftover semaphores and shared memory.
 
         This is used because sometimes it isn't successfully cleaned.
@@ -117,11 +119,13 @@ class SBDBE:
             sem = posix_ipc.Semaphore("/PGDBSemaphore" + hostname)
             sem.unlink()
             sem.close()
-        except posix_ipc.ExistentialError: pass
+        except posix_ipc.ExistentialError:
+            pass
         try:
             shmem = posix_ipc.SharedMemory("/PGDBMem" + hostname)
             shmem.unlink()
-        except posix_ipc.ExistentialError: pass
+        except posix_ipc.ExistentialError:
+            pass
 
     def set_executable_names(self, names):
         """Set the names of all the binaries of the processes under control.
@@ -141,8 +145,8 @@ class SBDBE:
             return
         self.load_files[filename] = None
         self.current_load_file = filename
-        self.comm.send(GDBMessage(LOAD_FILE, filename = filename,
-                                  rank = self.comm.get_mpiranks()),
+        self.comm.send(GDBMessage(LOAD_FILE, filename=filename,
+                                  rank=self.comm.get_mpiranks()),
                        self.comm.frontend)
 
     def load_file_check(self, filename):
@@ -172,7 +176,7 @@ class SBDBE:
         struct.pack_into("=B", self.gdb_mem, 1, 0)
         size = struct.unpack_from("=I", self.gdb_mem, 2)[0]
         if size <= 0:
-            print "Invalid read-memory size {0}!".format(size)
+            print("Invalid read-memory size {0}!".format(size))
             return False
         return struct.unpack_from("={0}s".format(size), self.gdb_mem, 6)[0]
 
