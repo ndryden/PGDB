@@ -33,7 +33,7 @@ def _is_primitive(v):
 
     """
     return (_is_str(v) or _is_int(v) or (v is None) or
-            (_is_list(v) and all(map(_is_primitive, v))))
+            (_is_list(v) and all([_is_primitve(x) for x in v])))
 
 def combine_records(records, ranks):
     """Combine a list of records into the smallest set of aggregated records.
@@ -95,7 +95,7 @@ class _Substitution:
         Cases:
         - data is the same as current default: do nothing
         - data differs:
-          - check whether this causes a different entry to become the new default
+          - check whether a different entry should become default
           - if yes, replace default
           - if no, add to other
 
@@ -108,7 +108,7 @@ class _Substitution:
         if _is_list(_data):
             _data = tuple(_data)
         counter_dict = {_data: 1}
-        for v in self.other.itervalues():
+        for v in self.other.values():
             if _is_list(v):
                 v = tuple(v)
             if v in counter_dict:
@@ -148,7 +148,7 @@ class _Substitution:
             other_default = tuple(other_default)
         counter_dict = {my_default: my_default_count,
                         other_default: other_default_count}
-        for v in self.other.itervalues():
+        for v in self.other.values():
             if _is_list(v):
                 # Convert for immutability.
                 v = tuple(v)
@@ -156,7 +156,7 @@ class _Substitution:
                 counter_dict[v] += 1
             else:
                 counter_dict[v] = 1
-        for v in other.other.itervalues():
+        for v in other.other.values():
             if _is_list(v):
                 # Convert for immutability.
                 v = tuple(v)
@@ -164,8 +164,7 @@ class _Substitution:
                 counter_dict[v] += 1
             else:
                 counter_dict[v] = 1
-        max_value = max(counter_dict.iterkeys(), key = lambda x: counter_dict[x])
-        max_count = counter_dict[max_value]
+        max_value = max(counter_dict.keys(), key=lambda x: counter_dict[x])
         new_other = {}
         for r in my_ranks:
             if r in self.other:
@@ -257,20 +256,20 @@ class GDBMIAggregatedRecord:
         self.record_type = record.record_type
         self.record_subtypes = record.record_subtypes
         self.fields = record.fields
-        self.ranks = Interval(lis = [rank], is_sorted = True)
+        self.ranks = Interval(lis=[rank], is_sorted=True)
         for field in self.fields:
             other_attr = getattr(record, field)
             setattr(self, field, self.create_structure(other_attr))
 
     def add_record(self, rank, record):
-        self.ranks += Interval(lis = [rank], is_sorted = True)
+        self.ranks += Interval(lis=[rank], is_sorted=True)
         if ((record.record_type != self.record_type) or
             (record.record_subtypes != self.record_subtypes)):
             raise ValueError(record)
         for field in self.fields:
             self.copy_structure(rank, getattr(self, field),
                                 getattr(record, field))
-        self.ranks += Interval(lis = [rank], is_sorted = True)
+        self.ranks += Interval(lis=[rank], is_sorted=True)
 
     def merge_recursive(self, field, other_field, other_ranks):
         if isinstance(field, _Substitution):
@@ -336,9 +335,9 @@ class GDBMIAggregatedRecord:
         for rank in self.ranks:
             record = self.get_record(rank)
             if record in class_dict:
-                class_dict[rank] += Interval(lis = [rank], is_sorted = True)
+                class_dict[rank] += Interval(lis=[rank], is_sorted=True)
             else:
-                class_dict[rank] = Interval(lis = [rank], is_sorted = True)
+                class_dict[rank] = Interval(lis=[rank], is_sorted=True)
         return class_dict
 
     def get_ranks(self):
