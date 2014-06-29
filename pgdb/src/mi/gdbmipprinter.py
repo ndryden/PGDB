@@ -1,4 +1,4 @@
-"""The main pretty-printer for printing nicely-formatted versions of the parsed MI output."""
+"""Pretty-printer for nicely-formatted versions of parsed MI output."""
 
 from conf import gdbconf
 import sys
@@ -26,15 +26,17 @@ class GDBMIPrettyPrinter:
         else:
             self.dump_file = None
 
-    def indent(self, level, s):
-        """Prepend level indents to s."""
-        return ("   " * level) + s
+    @staticmethod
+    def indent(level, string):
+        """Prepend level indents to string."""
+        return ("   " * level) + string
 
-    def default_pretty_print(self, record):
+    @staticmethod
+    def default_pretty_print(record):
         """Do a simple pretty-print displaying the raw data within a record."""
         return str(record)
 
-    def pretty_print(self, record, tag = None, output = None):
+    def pretty_print(self, record, tag=None, output=None):
         """Pretty-print a record.
 
         record is the record to pretty print.
@@ -53,17 +55,18 @@ class GDBMIPrettyPrinter:
                 raw += "\n"
         if gdbconf.pretty_print == "yes" or gdbconf.pretty_print == "both":
             try:
-                l = record.pretty_print()
-                if l is None:
+                line = record.pretty_print()
+                if line is None:
                     pretty = "[{0}] {1}".format(tag,
-                                                self.default_pretty_print(record))
+                                                self.default_pretty_print(
+                                                    record))
                     if pretty[-1] != "\n":
                         pretty += "\n"
                 else:
-                    pretty = "\n".join(map(lambda x: "[{0}] {1}".format(tag, x), l)) + "\n"
+                    pretty = "\n".join(["[{0}] {1}".format(tag, x)
+                                        for x in line]) + "\n"
             except AttributeError:
                 pretty = self.default_pretty_print(record)
-        s = raw + pretty
-        if not output:
-            output = sys.stdout
-        output.write(s)
+        string = raw + pretty
+        output = output or sys.stdout
+        output.write(string)
