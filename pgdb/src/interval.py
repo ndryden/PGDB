@@ -1,23 +1,25 @@
 """A simple integer interval representation."""
 
 class Interval(object):
-    """A class to efficiently store and support membership queries for disjoint integer intervals.
+    """Efficiently store and support queries for disjoint integer intervals.
 
-    This uses O(n) memory, less if there are many contiguous intervals, and O(logn)
-    to test for membership. Construction takes O(nlogn) for unsorted data and O(n) for sorted data.
+    This uses O(n) memory, less if there are many contiguous intervals, and
+    O(logn) to test for membership. Construction takes O(nlogn) for unsorted
+    data and O(n) for sorted data.
 
-    This compresses contiguous intervals when possible and uses binary search for membership testing.
+    This compresses contiguous intervals when possible and uses binary search
+    for membership testing.
 
     """
 
-    def __init__(self, intervals = None, lis = None, is_sorted = False):
+    def __init__(self, intervals=None, lis=None, is_sorted=False):
         """Initialize the intervals.
 
-        intervals - if present, is a list of disjoint intervals represented as tuples.
-        lis - if present, is a list of integers to be constructed into intervals.
+        intervals - if present, a list of disjoint intervals as tuples.
+        lis - if present, a list of integers to be constructed into intervals.
         is_sorted - whether the aforementioned lists are already sorted or not.
-        Note that intervals and lis are mutually exclusive. The entries in these should be
-        non-negative.
+        Note that intervals and lis are mutually exclusive. The entries in these
+        should be non-negative.
 
         """
         if intervals is None and lis is None:
@@ -26,7 +28,7 @@ class Interval(object):
             raise ValueError("Cannot provide both intervals and lis.")
         if not is_sorted:
             if intervals:
-                intervals.sort(key = lambda x: x[0])
+                intervals.sort(key=lambda x: x[0])
             if lis:
                 lis.sort()
         self.intervals = []
@@ -49,7 +51,8 @@ class Interval(object):
             cur_max = lis[0]
             for i in lis[1:]:
                 if i == cur_max + 1:
-                    # We have another contiguous integer, add it to the interval.
+                    # We have another contiguous integer.
+                    # Add it to the current interval.
                     cur_max += 1
                 else:
                     # Not contiguous, store the present interval and start anew.
@@ -78,7 +81,8 @@ class Interval(object):
                 return mid
         return None
 
-    def _interval_intersect(self, intv1, intv2):
+    @staticmethod
+    def _interval_intersect(intv1, intv2):
         """Return the intersection of intervals intv1 and intv2.
 
         intv1 and intv2 should be tuples of the form (low, high).
@@ -90,7 +94,8 @@ class Interval(object):
         else:
             return None
 
-    def _interval_difference(self, intv1, intv2):
+    @staticmethod
+    def _interval_difference(intv1, intv2):
         """Return the difference of intervals intv1 and intv2.
 
         intv1 and intv2 should be tuples of the form (low, high).
@@ -115,7 +120,9 @@ class Interval(object):
         else:
             return [intv1]
 
-    def _union_intersecting_intervals(self, intv1, intv2):
+    @staticmethod
+    def _union_intersecting_intervals(intv1, intv2):
+        """Return the union of two intersecting intervals."""
         return (min(intv1[0], intv2[0]), max(intv1[1], intv2[1]))
 
     def in_interval(self, i):
@@ -158,12 +165,13 @@ class Interval(object):
 
         """
         if not len(other):
-            return Interval(lis = [], is_sorted = True)
+            return Interval(lis=[], is_sorted=True)
         k = 0
         intersection = []
         for interval in self.intervals:
             while k < len(other):
-                intersect = self._interval_intersect(interval, other.intervals[k])
+                intersect = self._interval_intersect(interval,
+                                                     other.intervals[k])
                 if intersect:
                     intersection.append(intersect)
                     if other.intervals[k][1] <= interval[1]:
@@ -175,7 +183,7 @@ class Interval(object):
                         k += 1
                     else:
                         break
-        return Interval(intervals = intersection, is_sorted = True)
+        return Interval(intervals=intersection, is_sorted=True)
 
     def intersect_list(self, lis):
         """Return a list of items that are in both the list and this interval.
@@ -198,7 +206,7 @@ class Interval(object):
         if not len(other):
             return self.intervals
         if not len(self):
-            return Interval(lis = [], is_sorted = True)
+            return Interval(lis=[], is_sorted=True)
         i = 1
         k = 0
         new = []
@@ -246,17 +254,16 @@ class Interval(object):
                     cur = other.intervals[k]
             elif i == len(self) and k == len(other):
                 new.append(cur)
-        return Interval(intervals = new, is_sorted = True)
+        return Interval(intervals=new, is_sorted=True)
 
     def difference(self, other):
-        """Return the set-theoretic difference of this interval with the given interval.
+        """Return the set-theoretic difference of this interval with other.
 
         This takes O(n) time.
 
         """
         if not len(other):
             return self
-        i = 0
         k = 0
         new = []
         for interval in self.intervals:
@@ -264,7 +271,8 @@ class Interval(object):
             while k < len(other):
                 if self._interval_intersect(interval, other.intervals[k]):
                     append = True
-                    diff = self._interval_difference(interval, other.intervals[k])
+                    diff = self._interval_difference(interval,
+                                                     other.intervals[k])
                     if diff:
                         new += diff
                         if other.intervals[k][1] <= interval[1]:
@@ -282,10 +290,10 @@ class Interval(object):
                     k += 1
             if k >= len(other) and not append:
                 new.append(interval)
-        return Interval(intervals = new, is_sorted = True)
+        return Interval(intervals=new, is_sorted=True)
 
     def symmetric_difference(self, other):
-        """Return the symmetric difference of this interval with the given interval.
+        """Return the symmetric difference of this interval with other.
 
         This takes O(n) time.
 
@@ -294,12 +302,15 @@ class Interval(object):
         return self.union(other).difference(self.intersect(other))
 
     def range(self):
-        """Return the interval from the left side to the right side of this interval.
+        """Return the interval from the left to the right side of this interval.
 
-        More specifically, if this consists of {[x1,x'1],...,[xn,x'n]}, we return {[x1,x'n]}.
+        More specifically, if this consists of {[x1,x'1],...,[xn,x'n]}, we
+        return {[x1,x'n]}.
 
         """
-        return Interval(intervals = [(self.intervals[0][0], self.intervals[-1][1])], is_sorted = True)
+        return Interval(intervals=[(self.intervals[0][0],
+                                    self.intervals[-1][1])],
+                        is_sorted=True)
 
     def empty(self):
         """Return whether this interval is empty or not."""
@@ -324,7 +335,7 @@ class Interval(object):
         """Return true if two intervals are precisely the same."""
         if not isinstance(other, Interval):
             return NotImplemented
-        return all(map(lambda x: x[0] == x[1], zip(self.intervals, other.intervals)))
+        return all([x == y for x, y in zip(self.intervals, other.intervals)])
 
     def __ne__(self, other):
         """Return the negation of what __eq__ returns."""
@@ -334,18 +345,20 @@ class Interval(object):
         """Return a hash for this set."""
         if not self.intervals:
             return hash(None)
-        return reduce(lambda x, y: x ^ hash(y), self.intervals[1:], hash(self.intervals[0]))
+        cur_hash = hash(self.intervals[0])
+        for interval in self.intervals[1:]:
+            cur_hash ^= hash(interval)
+        return cur_hash
 
     def __str__(self):
         """Get a string representation of the set."""
-        s = ""
+        string = ""
         for i in self.intervals:
             if i[0] == i[1]:
-                s += "{0},".format(i[0])
+                string += "{0},".format(i[0])
             else:
-                s += "{0}-{1},".format(i[0], i[1])
-        return s[:-1]
-        #return str(self.intervals)
+                string += "{0}-{1},".format(i[0], i[1])
+        return string[:-1]
 
     def __repr__(self):
         """Get a raw representation of the set."""
