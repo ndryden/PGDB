@@ -2,6 +2,7 @@
 
 import cmd
 from commands import Commands
+from __future__ import print_function
 
 class GDBMICmd(cmd.Cmd):
     """Simple extension of Cmd for controlling GDB."""
