@@ -1,6 +1,9 @@
-import sys, os, socket, time, cPickle, inspect
+"""Miscellaneous shared things for both the PGDB FE and BE."""
+
+import inspect
 
 class NodeInfo:
+    """Stores MRNet node information for braodcast."""
     def __init__(self, mrnrank, host, port, parent, be_rank):
         self.mrnrank = mrnrank
         self.host = host
@@ -40,7 +43,8 @@ class GDBMessage:
         """Set up the message.
 
         msg_type is the type of the message; see above constants.
-        All additional keyword arguments are set as attributes for message-specific use.
+        All additional keyword arguments are set as attributes for message-
+        specific use.
 
         """
         self.msg_type = msg_type
@@ -53,10 +57,10 @@ class GDBMessage:
         Prints the message type and then the keys and values.
 
         """
-        s = ""
+        string = ""
         members = inspect.getmembers(self, lambda x: not inspect.isroutine(x))
         for k, v in members:
             if k[0:2] != "__":
                 # Keep out things like __doc__ and __module__.
-                s += "{0} = {1}, ".format(k, v)
-        return "GDBMessage: " + s[:-2]
+                string += "{0} = {1}, ".format(k, v)
+        return "GDBMessage: " + string[:-2]
