@@ -3,7 +3,7 @@
 import cmd
 from commands import Commands
 
-class GDBMICmd (cmd.Cmd):
+class GDBMICmd(cmd.Cmd):
     """Simple extension of Cmd for controlling GDB."""
     prompt = ""
     intro = ""
@@ -21,15 +21,16 @@ class GDBMICmd (cmd.Cmd):
 
     def dispatch_gdbmi_command_string(self, string):
         """Dispatch a GDBMI command from a string."""
-        cmd = self.resolve_gdbmi_command(string)
-        if cmd:
+        command = self.resolve_gdbmi_command(string)
+        if command:
             self.dispatch_gdbmi_command(cmd)
 
     def dispatch_gdbmi_command(self, command):
         """Execute a GDBMI command. Should be over-ridden by children."""
-        print "Would invoke {0} with arguments {1} and options {2}".format(command.command,
-                                                                           command.args,
-                                                                           command.opts)
+        print("Would invoke {0} with arguments {1} and options {2}".format(
+            command.command,
+            command.args,
+            command.opts))
 
     def check_gdbmi_command(self, string):
         """Check whether a string is a valid command."""
@@ -41,16 +42,15 @@ class GDBMICmd (cmd.Cmd):
         """Main run loop. Should be over-ridden by children if needed."""
         self.cmdloop()
 
-    def resolve_gdbmi_command(self, line, err = True):
+    def resolve_gdbmi_command(self, line, err=True):
         """Parse a line into a GDBMI command."""
-        cmd = self.commands.generate_command(line)
-        if not cmd and err:
-            print "Bad command: " + line
-        return cmd
+        command = self.commands.generate_command(line)
+        if not command and err:
+            print("Bad command: " + line)
+        return command
 
     def default(self, line):
-        """Called when the cmdloop can't find the command. This catches
-        and handles all the GDBMI commands."""
-        cmd = self.resolve_gdbmi_command(line)
-        if cmd:
-            self.dispatch_gdbmi_command(cmd)
+        """Catch and handle all GDBMI commands."""
+        command = self.resolve_gdbmi_command(line)
+        if command:
+            self.dispatch_gdbmi_command(command)
