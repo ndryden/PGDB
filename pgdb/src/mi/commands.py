@@ -1,8 +1,8 @@
 """Main file implementing GDB Machine Interface commands."""
 
+from __future__ import print_function
 # This is deprecated as of 2.7, but we need to support 2.6.
 import optparse
-from __future__ import print_function
 
 class Command(object):
     """Represents a GDB machine interface command and associated arguments."""
@@ -313,12 +313,11 @@ class Commands(object):
             }
         # Pre-generate option parsers and maps for all commands and store in
         # self.option_parsers/maps.
+        self.option_parsers = {}
+        self.option_maps = {}
         self._generate_option_parsers()
         # This is the set of callbacks for canonical MI commands.
         self.canonical_callbacks = {}
-        # Parsers and maps for parsing commands.
-        self.option_parsers = {}
-        self.option_maps = {}
         # This is the set of callbacks for alias commands.
         self.alias_callbacks = {
             "print": self._print_callback
