@@ -2,11 +2,12 @@
 
 # This is deprecated as of 2.7, but we need to support 2.6.
 import optparse
+from __future__ import print_function
 
 class Command(object):
     """Represents a GDB machine interface command and associated arguments."""
 
-    def __init__(self, command, opts = None, args = None):
+    def __init__(self, command, opts=None, args=None):
         """Initialize a command.
 
         command is the command.
@@ -26,7 +27,7 @@ class Command(object):
         for opt in self.opts:
             str_opts[str(opt)] = self.opts[opt]
         self.opts = str_opts
-        self.args = map(lambda x: str(x), self.args)
+        self.args = [str(x) for x in self.args]
 
     def add_opt(self, k, v):
         """Add an option to this GDB command."""
@@ -38,7 +39,9 @@ class Command(object):
 
     def generate_mi_command(self):
         """Generate a machine interface command from this Command."""
-        return "-" + self.command + " " + " ".join(map(lambda (k, v): k + " " + v, self.opts.items())) + " " + " ".join(self.args)
+        return ("-" + self.command + " " +
+                " ".join([k + " " + v for k, v in self.opts.items()]) +
+                " " + " ".join(self.args))
 
     def __str__(self):
         """Get a string representation of the command."""
@@ -263,8 +266,9 @@ class Commands(object):
             "set inferior-tty": "set-inferior-tty",
             "show inferior-tty": "show-inferior-tty"
             }
-        # These are options that every command takes. This is a list of tuples with the first value
-        # the option and the second value the value to pass to "action".
+        # These are options that every command takes.
+        # This is a list of tuples with the first value the option and the
+        # second value the value to pass to "action".
         self.global_options = [
             ("--thread", "store"),
             ("--frame", "store")
@@ -305,26 +309,33 @@ class Commands(object):
             "data-read-memory-bytes": [("-o", "store")],
             "trace-save": [("-r", "store_true")],
             "list-thread-groups": [("--available", "store_true"),
-                                    ("--recurse", "store")]
+                                   ("--recurse", "store")]
             }
-        # Pre-generate option parsers and maps for all commands and store in self.option_parsers/maps.
+        # Pre-generate option parsers and maps for all commands and store in
+        # self.option_parsers/maps.
         self._generate_option_parsers()
         # This is the set of callbacks for canonical MI commands.
         self.canonical_callbacks = {}
+        # Parsers and maps for parsing commands.
+        self.option_parsers = {}
+        self.option_maps = {}
         # This is the set of callbacks for alias commands.
         self.alias_callbacks = {
             "print": self._print_callback
         }
-        # This is the list searched for completions. Canonical MI commands are in here with
-        # both their original name and hyphens replaced with spaces. Aliases are in here verbatim.
-        self.completions = self.canonical_mi_commands + map(lambda x: x.replace("-", " "),
-                                                            self.canonical_mi_commands) + self.command_aliases.keys()
+        # This is the list searched for completions. Canonical MI commands are
+        # here with both their original name and hyphens replaced with spaces.
+        # Aliases are in here verbatim.
+        self.completions = (self.canonical_mi_commands +
+                            [x.replace("-", " ") for x in
+                             self.canonical_mi_commands] +
+                            self.command_aliases.keys())
 
     def _generate_default_optparser(self):
         """Generate a default option parser using the global options only."""
-        parser = optparse.OptionParser(conflict_handler = "resolve")
+        parser = optparse.OptionParser(conflict_handler="resolve")
         for opt, action in self.global_options:
-            parser.add_option(opt, action = action)
+            parser.add_option(opt, action=action)
         return parser
 
     def _generate_optparser(self, options):
@@ -335,24 +346,24 @@ class Commands(object):
         """
         parser = self._generate_default_optparser()
         for opt, action in options:
-            parser.add_option(opt, action = action)
+            parser.add_option(opt, action=action)
         return parser
 
     def _generate_option_parsers(self):
         """Generate and store option parsers and maps for all commands."""
-        self.option_parsers = {}
-        self.option_maps = {}
         for cmd in self.canonical_mi_commands:
             self.option_maps[cmd] = {}
             if cmd in self.options:
-                self.option_parsers[cmd] = self._generate_optparser(self.options[cmd])
+                self.option_parsers[cmd] = self._generate_optparser(
+                    self.options[cmd])
             else:
                 self.option_parsers[cmd] = self._generate_default_optparser()
             for opt in self.option_parsers[cmd].option_list:
-                self.option_maps[cmd][opt.get_opt_string().strip("-").replace("-", "_")] = opt.get_opt_string()
+                name = opt.get_opt_string().strip("-").replace("-", "_")
+                self.option_maps[cmd][name] = opt.get_opt_string()
 
     def _optparse_to_dict(self, command, opts):
-        """Take an object returned by parse_args and turn it into a dictionary."""
+        """Convert the object returned by parse_args to a dictionary."""
         options = {}
         for opt, val in vars(opts).items():
             if val:
@@ -360,9 +371,10 @@ class Commands(object):
         return options
 
     def complete(self, string):
-        """Attempt to determine if there is a unique completion for in the commands for a string.
+        """Try to find a unique complation for the commands in a string.
 
-        Returns the unique completion for a given string, or False if there is not one.
+        Returns the unique completion for a given string, or False if there is
+        not one.
 
         """
         matches = []
@@ -390,7 +402,7 @@ class Commands(object):
         complete = self.complete(cmd)
         if not complete:
             # Command not found.
-            return None
+            return None, None
         return complete, split
 
     def generate_command(self, string):
@@ -398,29 +410,34 @@ class Commands(object):
 
         This works as follows:
         First, the command name is determined:
-        - Words are gobbled up from the start of the string (a word is text separated by spaces).
-        - The first command that matches, based upon the complete() command, is chosen.
+        - Words are gobbled up from the start of the string (a word is text
+        separated by spaces).
+        - The first command that matches, based upon the complete() command, is
+        chosen.
         If the command is not found, return None.
         Next, callbacks are invoked as follows:
-        - If the command is a canonical command, a command object is generated. If there is a callback,
-        it is invoked with the command object, then the modified command object is returned.
-        - If the command is an alias command, a command object is generated containing just the name
-        of the command. If there is an alias callback, it is invoked with that command object and the
-        rest of the input string. That callback should fill out any options in the command object that
-        it needs to, and should return what is left of the input string to parse. The returned input
-        string is parsed for options, which are added to the command object. The command in the command
-        object is adjusted to be the canonical command. If there is a canonical callback, it is now
-        invoked, and the final command object is returned.
+        - If the command is a canonical command, a command object is generated.
+        If there is a callback, it is invoked with the command object, then the
+        modified command object is returned.
+        - If the command is an alias command, a command object is generated
+        containing just the name of the command. If there is an alias callback,
+        it is invoked with that command object and the rest of the input string.
+        That callback should fill out any options in the command object that it
+        needs to, and should return what is left of the input string to parse.
+        The returned input string is parsed for options, which are added to the
+        command object. The command in the command object is adjusted to be the
+        canonical command. If there is a canonical callback, it is now invoked,
+        and the final command object is returned.
 
         """
         # Determine the command name.
-        split = self._split_command(string)
-        if not split:
+        cmd, rest = self._split_command(string)
+        if not cmd:
             return None
-        cmd, rest = split
         if cmd in self.canonical_mi_commands:
             opts, args = self.option_parsers[cmd].parse_args(rest)
-            command = Command(cmd, opts = self._optparse_to_dict(cmd, opts), args = args)
+            command = Command(cmd, opts=self._optparse_to_dict(cmd, opts),
+                              args=args)
             if cmd in self.canonical_callbacks:
                 self.canonical_callbacks[cmd](command)
             return command
@@ -437,10 +454,12 @@ class Commands(object):
             return command
         else:
             # Something went wrong, we should never get here.
-            print "Completed a command but it's not a canonical or an alias! Got '{0}'.".format(cmd)
+            print("Completed a command but it's not a canonical or an alias!"
+                  "Got '{0}'.".format(cmd))
             return None
 
-    def _print_callback(self, command, rest):
+    @staticmethod
+    def _print_callback(command, rest):
         """Fill out print command with quotation marks for ease."""
         rest[0] = '"' + rest[0]
         rest[-1] = rest[-1] + '"'
