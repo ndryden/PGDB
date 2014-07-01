@@ -28,7 +28,7 @@ class GDBMILocal (GDBMICmd):
     def dispatch_gdbmi_command(self, command):
         """Over-ridden dispatch command to run GDBMI commands."""
         if self.gdb.is_running():
-            self.gdb.send(command.generate_mi_command())
+            self.gdb.send(command)
 
     def read_thread(self):
         """Primary thread for reading from GDB.

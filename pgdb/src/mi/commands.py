@@ -47,7 +47,7 @@ class Command(object):
 
     def generate_mi_command(self):
         """Generate a machine interface command from this Command."""
-        return ("-" + self.command + " " +
+        return ("{0:08d}-".format(self.token) + self.command + " " +
                 " ".join([k + " " + v for k, v in self.opts.items()]) +
                 " " + " ".join(self.args))
 

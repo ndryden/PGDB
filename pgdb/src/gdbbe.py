@@ -111,13 +111,12 @@ class GDBBE:
         for proc in self.proctab:
             os.kill(proc.pd.pid, signal.SIGTERM)
 
-    def run_gdb_command(self, command, ranks = None, token = None, no_thread = False):
+    def run_gdb_command(self, command, ranks = None, no_thread = False):
         """Run a GDB command.
 
         command is a Command object representing the command.
         ranks is an Interval of the ranks to run the command on.
         If ranks is None, run on the current GDB inferior.
-        token is the optional token to use.
 
         Returns a dictionary, indexed by ranks, of the tokens used.
         If running on the current inferior, the "rank" is -1.
@@ -128,13 +127,13 @@ class GDBBE:
             # Toss it in a list; don't need a full Interval.
             ranks = [ranks]
         tokens = {}
-        if not ranks:
+        if ranks is None:
             # Send to the current inferior.
-            tokens[-1] = self.gdb.send(command.generate_mi_command(), token)
-            if tokens[-1] is None:
+            if not self.gdb.send(command):
                 print "GDB error, exiting."
                 self.quit = True
                 return
+            tokens[-1] = command.token
         else:
             for rank in ranks:
                 if rank in self.rank_inferior_map:
@@ -143,14 +142,12 @@ class GDBBE:
                         rank in self.rank_thread_map and
                         command.get_opt('--thread') is None):
                         command.add_opt('--thread', self.rank_thread_map[rank][0])
-                    ret_token = self.gdb.send(command.generate_mi_command(),
-                                              token)
-                    if ret_token is None:
+                    if not self.gdb.send(command):
                         print "GDB error, exiting."
                         self.quit = True
                         return
-                    tokens[rank] = ret_token
-                    self.token_rank_map[ret_token] = rank
+                    tokens[rank] = command.token
+                    self.token_rank_map[command.token] = rank
         return tokens
 
     def init_handlers(self):
@@ -223,19 +220,15 @@ class GDBBE:
         The message contains the following fields:
         command - A Command object to run.
         ranks - An optional interval of ranks on which to run.
-        token - An optional token to use.
 
         """
         if msg.command.command == "gdb-exit":
             # Special case for quit.
             self.quit = True
-        token = None
-        if hasattr(msg, "token"):
-            token = msg.token
         ranks = self.comm.get_mpiranks()
         if hasattr(msg, "ranks"):
             ranks = msg.ranks
-        if not self.run_gdb_command(msg.command, ranks, token = token):
+        if not self.run_gdb_command(msg.command, ranks):
             # TODO: Send die message.
             print "Managed to get a bad command '{0}'.".format(msg.command)
 

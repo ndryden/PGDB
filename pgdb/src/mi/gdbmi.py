@@ -25,7 +25,6 @@ class GDBMachineInterface:
         flags = fcntl.fcntl(self.process.stdout, fcntl.F_GETFL)
         fcntl.fcntl(self.process.stdout, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
-        self.token = 0 # This is used to identify associated output.
         self.buffer = "" # Buffer for output from GDB.
         self.parser = GDBMIParser() # Parser for output from GDB.
 
@@ -52,17 +51,13 @@ class GDBMachineInterface:
             return False
         return True
 
-    def send(self, command, token=None):
-        """Send data to GDB and return the associated token."""
-        if not token:
-            token = self.token
-            token_str = "{0:08d}".format(self.token)
-            self.token += 1
-        else:
-            token_str = str(token)
-        if not self._write(token_str + command):
-            return
-        return token
+    def send(self, command):
+        """Send a command to GDB.
+
+        command is a Command object with the data to send.
+
+        """
+        return self._write(command.generate_mi_command())
 
     def read(self, timeout=0):
         """Generator to read, parse, and return data from GDB."""
