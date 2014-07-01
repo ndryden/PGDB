@@ -33,7 +33,7 @@ def _is_primitive(v):
 
     """
     return (_is_str(v) or _is_int(v) or (v is None) or
-            (_is_list(v) and all([_is_primitve(x) for x in v])))
+            (_is_list(v) and all([_is_primitive(x) for x in v])))
 
 def combine_records(records, ranks):
     """Combine a list of records into the smallest set of aggregated records.
