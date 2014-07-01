@@ -46,7 +46,7 @@ class Interval(object):
             # Construct compressed intervals from a list of integers.
             cur_min = src[0]
             cur_max = src[1]
-            for i in lis[1:]:
+            for i in src[1:]:
                 if i == cur_max + 1:
                     # We have another contiguous integer.
                     # Add it to the current interval.
