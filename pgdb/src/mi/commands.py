@@ -7,12 +7,15 @@ import optparse
 class Command(object):
     """Represents a GDB machine interface command and associated arguments."""
 
-    def __init__(self, command, opts=None, args=None):
+    _cur_token = 0
+
+    def __init__(self, command, opts=None, args=None, token=None):
         """Initialize a command.
 
         command is the command.
         opts is a dictionary of key-value options.
         args is a list of positional arguments.
+        token is the token to use for GDB.
 
         """
         self.command = command
@@ -22,6 +25,11 @@ class Command(object):
         self.args = args
         if not self.args:
             self.args = []
+        if token is None:
+            self.token = Command._cur_token
+            Command._cur_token += 1
+        else:
+            self.token = token
         self.annotations = None
         str_opts = {}
         for opt in self.opts:
