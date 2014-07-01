@@ -256,20 +256,20 @@ class GDBMIAggregatedRecord:
         self.record_type = record.record_type
         self.record_subtypes = record.record_subtypes
         self.fields = record.fields
-        self.ranks = Interval(lis=[rank], is_sorted=True)
+        self.ranks = Interval(rank)
         for field in self.fields:
             other_attr = getattr(record, field)
             setattr(self, field, self.create_structure(other_attr))
 
     def add_record(self, rank, record):
-        self.ranks += Interval(lis=[rank], is_sorted=True)
+        self.ranks += Interval(rank)
         if ((record.record_type != self.record_type) or
             (record.record_subtypes != self.record_subtypes)):
             raise ValueError(record)
         for field in self.fields:
             self.copy_structure(rank, getattr(self, field),
                                 getattr(record, field))
-        self.ranks += Interval(lis=[rank], is_sorted=True)
+        self.ranks += Interval(rank)
 
     def merge_recursive(self, field, other_field, other_ranks):
         if isinstance(field, _Substitution):
@@ -335,9 +335,9 @@ class GDBMIAggregatedRecord:
         for rank in self.ranks:
             record = self.get_record(rank)
             if record in class_dict:
-                class_dict[rank] += Interval(lis=[rank], is_sorted=True)
+                class_dict[rank] += Interval(rank)
             else:
-                class_dict[rank] = Interval(lis=[rank], is_sorted=True)
+                class_dict[rank] = Interval(rank)
         return class_dict
 
     def get_ranks(self):

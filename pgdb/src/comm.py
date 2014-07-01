@@ -120,7 +120,7 @@ class Communicator (object):
 
     def get_mpiranks(self):
         """Return an interval of MPI ranks. If on the back-end, this is local only."""
-        return Interval(lis = self.mpiranks)
+        return Interval(self.mpiranks)
 
     def _multi_payload_split(self, msg, tag):
         """Given a message, split it into multi-messages if needed."""
@@ -150,7 +150,7 @@ class Communicator (object):
             return self.mrnet_broadcast_stream
         else:
             if isinstance(interval, int):
-                interval = Interval(lis = [interval])
+                interval = Interval(interval)
             stream = None
             mrnet_ranks = []
             for rank in interval.members():

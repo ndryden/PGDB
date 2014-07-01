@@ -12,43 +12,40 @@ class Interval(object):
 
     """
 
-    def __init__(self, intervals=None, lis=None, is_sorted=False):
+    def __init__(self, src, is_sorted=False):
         """Initialize the intervals.
 
-        intervals - if present, a list of disjoint intervals as tuples.
-        lis - if present, a list of integers to be constructed into intervals.
+        src - the data to construct the interval from. One of the following:
+         - a single integer
+         - a list of disjoint intervals as tuples
+         - a list of integers
+        These should all be non-negative.
         is_sorted - whether the aforementioned lists are already sorted or not.
-        Note that intervals and lis are mutually exclusive. The entries in these
-        should be non-negative.
 
         """
-        if intervals is None and lis is None:
-            raise ValueError("Must provide at least one of intervals or lis.")
-        if intervals and lis:
-            raise ValueError("Cannot provide both intervals and lis.")
-        if not is_sorted:
-            if intervals:
-                intervals.sort(key=lambda x: x[0])
-            if lis:
-                lis.sort()
+        if isinstance(src, int):
+            src = [src]
+            is_sorted = True
+        elif not isinstance(src, list):
+            raise ValueError("Input is not a list or integer.")
         self.intervals = []
-        if intervals:
-            # Interval compression for existing intervals.
-            cur = intervals[0]
-            for interval in intervals[1:]:
-                if interval[0] == cur[1] + 1:
-                    # The intervals are contiguous.
-                    cur = (cur[0], interval[1])
-                else:
-                    # Not contiguous, store cur.
-                    self.intervals.append(cur)
-                    cur = interval
-            # Append the last interval.
-            self.intervals.append(cur)
-        elif lis:
-            # Construct compressed intervals from lis.
-            cur_min = lis[0]
-            cur_max = lis[0]
+        if not len(src):
+            # Empty, nothing more to do.
+            return
+        lis = False # Identify the type of input.
+        if isinstance(src[0], int):
+            lis = True
+        elif not isinstance(src[0], tuple):
+            raise ValueError("Input is not a list of ints or tuples.")
+        if not is_sorted:
+            if lis:
+                src.sort()
+            else:
+                src.sort(key=lambda x: x[0])
+        if lis:
+            # Construct compressed intervals from a list of integers.
+            cur_min = src[0]
+            cur_max = src[1]
             for i in lis[1:]:
                 if i == cur_max + 1:
                     # We have another contiguous integer.
@@ -61,6 +58,19 @@ class Interval(object):
                     cur_max = i
             # Append the last interval.
             self.intervals.append((cur_min, cur_max))
+        else:
+            # Interval compression for existing intervals.
+            cur = src[0]
+            for interval in src[1:]:
+                if interval[0] == cur[1] + 1:
+                    # The intervals are contiguous.
+                    cur = (cur[0], interval[1])
+                else:
+                    # Not contiguous, store cur.
+                    self.intervals.append(cur)
+                    cur = interval
+            # Append the last interval.
+            self.intervals.append(cur)
 
     def _binary_search_intervals(self, i):
         """Return the index of the interval that contains i, if any.
@@ -165,7 +175,7 @@ class Interval(object):
 
         """
         if not len(other):
-            return Interval(lis=[], is_sorted=True)
+            return Interval([], is_sorted=True)
         k = 0
         intersection = []
         for interval in self.intervals:
@@ -183,7 +193,7 @@ class Interval(object):
                         k += 1
                     else:
                         break
-        return Interval(intervals=intersection, is_sorted=True)
+        return Interval(intersection, is_sorted=True)
 
     def intersect_list(self, lis):
         """Return a list of items that are in both the list and this interval.
@@ -206,7 +216,7 @@ class Interval(object):
         if not len(other):
             return self.intervals
         if not len(self):
-            return Interval(lis=[], is_sorted=True)
+            return Interval([], is_sorted=True)
         i = 1
         k = 0
         new = []
@@ -254,7 +264,7 @@ class Interval(object):
                     cur = other.intervals[k]
             elif i == len(self) and k == len(other):
                 new.append(cur)
-        return Interval(intervals=new, is_sorted=True)
+        return Interval(new, is_sorted=True)
 
     def difference(self, other):
         """Return the set-theoretic difference of this interval with other.
@@ -290,7 +300,7 @@ class Interval(object):
                     k += 1
             if k >= len(other) and not append:
                 new.append(interval)
-        return Interval(intervals=new, is_sorted=True)
+        return Interval(new, is_sorted=True)
 
     def symmetric_difference(self, other):
         """Return the symmetric difference of this interval with other.
@@ -308,7 +318,7 @@ class Interval(object):
         return {[x1,x'n]}.
 
         """
-        return Interval(intervals=[(self.intervals[0][0],
+        return Interval([(self.intervals[0][0],
                                     self.intervals[-1][1])],
                         is_sorted=True)
 

@@ -263,7 +263,7 @@ class GDBFE (GDBMICmd):
             except ValueError:
                 print "Bad processor specification."
                 return
-        return Interval(intervals = targets)
+        return Interval(targets)
 
     def do_proc(self, cmd, targets = None):
         """Handle the "proc" command to send commands to a subset of remote nodes based on MPI rank."""
@@ -395,7 +395,7 @@ class GDBFE (GDBMICmd):
         # We only care about the IDs that are present in both.
         ids = targets.intersect(arec.get_ranks())
         for vid in ids:
-            self.pprinter.pretty_print(arec.get_record(vid), Interval(lis = [vid]))
+            self.pprinter.pretty_print(arec.get_record(vid), Interval(vid))
 
     def dispatch_gdbmi_command(self, command):
         """Send a GDB command."""
