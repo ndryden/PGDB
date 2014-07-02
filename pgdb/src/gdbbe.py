@@ -88,6 +88,9 @@ class GDBBE:
                                         proc.mpirank, no_thread = True):
                 raise RuntimeError("Could not attach to rank {0}!".format(proc.mpirank))
             self.varobjs[proc.mpirank] = VariableObjectManager()
+            # Cludge to fix GDB not outputting records for the i1 attach.
+            if self.rank_inferior_map[proc.mpirank] == 'i1':
+                time.sleep(0.1)
 
     def _watch_thread_created(self, record, **kwargs):
         """Handle watching thread creation."""
