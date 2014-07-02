@@ -8,7 +8,7 @@ and forth.
 
 from __future__ import print_function
 from conf import gdbconf
-from comm import CommunicatorFE
+from comm import CommunicatorBE
 from gdb_shared import *
 from lmon.lmonbe import LMON_be
 import mi.gdbmi_parser as gdbparser
@@ -27,6 +27,7 @@ import os.path
 import mmap
 import struct
 import time
+import sys
 import posix_ipc
 
 class GDBBE:
