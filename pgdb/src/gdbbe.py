@@ -43,6 +43,9 @@ class GDBBE:
         self.record_handler.add_type_handler(
             self._watch_thread_created,
             set([gdbparser.ASYNC_NOTIFY_THREAD_CREATED]))
+        self.startup_stop_hid = self.record_handler.add_type_handler(
+            self._watch_startup_stop,
+            set([gdbparser.ASYNC_EXEC_STOPPED]))
         gdb_env = {}
         if gdbconf.use_sbd:
             self.sbd = SBDBE(self.comm)
@@ -119,6 +122,13 @@ class GDBBE:
             # Always ensure smallest thread is first.
             self.rank_thread_map[rank].sort()
         self.thread_rank_map[thread_id] = rank
+
+    def _watch_startup_stop(self, record, **kwargs):
+        """Handle watching for initial inferior stops during startup."""
+        self.startup_done_count += 1
+        if self.startup_done_count == self.comm.get_proctab_size():
+            self.doing_startup = False
+            self.record_handler.remove_handler(self.startup_stop_hid)
 
     def kill_inferiors(self):
         """Terminate all targets being debugged.
@@ -303,11 +313,6 @@ class GDBBE:
             records = []
             ranks = []
             for record in self.gdb.read():
-                if (record.record_subtypes == set(["stopped"]) and
-                    self.doing_startup):
-                    self.startup_done_count += 1
-                    if self.startup_done_count == self.comm.get_proctab_size():
-                        self.doing_startup = False
                 self.record_handler.handle(record)
                 if not self.is_filterable(record):
                     records.append(record)
@@ -321,8 +326,7 @@ class GDBBE:
                     self.startup_arec = combine_aggregated_records(
                         self.startup_arecs + arecs)
                 else:
-                    if (self.startup_done_count == self.comm.get_proctab_size()
-                        and self.startup_arecs is not None):
+                    if not self.doing_startup and self.startup_arecs:
                         arecs = combine_aggregated_records(
                             self.startup_arecs + arecs)
                         self.comm.send(GDBMessage(OUT_MSG, record=arecs),
