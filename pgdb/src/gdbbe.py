@@ -319,7 +319,7 @@ class GDBBE:
                     if record.token and record.token in self.token_rank_map:
                         ranks.append(self.token_rank_map[record.token])
                     else:
-                        ranks.append(-1)
+                        ranks.append(self.comm.get_mpiranks())
             if records:
                 arecs = combine_records(records, ranks)
                 if self.doing_startup:
