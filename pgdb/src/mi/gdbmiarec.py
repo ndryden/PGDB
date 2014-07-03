@@ -335,9 +335,9 @@ class GDBMIAggregatedRecord:
         for rank in self.ranks:
             record = self.get_record(rank)
             if record in class_dict:
-                class_dict[rank] += Interval(rank)
+                class_dict[record] += Interval(rank)
             else:
-                class_dict[rank] = Interval(rank)
+                class_dict[record] = Interval(rank)
         return class_dict
 
     def get_ranks(self):
