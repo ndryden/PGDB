@@ -153,8 +153,9 @@ class GDBBE:
         if isinstance(ranks, int):
             # Special case for a single int.
             # Toss it in a list; don't need a full Interval.
-            ranks = [ranks]
+            ranks = Interval(ranks)
         if ranks is None:
+            self.token_rank_map[command.token] = self.comm.get_mpiranks()
             return self.gdb.send(command)
         else:
             for rank in ranks:
@@ -167,6 +168,7 @@ class GDBBE:
                                         self.rank_thread_map[rank][0])
                     if not self.gdb.send(command):
                         return False
+            self.token_rank_map[command.token] = ranks
         return True
 
     def init_handlers(self):
