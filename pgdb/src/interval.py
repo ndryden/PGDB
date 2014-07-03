@@ -17,6 +17,7 @@ class Interval(object):
 
         src - the data to construct the interval from. One of the following:
          - a single integer
+         - an Interval
          - a list of disjoint intervals as tuples
          - a list of integers
         These should all be non-negative.
@@ -26,6 +27,9 @@ class Interval(object):
         if isinstance(src, int):
             src = [src]
             is_sorted = True
+        elif isinstance(src, Interval):
+            self.intervals = src.intervals
+            return
         elif not isinstance(src, list):
             raise ValueError("Input is not a list or integer.")
         self.intervals = []
