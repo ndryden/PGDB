@@ -232,6 +232,9 @@ class GDBBE:
         ranks - An optional interval of ranks on which to run.
 
         """
+        if self.doing_startup:
+            print("Ignoring command during startup.")
+            return
         if msg.command.command == "gdb-exit":
             # Special case for quit.
             self.quit = True
@@ -287,6 +290,7 @@ class GDBBE:
             if self.sbd:
                 # Check for data from the GDB process for LOAD_FILE.
                 self.sbd.sbd_check()
+
             msg = self.comm.recv(blocking=False)
             if msg is not None:
                 # Received data.
