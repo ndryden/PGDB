@@ -273,36 +273,66 @@ class Interval(object):
     def difference(self, other):
         """Return the set-theoretic difference of this interval with other.
 
+        This is every element of this interval that is not also in other.
+
         This takes O(n) time.
 
         """
         if not len(other):
+            # If other is empty, it doesn't remove anything.
             return self
         k = 0
         new = []
         for interval in self.intervals:
-            append = False
             while k < len(other):
+                # Iterate over intervals in other until the intervals cannot
+                # modify the current interval, then add whatever is left of
+                # the current interval to new.
                 if self._interval_intersect(interval, other.intervals[k]):
-                    append = True
+                    # We need to remove something from the current interval.
                     diff = self._interval_difference(interval,
                                                      other.intervals[k])
                     if diff:
-                        new += diff
-                        if other.intervals[k][1] <= interval[1]:
-                            k += 1
+                        # There is some portion remaining, but we can only add
+                        # the portion that is to the left of the start of the
+                        # other interval, as it may be removed later.
+                        if len(diff) == 1:
+                            if interval[0] < other.intervals[k][0]:
+                                # interval begins before other, so we can just
+                                # add the difference, as other extends past the
+                                # right end of interval.
+                                new += diff
+                                # Since other goes past the right end, advance
+                                # interval.
+                                break
+                            else:
+                                # We cut off the left portion of interval, so we
+                                # need to advance other.
+                                k += 1
+                                interval = diff[0]
                         else:
-                            break
+                            # len(diff) == 2, and the middle was removed.
+                            # Keep the right portion and advance other.
+                            new.append(diff[0])
+                            interval = diff[1]
+                            k += 1
                     else:
-                        k += 1
-                else:
-                    if other.intervals[k][0] > interval[1] and not append:
-                        append = True
-                        new.append(interval)
-                        k += 1
+                        # Completely removed interval, advance to next.
                         break
-                    k += 1
-            if k >= len(other) and not append:
+                else:
+                    # No intersection, advance to next in other and possibly
+                    # add what's left of the current interval and advance.
+                    if interval[1] < other[k][0]:
+                        # Other is to the right of interval, add what's left
+                        # and advance interval.
+                        new.append(interval)
+                        break
+                    else:
+                        # Other is not to the right and did not intersect, so it
+                        # must be to the left. Advance other.
+                        k += 1
+            if k >= len(other) and interval:
+                # We've exhaused other, but still have some of interval, add it.
                 new.append(interval)
         return Interval(new, is_sorted=True)
 
