@@ -136,7 +136,7 @@ class GDBBE:
         This sends SIGTERM.
 
         """
-        for proc in self.proctab:
+        for proc in self.comm.get_proctab():
             os.kill(proc.pd.pid, signal.SIGTERM)
 
     def run_gdb_command(self, command, ranks=None, no_thread=False):
