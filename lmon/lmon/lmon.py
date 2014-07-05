@@ -1,11 +1,14 @@
 """Common LaunchMON Python interface definitions.
 
-This defines some useful things common to both the LaunchMON front- and back-end interfaces, as well
-as things useful to things using this interface, such as exceptions and CTypes structures.
+This defines some useful things common to both the LaunchMON front- and back-end
+interfaces, as well as things useful to things using this interface, such as
+exceptions and CTypes structures.
 
 """
 
-from ctypes import *
+from __future__ import print_function
+from ctypes import (Structure, c_int, c_char_p, POINTER, cast, c_void_p,
+                    memmove, string_at)
 import cPickle
 
 # The version of the LaunchMON API. This must match the header file.
@@ -22,9 +25,9 @@ lmon_environ = {"LMON_REMOTE_LOGIN": "/usr/bin/ssh",
                 "LMON_PREFIX": lmon_path,
                 "LMON_LAUNCHMON_ENGINE_PATH": lmon_path + "/bin/launchmon"}
 
-def set_lmon_paths(path, fe_lib = None, be_lib = None):
+def set_lmon_paths(path, fe_lib=None, be_lib=None):
     """Set the LaunchMON paths."""
-    global lmon_path, lmon_fe_lib, lmon_be_lib, lmon_environ
+    global lmon_path, lmon_fe_lib, lmon_be_lib
     lmon_path = path
     if fe_lib:
         lmon_fe_lib = fe_lib
@@ -39,7 +42,6 @@ def set_lmon_paths(path, fe_lib = None, be_lib = None):
 
 def set_lmon_env(var, val):
     """Set environment variable var to val."""
-    global lmon_environ
     lmon_environ[var] = val
 
 # LaunchMON constants.
@@ -48,7 +50,7 @@ def set_lmon_env(var, val):
  LMON_ETOUT, LMON_ENOMEM, LMON_ENCLLB, LMON_ECLLB,
  LMON_ENEGCB, LMON_ENOPLD, LMON_EBDMSG, LMON_EDUNAV,
  LMON_ETRUNC, LMON_EBUG, LMON_NOTIMPL, LMON_YES,
- LMON_NO) = map(int, xrange(21))
+ LMON_NO) = list(range(21))
 lmon_const_map = [
     "LMON_OK",
     "LMON_EINVAL",
@@ -76,8 +78,8 @@ lmon_const_map = [
 class LMONException(Exception):
     """An error from LaunchMON.
 
-    This is raised whenever a LaunchMON function returns an error code that is not one of:
-    LMON_OK, LMON_YES, or LMON_NO.
+    This is raised whenever a LaunchMON function returns an error code that is
+    not one of: LMON_OK, LMON_YES, or LMON_NO.
 
     """
     def __init__(self, value):
@@ -91,7 +93,8 @@ class LMONException(Exception):
 
     def print_lmon_error(self):
         """Print a short error message."""
-        print "Caught LaunchMON error, code = {0} ({1})".format(self, self.value)
+        print("Caught LaunchMON error, code = {0} ({1})".format(self,
+                                                                self.value))
 
 class MPIR_PROCDESC(Structure):
     """A CTypes structure for the MPIR_PROCDESC structure."""
@@ -120,16 +123,16 @@ def call(func, *args):
     The return code is returned if it is not an error.
 
     """
-    rc = func(*args)
-    if rc not in [LMON_OK, LMON_YES, LMON_NO]:
-        raise LMONException(rc)
-    return rc
+    ret_code = func(*args)
+    if ret_code not in [LMON_OK, LMON_YES, LMON_NO]:
+        raise LMONException(ret_code)
+    return ret_code
 
 def create_array(ctype, lis):
     """A helper function to lay out a CTypes array."""
     if len(lis):
-        ar = ctype * len(lis)
-        _lis = ar(*tuple(lis))
+        array_type = ctype * len(lis)
+        _lis = array_type(*tuple(lis))
         return _lis
     else:
         return None
@@ -151,13 +154,13 @@ def udata_unserialize(udata):
 def pack(udata, msgbuf, msgbufmax, msgbuflen):
     """The pack callback for LaunchMON; see the relevant manpages."""
     udata_size = len(string_at(udata))
-    if udata_size > msgbuflen:
+    if udata_size > msgbufmax:
         raise ValueError("LMon pack got data larger than the message buffer.")
     memmove(msgbuf, udata, udata_size)
     msgbuflen[0] = udata_size
     return 0
 
 def unpack(udatabuf, udatabuflen, udata):
-    """The unpack callback for LaunchMON; seel the relevant manpages."""
+    """The unpack callback for LaunchMON; see the relevant manpages."""
     memmove(udata, udatabuf, udatabuflen)
     return 0
