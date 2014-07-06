@@ -6,8 +6,9 @@ import lmon
 class LMON_fe(object):
     """An interface to the LaunchMON front-end library using CTypes.
 
-    This loads the library, provides for type-checking of arguments, and handles some
-    convenience things. See the LaunchMON manpages for additional information.
+    This loads the library, provides for type-checking of arguments, and handles
+    some convenience things. See the LaunchMON manpages for additional
+    information.
 
     """
 
@@ -17,26 +18,32 @@ class LMON_fe(object):
         # Used for keeping callbacks alive.
         self.pack_cbs = {}
         self.unpack_cbs = {}
-        self.pack_type = CFUNCTYPE(c_int, c_void_p, c_void_p, c_int, POINTER(c_int))
+        self.pack_type = CFUNCTYPE(c_int, c_void_p, c_void_p, c_int,
+                                   POINTER(c_int))
         self.unpack_type = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)
         # Set up argument types.
         self.lib.LMON_fe_init.argtypes = [c_int]
         self.lib.LMON_fe_createSession.argtypes = [POINTER(c_int)]
-        self.lib.LMON_fe_attachAndSpawnDaemons.argtypes = [c_int, c_char_p, c_int,
-                                                           c_char_p, POINTER(c_char_p),
+        self.lib.LMON_fe_attachAndSpawnDaemons.argtypes = [c_int, c_char_p,
+                                                           c_int, c_char_p,
+                                                           POINTER(c_char_p),
                                                            c_void_p, c_void_p]
-        self.lib.LMON_fe_launchAndSpawnDaemons.argtypes = [c_int, c_char_p, c_char_p,
-                                                           POINTER(c_char_p), c_char_p,
-                                                           POINTER(c_char_p), c_void_p,
-                                                           c_void_p]
+        self.lib.LMON_fe_launchAndSpawnDaemons.argtypes = [c_int, c_char_p,
+                                                           c_char_p,
+                                                           POINTER(c_char_p),
+                                                           c_char_p,
+                                                           POINTER(c_char_p),
+                                                           c_void_p, c_void_p]
         self.lib.LMON_fe_regPackForFeToBe.argtypes = [c_int, self.pack_type]
         self.lib.LMON_fe_regUnpackForBeToFe.argtypes = [c_int, self.unpack_type]
         self.lib.LMON_fe_sendUsrDataBe.argtypes = [c_int, c_void_p]
         self.lib.LMON_fe_recvUsrDataBe.argtypes = [c_int, c_void_p]
-        self.lib.LMON_fe_putToBeDaemonEnv.argtypes = [c_int, POINTER(lmon.lmon_daemon_env_t),
+        self.lib.LMON_fe_putToBeDaemonEnv.argtypes = [c_int,
+                                                      POINTER(lmon.lmon_daemon_env_t),
                                                       c_int]
         self.lib.LMON_fe_getProctableSize.argtypes = [c_int, POINTER(c_uint)]
-        # We use c_void_p here because ctypes isn't good at resolving the multiple-pointers.
+        # We use c_void_p here because ctypes isn't good at resolving the
+        # multiple-pointers.
         self.lib.LMON_fe_getProctable.argtypes = [c_int, c_void_p,
                                                   POINTER(c_uint), c_uint]
         self.lib.LMON_fe_detach.argtypes = [c_int]
@@ -53,8 +60,14 @@ class LMON_fe(object):
         lmon.call(self.lib.LMON_fe_createSession, byref(session))
         return session.value
 
-    def attachAndSpawnDaemons(self, session, hostname, pid, daemon, d_argv, febe_data, befe_data):
-        """Invoke LMON_fe_attachAndSpawnDaemons. See the manpages. d_argv is a list. befe_data is the size of the desired buffer or None."""
+    def attachAndSpawnDaemons(self, session, hostname, pid, daemon, d_argv,
+                              febe_data, befe_data):
+        """Invoke LMON_fe_attachAndSpawnDaemons.
+
+        See the manpages. d_argv is a list.
+        befe_data is the size of the desired buffer or None.
+
+        """
         # Need a trailing null entry on the array.
         d_argv += [None]
         _d_argv = lmon.create_array(c_char_p, d_argv)
@@ -68,15 +81,15 @@ class LMON_fe(object):
             _befe_data = cast(buf, c_void_p)
         else:
             _befe_data = cast(None, c_void_p)
-        lmon.call(self.lib.LMON_fe_attachAndSpawnDaemons, session, hostname, pid, daemon, _d_argv,
-                  _febe_data, _befe_data)
+        lmon.call(self.lib.LMON_fe_attachAndSpawnDaemons, session, hostname,
+                  pid, daemon, _d_argv, _febe_data, _befe_data)
         if befe_data:
             return lmon.udata_unserialize(buf.value)
         else:
             return None
 
-    def launchAndSpawnDaemons(self, session, hostname, launcher, l_argv, daemon, d_argv, febe_data,
-                              befe_data):
+    def launchAndSpawnDaemons(self, session, hostname, launcher, l_argv, daemon,
+                              d_argv, febe_data, befe_data):
         """Invoke LMON_fe_launchAndSpawnDaemons."""
         # Need trailing null entries on the arrays.
         l_argv += [None]
@@ -93,8 +106,8 @@ class LMON_fe(object):
             _befe_data = cast(buf, c_void_p)
         else:
             _befe_data = cast(None, c_void_p)
-        lmon.call(self.lib.LMON_fe_launchAndSpawnDaemons, session, hostname, launcher, _l_argv,
-                  daemon, _d_argv, _febe_data, _befe_data)
+        lmon.call(self.lib.LMON_fe_launchAndSpawnDaemons, session, hostname,
+                  launcher, _l_argv, daemon, _d_argv, _febe_data, _befe_data)
         if befe_data:
             return lmon.udata_unserialize(buf.value)
         else:
@@ -113,13 +126,15 @@ class LMON_fe(object):
         lmon.call(self.lib.LMON_fe_regUnpackForBeToFe, session, cb)
 
     def sendUsrDataBe(self, session, febe_data):
-        """Send user data to the backend with LMON_fe_sendUsrDataBe (it is serialized)."""
-        lmon.call(self.lib.LMON_fe_sendUsrDataBe, session, lmon.udata_serialize(febe_data))
+        """Send user data to the backend."""
+        lmon.call(self.lib.LMON_fe_sendUsrDataBe, session,
+                  lmon.udata_serialize(febe_data))
 
     def recvUsrDataBe(self, session, buf_size):
-        """Receive user data from the backend with LMON_fe_recvUsrDataBe (it is unserialized)."""
+        """Receive user data from the backend."""
         befe_data = create_string_buffer(buf_size)
-        lmon.call(self.lib.LMON_fe_recvUsrDataBe, session, cast(befe_data, c_void_p))
+        lmon.call(self.lib.LMON_fe_recvUsrDataBe, session,
+                  cast(befe_data, c_void_p))
         return lmon.udata_unserialize(befe_data.raw)
 
     def putToBeDaemonEnv(self, session, environ):
@@ -137,20 +152,22 @@ class LMON_fe(object):
                 env_list[k].next = pointer(env_list[k + 1])
             else:
                 env_list[k].next = None
-        lmon.call(self.lib.LMON_fe_putToBeDaemonEnv, session, env_list, len(environ))
+        lmon.call(self.lib.LMON_fe_putToBeDaemonEnv, session, env_list,
+                  len(environ))
 
     def getProctableSize(self, session):
-        """Return the size of the process table with LMON_fe_getProctableSize."""
+        """Return the size of the process table."""
         size = c_uint()
         lmon.call(self.lib.LMON_fe_getProctableSize, session, byref(size))
         return size.value
 
     def getProctable(self, session, maxsize):
-        """Return the process table and its size with LMON_fe_getProctable."""
+        """Return the process table and its size."""
         proctab_type = lmon.MPIR_PROCDESC_EXT * maxsize
         proctab = proctab_type()
         size = c_uint()
-        lmon.call(self.lib.LMON_fe_getProctable, session, byref(proctab), byref(size), c_uint(maxsize))
+        lmon.call(self.lib.LMON_fe_getProctable, session, byref(proctab),
+                  byref(size), c_uint(maxsize))
         return proctab, size.value
 
     def detach(self, session):

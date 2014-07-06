@@ -6,17 +6,22 @@ import lmon
 class LMON_be(object):
     """An interface to the LaunchMON back-end library using CTypes.
 
-    This loads the library, provides for type-checking of arguments, and handles some
-    convenience things. See the LaunchMON manpages for additional information.
+    This loads the library, provides for type-checking of arguments, and handles
+    some convenience things. See the LaunchMON manpages for additional
+    information.
 
     """
 
     def __init__(self):
         """Initialize the LaunchMON back-end library."""
         self.lib = cdll.LoadLibrary(lmon.lmon_be_lib)
-        self.pack_type = CFUNCTYPE(c_int, c_void_p, c_void_p, c_int, POINTER(c_int))
+        self.pack_type = CFUNCTYPE(c_int, c_void_p, c_void_p, c_int,
+                                   POINTER(c_int))
         self.unpack_type = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)
-        # We use c_void_p because ctypes isn't good at the whole multiple-pointers thing.
+        self.pack_cb = None
+        self.unpack_cb = None
+        # We use c_void_p because ctypes isn't good at the whole
+        # multiple-pointers thing.
         self.lib.LMON_be_init.argtypes = [c_int, POINTER(c_int), c_void_p]
         self.lib.LMON_be_getMyRank.argtypes = [POINTER(c_int)]
         self.lib.LMON_be_amIMaster.argtypes = []
@@ -25,7 +30,8 @@ class LMON_be(object):
         self.lib.LMON_be_ready.argtypes = [c_void_p]
         self.lib.LMON_be_getMyProctabSize.argtypes = [POINTER(c_int)]
         # See above for why we use c_void_p.
-        self.lib.LMON_be_getMyProctab.argtypes = [c_void_p, POINTER(c_int), c_int]
+        self.lib.LMON_be_getMyProctab.argtypes = [c_void_p, POINTER(c_int),
+                                                  c_int]
         self.lib.LMON_be_finalize.argtypes = []
         self.lib.LMON_be_regPackForBeToFe.argtypes = [self.pack_type]
         self.lib.LMON_be_regUnpackForFeToBe.argtypes = [self.unpack_type]
@@ -44,40 +50,46 @@ class LMON_be(object):
         """
         _argc = c_int(argc)
         # This is horribly ugly code to properly reconstruct argv for LaunchMON.
-        # We stuff the arguments in string buffers (since they can be modified!).
+        # We stuff the arguments in string buffers (since they can be modified).
         # We stuff those into an array.
         # We add an entry at the end with a bunch of null bytes, since the last
         # argv entry is supposed to be a null and otherwise LaunchMON will make
         # malloc *very* unhappy.
         # We create a pointer to this array.
         # We pass that pointer by reference (another pointer).
-        tmp_argv = map(lambda x: cast(create_string_buffer(x), c_char_p), argv)
+        tmp_argv = [cast(create_string_buffer(x), c_char_p) for x in argv]
         tmp_argv.append(cast(create_string_buffer(32), c_char_p))
         _argv = lmon.create_array(c_char_p, tmp_argv)
         argv_ref = c_void_p(addressof(_argv))
-        lmon.call(self.lib.LMON_be_init, lmon.LMON_VERSION, byref(_argc), byref(argv_ref))
+        lmon.call(self.lib.LMON_be_init, lmon.LMON_VERSION, byref(_argc),
+                  byref(argv_ref))
 
     def getMyRank(self):
-        """Return the rank from LMON_be_getMyRank."""
+        """Return the rank of this process."""
         rank = c_int()
         lmon.call(self.lib.LMON_be_getMyRank, byref(rank))
         return rank.value
 
     def amIMaster(self):
-        """Return True or False depending upon the result of LMON_be_amIMaster."""
+        """Return whether this process is the master."""
         rc = lmon.call(self.lib.LMON_be_amIMaster)
         if rc == lmon.LMON_YES:
             return True
         return False
 
     def getSize(self):
-        """Return the size from LMON_be_getSize."""
+        """Return the number of LaunchMON processes."""
         size = c_int()
         lmon.call(self.lib.LMON_be_getSize, byref(size))
         return size.value
 
     def handshake(self, udata):
-        """Invoke LMON_be_handshake. If udata is not None, it should be the length of the buffer to unserialize front-end data to."""
+        """Do the LaunchMON handshake.
+
+        If udata is not None, it should be the length of the buffer to
+        unserialize front-end data to.
+
+        """
         if udata is None:
             lmon.call(self.lib.LMON_be_handshake, cast(None, c_void_p))
         else:
@@ -89,46 +101,47 @@ class LMON_be(object):
             return None
 
     def ready(self, udata):
-        """Invoke LMON_be_ready, serializing in udata for sending if provided."""
+        """Inform the front-end that we are ready."""
         if udata is None:
             lmon.call(self.lib.LMON_be_ready, cast(None, c_void_p))
         else:
             lmon.call(self.lib.LMON_be_ready, lmon.udata_serialize(udata))
 
     def getMyProctabSize(self):
-        """Return the size of the process table form LMON_be_getMyProctabSize."""
+        """Return the size of the process table."""
         size = c_int()
         lmon.call(self.lib.LMON_be_getMyProctabSize, byref(size))
         return size.value
 
     def getMyProctab(self, maxsize):
-        """Return the process table (CTypes array of MPIR_PROCDESC_EXTs) and the size from LMON_be_getMyProctab."""
+        """Return the process table and size for this process."""
         proctab_type = lmon.MPIR_PROCDESC_EXT * maxsize
         proctab = proctab_type()
         size = c_int()
-        lmon.call(self.lib.LMON_be_getMyProctab, byref(proctab), byref(size), maxsize)
+        lmon.call(self.lib.LMON_be_getMyProctab, byref(proctab), byref(size),
+                  maxsize)
         return proctab, size.value
 
     def finalize(self):
-        """Invoke LMON_be_finalize."""
+        """Finalize this session."""
         lmon.call(self.lib.LMON_be_finalize)
 
     def regPackForBeToFe(self, callback):
-        """Register a pack function with LMON_be_regPackForBeToFe."""
+        """Register a pack function."""
         self.pack_cb = self.pack_type(callback)
-        lmon.call(self.lib.LMON_be_regPackForBeToFe,  self.pack_cb)
+        lmon.call(self.lib.LMON_be_regPackForBeToFe, self.pack_cb)
 
     def regUnpackForFeToBe(self, callback):
-        """Register an unpack function with LMON_be_regUnpackForFeToBe."""
+        """Register an unpack function."""
         self.unpack_cb = self.unpack_type(callback)
         lmon.call(self.lib.LMON_be_regUnpackForFeToBe, self.unpack_cb)
 
     def sendUsrData(self, udata):
-        """Send data with LMON_be_sendUsrData (the data is serialized)."""
+        """Send data to the front-end."""
         lmon.call(self.lib.LMON_be_sendUsrData, lmon.udata_serialize(udata))
 
     def recvUsrData(self, buf_size):
-        """Receive user data with LMON_be_recvUsrData (the data is unserialized)."""
+        """Receive data from the front-end."""
         udata = create_string_buffer(buf_size)
         lmon.call(self.lib.LMON_be_recvUsrData, cast(udata, c_void_p))
         if self.amIMaster():
@@ -136,27 +149,28 @@ class LMON_be(object):
         return None
 
     def barrier(self):
-        """Invoke LMON_be_barrier."""
+        """Make a barrier."""
         lmon.call(self.lib.LMON_be_barrier)
 
     def broadcast(self, udata, size):
-        """Broadcast with LMON_be_broadcast.
+        """Broadcast data.
 
         The master provides data and the size of it, and this returns None.
-        The slaves can provide None for the data, and size is the size of the buffer, which is
-        returned after unserialization.
+        The slaves can provide None for the data, and size is the size of the
+        buffer, which is returned after unserialization.
 
         """
         if self.amIMaster():
             # Master sends the data, returns None.
-            lmon.call(self.lib.LMON_be_broadcast, lmon.udata_serialize(udata), size)
+            lmon.call(self.lib.LMON_be_broadcast, lmon.udata_serialize(udata),
+                      size)
             return None
         else:
             # Slave returns the data.
             buf = create_string_buffer(size)
             lmon.call(self.lib.LMON_be_broadcast, cast(buf, c_void_p), size)
-            # Depending on the application, there appears to be a spurious null byte at the start
-            # of the data. I do not know why. This gets around it.
+            # Depending on the application, there appears to be a spurious null
+            # byte at the start of the data. I do not know why. This avoids it.
             if buf.raw[0] == "\0" and buf.raw[1] != "\0":
                 buf = string_at(addressof(buf) + 1)
             else:
@@ -164,7 +178,7 @@ class LMON_be(object):
             return lmon.udata_unserialize(buf)
 
     def scatter(self, udata_array, elem_size):
-        """Scatter with LMON_be_scatter.
+        """Scatter data.
 
         The master provides udata_array, which is an array of data to scatter.
         The slaves may provide None for the data.
@@ -183,12 +197,15 @@ class LMON_be(object):
             buf_addr = addressof(send_buf)
             idx = 0
             for elem in udata_array:
-                tmp_buf = create_string_buffer(string_at(lmon.udata_serialize(elem)), elem_size)
+                tmp_buf = create_string_buffer(
+                    string_at(lmon.udata_serialize(elem)), elem_size)
                 memmove(buf_addr + (idx * elem_size), tmp_buf, elem_size)
                 idx += 1
-            lmon.call(self.lib.LMON_be_scatter, cast(send_buf, c_void_p), elem_size, cast(buf, c_void_p))
+            lmon.call(self.lib.LMON_be_scatter, cast(send_buf, c_void_p),
+                      elem_size, cast(buf, c_void_p))
         else:
-            lmon.call(self.lib.LMON_be_scatter, cast(None, c_void_p), elem_size, cast(buf, c_void_p))
+            lmon.call(self.lib.LMON_be_scatter, cast(None, c_void_p), elem_size,
+                      cast(buf, c_void_p))
         # This is here for the same reason as in broadcast.
         # Note that it appears that the null byte is only present for children.
         if buf.raw[0] == "\0" and buf.raw[1] != "\0":
