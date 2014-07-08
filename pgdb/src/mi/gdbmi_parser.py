@@ -56,9 +56,7 @@ class GDBMIParser:
             else:
                 parts = self.output_re.match(line)
                 if not parts:
-                    record = GDBMIUnknownRecord()
-                    record.output = line
-                    records.append(record)
+                    records.append(GDBMIUnknownRecord.create_record(line))
                     continue
                 token, symbol, rest = parts.groups()
                 if not token:

@@ -767,12 +767,17 @@ class GDBMIResultRecord(GDBMIRecord):
 class GDBMIUnknownRecord(GDBMIRecord):
     """Some other type of record."""
 
+    @staticmethod
+    def create_record(line):
+        """Create a new record of unknown type."""
+        record = GDBMIUnknownRecord()
+        record.output = line
+
     def __init__(self):
         """Initialization."""
         super(GDBMIUnknownRecord, self).__init__()
         self.record_type = UNKNOWN
         self.fields = ["output"]
-        self.output = None
 
     def __str__(self):
         """Return a basic string representation."""
