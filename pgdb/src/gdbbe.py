@@ -43,10 +43,10 @@ class GDBBE:
         self.record_handler = GDBMIRecordHandler()
         self.record_handler.add_type_handler(
             self._watch_thread_created,
-            set([gdbmi_records.ASYNC_NOTIFY_THREAD_CREATED]))
+            set([mi.gdbmi_records.ASYNC_NOTIFY_THREAD_CREATED]))
         self.startup_stop_hid = self.record_handler.add_type_handler(
             self._watch_startup_stop,
-            set([gdbmi_records.ASYNC_EXEC_STOPPED]))
+            set([mi.gdbmi_records.ASYNC_EXEC_STOPPED]))
         gdb_env = {}
         if gdbconf.use_sbd:
             self.sbd = SBDBE(self.comm)

@@ -3,6 +3,7 @@
 import copy
 from collections import defaultdict
 from mi.gdbmi_parser import *
+from mi.gdbmi_records import *
 from interval import Interval
 
 def _is_dict(v):
