@@ -12,6 +12,7 @@ from comm import CommunicatorBE
 from gdb_shared import *
 from lmon.lmonbe import LMON_be
 import mi.gdbmi_parser as gdbparser
+import mi.gdbmi_records
 from mi.gdbmi import GDBMachineInterface
 from mi.varobj import VariableObject, VariableObjectManager
 from mi.commands import Command
@@ -42,10 +43,10 @@ class GDBBE:
         self.record_handler = GDBMIRecordHandler()
         self.record_handler.add_type_handler(
             self._watch_thread_created,
-            set([gdbparser.ASYNC_NOTIFY_THREAD_CREATED]))
+            set([gdbmi_records.ASYNC_NOTIFY_THREAD_CREATED]))
         self.startup_stop_hid = self.record_handler.add_type_handler(
             self._watch_startup_stop,
-            set([gdbparser.ASYNC_EXEC_STOPPED]))
+            set([gdbmi_records.ASYNC_EXEC_STOPPED]))
         gdb_env = {}
         if gdbconf.use_sbd:
             self.sbd = SBDBE(self.comm)
