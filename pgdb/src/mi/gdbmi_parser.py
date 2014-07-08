@@ -3,7 +3,7 @@
 import re
 from gdbmi_records import (RESULT_CLASS_DONE, RESULT_CLASS_RUNNING,
                            RESULT_CLASS_CONNECTED, RESULT_CLASS_ERROR,
-                           RESULT_CLASS_EXIT, ASYNC_EXIT, ASYNC_STATUS,
+                           RESULT_CLASS_EXIT, ASYNC_EXEC, ASYNC_STATUS,
                            ASYNC_NOTIFY, STREAM_CONSOLE, STREAM_TARGET,
                            STREAM_LOG, GDBMIAsyncRecord, GDBMIStreamRecord,
                            GDBMIResultRecord, GDBMIUnknownRecord)
