@@ -304,6 +304,7 @@ class GDBMIAggregatedRecord:
             new_data = {}
             for k in data:
                 new_data[k] = self.reconstruct_recursive(rank, data[k])
+            return new_data
 
     def get_record(self, rank):
         """Return the reconstructed record for the given rank."""
