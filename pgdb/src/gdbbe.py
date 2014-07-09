@@ -324,7 +324,8 @@ class GDBBE:
                 self.record_handler.handle(record)
                 if not self.is_filterable(record):
                     records.append(record)
-                    if record.token and record.token in self.token_rank_map:
+                    if (record.token is not None and
+                        record.token in self.token_rank_map):
                         ranks.append(self.token_rank_map[record.token])
                     else:
                         ranks.append(self.comm.get_mpiranks())
