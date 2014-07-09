@@ -398,10 +398,11 @@ class GDBFE (GDBMICmd):
             self.pprinter.pretty_print(arec.get_record(vid), Interval(vid))
 
     def dispatch_gdbmi_command(self, command):
-        """Send a GDB command."""
+        """Send a GDB command to every rank (use proc to send to subsets)."""
         if self.comm.is_shutdown():
             return False
-        return self.comm.send(GDBMessage(CMD_MSG, command = command), self.comm.broadcast)
+        return self.comm.send(GDBMessage(CMD_MSG, command = command),
+                              self.comm.broadcast)
 
     def handle_msg(self, msg):
         """Handle a received message."""

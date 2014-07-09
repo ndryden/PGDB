@@ -88,8 +88,8 @@ class GDBBE:
                 raise RuntimeError('Cound not add inferior i{0}!'.format(i - 1))
 
         # Maps MPI ranks to associated threads and vice-versa.
-        self.rank_thread_map = {procs[0].mpirank: [1]}
-        self.thread_rank_map = {1: procs[0].mpirank}
+        self.rank_thread_map = {}
+        self.thread_rank_map = {}
 
         if self.sbd:
             # Set up the list of executables for load file checking.
@@ -130,6 +130,9 @@ class GDBBE:
         if self.startup_done_count == self.comm.get_proctab_size():
             self.doing_startup = False
             self.record_handler.remove_handler(self.startup_stop_hid)
+            # Reset token counts to sync with front-end.
+            self.token_rank_map = {}
+            Command._cur_token = 0
 
     def kill_inferiors(self):
         """Terminate all targets being debugged.
@@ -159,12 +162,14 @@ class GDBBE:
             self.token_rank_map[command.token] = self.comm.get_mpiranks()
             return self.gdb.send(command)
         else:
+            if command.get_opt('--thread') is not None:
+                # If --thread provided, don't override it.
+                no_thread = True
             for rank in ranks:
                 if rank in self.rank_inferior_map:
                     # Most recent option with same name takes precedence.
                     if (not no_thread and
-                        rank in self.rank_thread_map and
-                        command.get_opt('--thread') is None):
+                        rank in self.rank_thread_map):
                         command.add_opt('--thread',
                                         self.rank_thread_map[rank][0])
                     if not self.gdb.send(command):
