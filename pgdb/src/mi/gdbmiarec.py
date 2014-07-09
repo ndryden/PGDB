@@ -191,7 +191,7 @@ class _Substitution:
 
     def __str__(self):
         return "_Substitution: default = {0}\nothers = {1}".format(self.default,
-                                                                   self.others)
+                                                                   self.other)
 
 class GDBMIAggregatedRecord:
     """Aggregated GDBMIRecord making use of substitutions.
