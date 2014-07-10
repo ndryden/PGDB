@@ -160,13 +160,13 @@ class GDBMIAsyncRecord(GDBMIRecord):
             record.frame = GDBMIFrame(output["frame"])
             record.fields += ["frame"]
         if record_type == ASYNC_EXEC:
-            record.thread_id = output["thread-id"]
+            record.thread_id = int(output["thread-id"])
             record.fields += ["thread_id"]
             if output_class == ASYNC_EXEC_STOPPED:
                 record.reason = output.get("reason")
                 if record.reason:
                     if ASYNC_STOPPED_BREAKPOINT_HIT == record.reason:
-                        record.breakpoint_id = output["bkptno"]
+                        record.breakpoint_id = int(output["bkptno"])
                     elif ASYNC_STOPPED_WATCHPOINT_TRIGGER == record.reason:
                         pass
                     elif ASYNC_STOPPED_READ_WATCHPOINT_TRIGGER == record.reason:
@@ -202,7 +202,7 @@ class GDBMIAsyncRecord(GDBMIRecord):
                     elif ASYNC_STOPPED_EXEC == record.reason:
                         pass
                 record.stopped_threads = output["stopped-threads"]
-                record.core = output.get("core")
+                record.core = int(output.get("core"))
                 record.fields += ["reason", "stopped_threads", "core"]
         elif record_type == ASYNC_NOTIFY:
             if output_class == ASYNC_NOTIFY_THREAD_GROUP_ADDED:
@@ -213,22 +213,22 @@ class GDBMIAsyncRecord(GDBMIRecord):
                 record.fields += ["thread_group_id"]
             elif output_class == ASYNC_NOTIFY_THREAD_GROUP_STARTED:
                 record.thread_group_id = output["id"]
-                record.pid = output["pid"]
+                record.pid = int(output["pid"])
                 record.fields += ["thread_group_id", "pid"]
             elif output_class == ASYNC_NOTIFY_THREAD_GROUP_EXITED:
                 record.thread_group_id = output["id"]
                 record.exit_code = output.get("exit-code")
                 record.fields += ["thread_group_id", "exit_code"]
             elif output_class == ASYNC_NOTIFY_THREAD_CREATED:
-                record.thread_id = output["id"]
+                record.thread_id = int(output["id"])
                 record.thread_group_id = output["group-id"]
                 record.fields += ["thread_id", "thread_group_id"]
             elif output_class == ASYNC_NOTIFY_THREAD_EXITED:
-                record.thread_id = output["id"]
+                record.thread_id = int(output["id"])
                 record.thread_group_id = output["group-id"]
                 record.fields += ["thread_id", "thread_group_id"]
             elif output_class == ASYNC_NOTIFY_THREAD_SELECTED:
-                record.thread_id = output["id"]
+                record.thread_id = int(output["id"])
                 record.fields += ["thread_id"]
             elif output_class == ASYNC_NOTIFY_LIBRARY_LOADED:
                 record.library_id = output["id"]
@@ -272,7 +272,7 @@ class GDBMIAsyncRecord(GDBMIRecord):
                 record.breakpoint = GDBMIBreakpoint(output["bkpt"])
                 record.fields += ["breakpoint"]
             elif output_class == ASYNC_NOTIFY_BREAKPOINT_DELETED:
-                record.breakpoint_id = output["id"]
+                record.breakpoint_id = int(output["id"])
                 record.fields += ["breakpoint_id"]
             elif output_class == ASYNC_NOTIFY_RECORD_STARTED:
                 record.thread_group_id = output["group-id"]
@@ -914,7 +914,7 @@ class GDBMIThread:
     """A thread."""
 
     def __init__(self, thread):
-        self.thread_id = thread["id"]
+        self.thread_id = int(thread["id"])
         self.target_id = thread["target-id"]
         self.details = thread.get("details")
         self.name = thread.get("name")
