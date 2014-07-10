@@ -327,6 +327,9 @@ class GDBBE:
                     if (record.token is not None and
                         record.token in self.token_rank_map):
                         ranks.append(self.token_rank_map[record.token])
+                    elif (hasattr(record, "thread_id") and
+                          record.thread_id in self.thread_rank_map):
+                        ranks.append(self.thread_rank_map[record.thread_id])
                     else:
                         ranks.append(self.comm.get_mpiranks())
             if records:
