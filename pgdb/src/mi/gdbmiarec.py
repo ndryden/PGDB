@@ -348,3 +348,9 @@ class GDBMIAggregatedRecord:
     def __str__(self):
         return "AggregatedRecord({0}, {1})".format(self.record_type,
                                                    self.record_subtypes)
+
+    def __repr__(self):
+        return ("<AggregatedRecord(type = {0}, subtypes = {1}, "
+                "ranks = {2})>").format(self.record_type,
+                                        self.record_subtypes,
+                                        self.ranks)
