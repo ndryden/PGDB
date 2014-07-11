@@ -146,6 +146,10 @@ class GDBMIRecord(object):
             s += "{0} = {1}\n".format(field, val)
         return s
 
+    def __repr__(self):
+        """Simple repr that returns __str__ so that output is nicer."""
+        return self.__str__()
+
 class GDBMIAsyncRecord(GDBMIRecord):
     """An async record."""
 
