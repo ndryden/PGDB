@@ -335,7 +335,7 @@ class GDBBE:
             if records:
                 arecs = combine_records(records, ranks)
                 if self.doing_startup:
-                    self.startup_arec = combine_aggregated_records(
+                    self.startup_arecs = combine_aggregated_records(
                         self.startup_arecs + arecs)
                 else:
                     if not self.doing_startup and self.startup_arecs:
