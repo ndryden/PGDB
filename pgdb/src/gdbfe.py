@@ -422,8 +422,9 @@ class GDBFE (GDBMICmd):
             return False
         # Signal main thread we can use stdin.
         self.remote_up.set()
-        print "GDB deployed to {0} hosts and {1} processors.".format(self.comm.get_mrnet_network_size(),
-                                                                     self.comm.get_proctab_size())
+        print "PGDB deployed to {0} hosts and {1} processors.".format(
+            self.comm.get_mrnet_network_size(),
+            self.comm.get_proctab_size())
         recvd = False
         while not self.quit and not self.comm.all_nodes_exited():
             # Receive data, if any.
