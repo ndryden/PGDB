@@ -276,9 +276,13 @@ class GDBMIAggregatedRecord:
         if isinstance(field, _Substitution):
             field.merge(other_field, self.ranks, other_ranks)
         elif _is_list(field):
+            if len(field) != len(other_field):
+                print "Warning: List lengths differ; not supported!"
             for d1, d2 in zip(field, other_field):
                 self.merge_recursive(d1, d2, other_ranks)
         elif _is_dict(field):
+            if len(field) != len(other_field):
+                print "Warning: Dict lengths differ; not supported!"
             for k in field:
                 self.merge_recursive(field[k], other_field[k], other_ranks)
 

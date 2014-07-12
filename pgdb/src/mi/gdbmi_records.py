@@ -531,6 +531,7 @@ class GDBMIResultRecord(GDBMIRecord):
             else:
                 record.stack = [GDBMIFrame(results[RESULT_STACK]["frame"])]
             record.fields += ["stack"]
+            record.record_subtypes.add(len(record.stack))
         if RESULT_LOCALS in results:
             record.record_subtypes.add(RESULT_LOCALS)
             record.local_variables = {}
