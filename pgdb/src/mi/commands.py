@@ -45,15 +45,25 @@ class Command(object):
         """Get an option to this GDB command."""
         return self.opts.get(k)
 
-    def generate_mi_command(self):
-        """Generate a machine interface command from this Command."""
-        return ("{0:08d}-".format(self.token) + self.command + " " +
-                " ".join([k + " " + v for k, v in self.opts.items()]) +
-                " " + " ".join(self.args))
+    def generate_mi_command(self, new_tok=True):
+        """Generate a machine interface command from this Command.
+
+        If new_tok is True (default), generate a new token after creating this
+        command.
+
+        """
+        cmd = ("{0:08d}-".format(self.token) + self.command + " " +
+               " ".join([k + " " + v for k, v in self.opts.items()]) +
+               " " + " ".join(self.args))
+        if new_tok:
+            # Update token after each command is sent.
+            self.token = Command._cur_token
+            Command._cur_token += 1
+        return cmd
 
     def __str__(self):
         """Get a string representation of the command."""
-        return self.generate_mi_command()
+        return self.generate_mi_command(new_tok=False)
 
 class Commands(object):
     """Represents the set of commands a GDB MI supports."""

@@ -174,7 +174,7 @@ class GDBBE:
                                         self.rank_thread_map[rank][0])
                     if not self.gdb.send(command):
                         return False
-            self.token_rank_map[command.token] = ranks
+                    self.token_rank_map[command.token] = rank
         return True
 
     def init_handlers(self):
